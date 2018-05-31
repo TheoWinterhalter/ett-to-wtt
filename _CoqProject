@@ -1,0 +1,26 @@
+-R theories Translation
+-arg "-w default,-notation-overridden"
+
+theories/util.v
+theories/SAst.v
+theories/Equality.v
+theories/SLiftSubst.v
+theories/SCommon.v
+theories/Conversion.v
+theories/XTyping.v
+theories/ITyping.v
+theories/ITypingInversions.v
+theories/ITypingLemmata.v
+theories/ContextConversion.v
+theories/Uniqueness.v
+theories/SubjectReduction.v
+theories/ITypingAdmissible.v
+theories/PackLifts.v
+theories/FundamentalLemma.v
+theories/Translation.v
+theories/Pruning.v
+theories/Quotes.v
+theories/FinalTranslation.v
+theories/FullQuote.v
+theories/ExamplesUtil.v
+theories/Example.v
