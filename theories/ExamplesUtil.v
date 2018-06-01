@@ -91,8 +91,10 @@ Definition glob_term :=
 
 Quote Recursively Definition glob_prog := @glob_term.
 Definition Σ : global_context :=
-  (* reconstruct_global_context (fst glob_prog). *)
+  (* reconstruct_global_context (Datatypes.fst glob_prog). *)
   pair (Datatypes.fst glob_prog) init_graph.
+
+(* Definition Σ := ltac:(let t := eval lazy in Σ' in exact t). *)
 
 Arguments Σ : simpl never.
 

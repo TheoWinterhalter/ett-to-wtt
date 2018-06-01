@@ -41,7 +41,7 @@ Instance monad_exc : MonadExc fq_error fq_result :=
       end
   }.
 
-Open Scope t_scope.
+Close Scope s_scope.
 
 Fixpoint fullquote (fuel : nat) (Σ : global_context) (Γ : context) (t : term)
          (sf : nat -> sort) (si : nat)

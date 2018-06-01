@@ -45,8 +45,6 @@ Instance monad_exc : MonadExc tsl_error tsl_result :=
       end
   }.
 
-Open Scope t_scope.
-
 (* For now, we'll let TemplateCoq deal with universes on its own. *)
 Fixpoint sort_to_universe (s : sort) : Universe.t :=
   match s with
@@ -81,6 +79,8 @@ Fixpoint brs_repack (l : list (nat * tsl_result term)) :
     end
   | (_, Error e) :: _ => Error e
   end.
+
+Close Scope s_scope.
 
 Fixpoint tsl_rec (fuel : nat) (Σ : global_context) (Γ : context) (t : sterm) {struct fuel}
   : tsl_result term :=
