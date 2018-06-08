@@ -77,7 +77,7 @@ Notation lift0 n t := (lift n 0 t).
 Fixpoint subst t k u :=
   match u with
   | sRel n =>
-    match nat_compare k n with
+    match k ?= n with
     | Datatypes.Eq => lift0 k t
     | Gt => sRel n
     | Lt => sRel (pred n)

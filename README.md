@@ -3,25 +3,35 @@
 Formalisation (in Coq) of a translation from extensional type theory
 to intensional type theory.
 
+## Requirements
+
+This project can be compiled with Coq 8.8 and requires
+[Equations](http://mattam82.github.io/Coq-Equations/) to compile.
+
+If you want to compile the examples, you also need 
+[TemplateCoq](https://github.com/Template-Coq/template-coq).
+For the moment, I need for some changes to be integrated to it, so in
+the mean time you can clone
+[my fork](https://github.com/TheoWinterhalter/template-coq/tree/univ-fix)
+and run
+```bash
+make && make install
+```
+to install the required version of TemplateCoq.
+
 ## Building
 
-This project can be compiled with Coq 8.7 and requires
-[TemplateCoq](https://github.com/Template-Coq/template-coq).
-You can fetch the release for 8.7 with
-```bash
-opam install coq-template-coq
-```
-You also need the Equations plugin to build it.
-See [here](http://mattam82.github.io/Coq-Equations/) for how to install it.
-
-Once you are done, simply run
+Once you have the dependencies (at least Equations), simply run
 ```bash
 make
 ```
-to build the project (it takes quite some time unfortunately).
+to build the project (it takes quite some time unfortunately, so you
+can use options like `-j4` to speed up a little bit).
 
 
 ### Structure of the project
+
+All of the formalisation can be found in the `theories` directory.
 
 *The file [util.v](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/util.v)
 provides useful lemmata that aren't specific to the formalisation.*
@@ -31,9 +41,8 @@ provides useful lemmata that aren't specific to the formalisation.*
 In [SAst](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/SAst.v)
 we define the common syntax to both ETT (Extensional type theory) and ITT (our own version of Itensional
 type theory with some sugar) in the form of a simple inductive type `sterm`.
-The module [SInduction](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/SInduction.v)
-provides useful induction principles on this type. Since terms (`sterm`) are annotated with names—for
-printing—which are irrelevant for computation and typing, we define an erasure map `nl : sterm -> nlterm`
+Since terms (`sterm`) are annotated with names—for printing—which are
+irrelevant for computation and typing, we define an erasure map `nl : sterm -> nlterm`
 in [Equality](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Equality.v)
 from which we derive a decidable equality on `sterm`.
 We then define lifting operations, substitution and closedness in
@@ -43,17 +52,17 @@ We then define lifting operations, substitution and closedness in
 
 First, in [SCommon](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/SCommon.v)
 we define common utility to both ETT and ITT, namely with the definition of contexts (`scontext`) and global
-contexts (`sglobal_context`), the latter containing the declarations of inductive types.
+contexts (`sglobal_context`), the latter containing the declarations of constants.
 [Conversion](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Conversion.v)
 is about the untyped conversion used in ITT (conversion `Σ |-i t = u` is derived from one-step reduction
-`Σ |-i t ▷ u`) and contains the only axiom of the whole formalisation.
+`Σ |-i t ▷ u`) and contains the **only axiom** of the whole formalisation.
 [XTyping](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/XTyping.v)
-contains the definition of typing rule of ETT (`Σ ;;; Γ |-x t : A`), mutually defined with a typed
+contains the definition of typing rules of ETT (`Σ ;;; Γ |-x t : A`), mutually defined with a typed
 conversion (`Σ ;;; Γ |-x t = u : A`) and the well-formedness of contexts (`wf Σ Γ`).
 [ITyping](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ITyping.v)
-is the same for ITT (with the difference that the conversion isn't mutually defined but instead the
+is the same for ITT with the difference that the conversion isn't mutually defined but instead the
 one defined in [Conversion](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Conversion.v))
-except that it also defines a notion of well-formedness of global declarations (`type_glob Σ`).
+and that it also defines a notion of well-formedness of global declarations (`type_glob Σ`).
 
 #### Lemmata regarding ITT
 
@@ -85,6 +94,8 @@ Record Pack A1 A2 := pack {
   ProjTe : ProjT1 ≅ ProjT2
 }.
 ```
+[FundamentalLemma](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/FundamentalLemma.v)
+contains the proof of the fundamental lemma, crucial step for our translation.
 [Translation](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Translation.v)
 contains the translation from ETT to ITT.
 
@@ -92,13 +103,17 @@ contains the translation from ETT to ITT.
 
 Before we transalte from ITT to TemplateCoq, we have a *pruning* phase that removes unnecessary transports
 from ITT terms, it is defined in
-[Reduction](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Reduction.v).
+[Pruning](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Pruning.v).
 Then to realise the sugar of ITT, we define some constants in
 [Quotes](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Quotes.v)
-and then quote them to TemplateCoq inner representation of terms.
+and then quote them to TemplateCoq's inner representation of terms.
 The translation from ITT to TemplateCoq is done in
 [FinalTranslation](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/FinalTranslation.v).
+[FullQuote](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/FullQuoten.v)
+is for the opposite: generating an ITT term from a TemplateCoq (and
+thus Coq) term, it is useful to generate examples.
 The module [ExamplesUtil](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ExamplesUtil.v)
-provides useful lemmata and the proof of well-formedness of a global context with `nat`, `bool` and `vec` inductive types.
+provides useful lemmata and the proof of well-formedness of a global
+context with `nat` and `vec` as axiomatised constants.
 Finally, some examples can be found in
 [Example](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Example.v).

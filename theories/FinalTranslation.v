@@ -3,7 +3,7 @@
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template
-Require Import Ast utils monad_utils LiftSubst Typing Checker Template.
+Require Import config Ast utils monad_utils LiftSubst Typing Checker.
 From Translation
 Require Import util SAst SLiftSubst SCommon ITyping Quotes.
 
@@ -63,8 +63,12 @@ Definition myret (Σ : global_context) (Γ : context) (t : term) : tsl_result te
   (* | _ => Error TranslationNotHandled *)
   (* end. *)
 
+Instance type_in_type : checker_flags := {|
+  check_univs := false
+|}.
+
 Definition infer_hnf fuel Σ Γ t :=
-  @infer (Build_Fuel fuel) Σ Γ t.
+  infer (F := Build_Fuel fuel) Σ Γ t.
   (* t' <- @infer (Build_Fuel fuel) Σ Γ t ;; *)
   (* hnf Σ Γ t'. *)
 

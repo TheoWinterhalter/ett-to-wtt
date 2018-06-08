@@ -2,7 +2,7 @@
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import utils Ast LiftSubst Typing Checker Template.
+From Template Require Import utils Ast LiftSubst Typing Checker.
 From Translation Require Import util Quotes SAst SLiftSubst SCommon ITyping
      ITypingInversions ITypingLemmata ITypingAdmissible XTyping
      FundamentalLemma Translation Pruning FinalTranslation FullQuote.

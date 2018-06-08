@@ -1123,7 +1123,7 @@ Lemma trel_subst :
 Proof.
   intros t1 t2. induction 1 ; intros m1 m2 hu n.
   all: try (cbn ; constructor ; easy).
-  unfold subst. destruct (nat_compare n x).
+  unfold subst. destruct (n ?= x).
   - now apply trel_lift.
   - apply trel_Rel.
   - apply trel_Rel.
