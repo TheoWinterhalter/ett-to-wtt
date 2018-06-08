@@ -1084,7 +1084,7 @@ Lemma inrel_lift :
     t ⊏ t' ->
     forall n k, lift n k t ⊏ lift n k t'.
 Proof.
-  intros  t t'. induction 1 ; intros m k.
+  intros t t'. induction 1 ; intros m k.
   all: try (cbn ; now constructor).
   cbn. destruct (k <=? x) ; now constructor.
 Defined.
@@ -1367,39 +1367,48 @@ Proof.
   intros Σ A A' t t' Γ' hg hth hA ht.
   destruct (trel_transport_seq hA) as [A'' [tseq [[hh heq] hrel]]].
   exists A''. split.
-  - assert (simA : A' ∼ A'').
-    { apply trel_sym.
-      eapply trel_trans.
-      - apply trel_sym. apply inrel_trel. eassumption.
-      - apply inrel_trel. assumption.
-    }
-    destruct (trel_to_heq Γ' hg simA) as [p hp].
-    exists (sTransport A' A'' (sHeqToEq p) t').
-    repeat split.
-    + constructor. assumption.
-    + assumption.
-    + intro h.
-      rewrite heq in h.
-      destruct (istype_type hg h) as [s hs].
-      assert (hth' : type_head (head A'')) by (now rewrite hh).
-      destruct (inversion_transportType hg hth' hs) as [s' [h' hss']].
-      specialize (hp (sSort s) (sSort s)).
-      rewrite <- heq in hs.
-      assert (hAs : Σ ;;; Γ' |-i A'' : sSort s).
-      { eapply type_conv.
-        - eassumption.
-        - eapply type_Sort. eapply typing_wf. eassumption.
-        - cut (s' = s).
-          + intro. subst. apply conv_refl.
-          + eapply sorts_in_sort ; try eassumption.
-            apply type_Sort. apply (typing_wf h').
+  - case_eq (Equality.eq_term A' A'').
+    + intro eq. exists t'. repeat split ; try assumption.
+      intro h. 
+      destruct (istype_type hg h).
+      apply Equality.eq_term_spec in eq.
+      eapply type_conv ; try eassumption.
+      * eapply nl_type ; eassumption.
+      * constructor. assumption.
+    + { assert (simA : A' ∼ A'').
+        { apply trel_sym.
+          eapply trel_trans.
+          - apply trel_sym. apply inrel_trel. eassumption.
+          - apply inrel_trel. assumption.
+        }
+        destruct (trel_to_heq Γ' hg simA) as [p hp].
+        exists (sTransport A' A'' (sHeqToEq p) t').
+        repeat split.
+        + constructor. assumption.
+        + assumption.
+        + intro h.
+          rewrite heq in h.
+          destruct (istype_type hg h) as [s hs].
+          assert (hth' : type_head (head A'')) by (now rewrite hh).
+          destruct (inversion_transportType hg hth' hs) as [s' [h' hss']].
+          specialize (hp (sSort s) (sSort s)).
+          rewrite <- heq in hs.
+          assert (hAs : Σ ;;; Γ' |-i A'' : sSort s).
+          { eapply type_conv.
+            - eassumption.
+            - eapply type_Sort. eapply typing_wf. eassumption.
+            - cut (s' = s).
+              + intro. subst. apply conv_refl.
+              + eapply sorts_in_sort ; try eassumption.
+                apply type_Sort. apply (typing_wf h').
+          }
+          specialize (hp hs hAs).
+          pose proof (sort_heq hg hp) as hq.
+          destruct (istype_type hg hp) as [? hEq].
+          ttinv hEq.
+          eapply type_Transport' ; try eassumption.
+          subst. assumption.
       }
-      specialize (hp hs hAs).
-      pose proof (sort_heq hg hp) as hq.
-      destruct (istype_type hg hp) as [? hEq].
-      ttinv hEq.
-      eapply type_Transport' ; try eassumption.
-      subst. assumption.
   - assumption.
 Defined.
 
