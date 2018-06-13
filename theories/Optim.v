@@ -138,5 +138,28 @@ Proof.
     apply cong_Eq ; assumption.
 Defined.
 
+Fact opt_sort_heq :
+  forall {Σ Γ s1 s2 A B e},
+    type_glob Σ ->
+    Σ ;;; Γ |-i e : sHeq (sSort s1) A (sSort s2) B ->
+    Σ ;;; Γ |-i optHeqToEq e : sEq (sSort s1) A B.
+Proof.
+  intros Σ Γ s1 s2 A B e hg h.
+  destruct (istype_type hg h) as [? hty].
+  ttinv hty.
+  eapply opt_HeqToEq ; try assumption.
+  eapply heq_sort ; eassumption.
+Defined.
+
+Corollary opt_sort_heq_ex :
+  forall {Σ Γ s1 s2 A B e},
+    type_glob Σ ->
+    Σ ;;; Γ |-i e : sHeq (sSort s1) A (sSort s2) B ->
+    ∑ p, Σ ;;; Γ |-i p : sEq (sSort s1) A B.
+Proof.
+  intros Σ Γ s A B e hg h.
+  eexists. now eapply opt_sort_heq.
+Defined.
+
 (* TODO sHeqTransport, sCongProd and co, sEqToHeq, sHeqTypeEq? *)
 

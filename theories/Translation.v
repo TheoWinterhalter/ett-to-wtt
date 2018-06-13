@@ -800,7 +800,7 @@ Proof.
         - eapply opt_HeqTrans ; try eassumption.
       }
       destruct hq as [q hq].
-      destruct (sort_heq_ex hg hq) as [e' he'].
+      destruct (opt_sort_heq_ex hg hq) as [e' he'].
       (* Now we conclude *)
       exists B', (sTransport A' B' e' t').
       destruct hA' as [[[? ?] ?] ?].
@@ -963,7 +963,7 @@ Proof.
       }
       destruct he as [e' he'].
       rename e into eqt.
-      destruct (sort_heq_ex hg he') as [e he].
+      destruct (opt_sort_heq_ex hg he') as [e he].
       (* Likewise, we build paths for the terms *)
       assert (hq1 : ∑ q1, Σ ;;; Γ' |-i q1 : sHeq T1' t1' T1''' t1'').
       { destruct ht1' as [[_ et1'] ht1'].
@@ -1438,7 +1438,7 @@ Proof.
         apply hpB.
       }
       destruct hty as [pty hty].
-      destruct (sort_heq_ex hg hty) as [eT heT].
+      destruct (opt_sort_heq_ex hg hty) as [eT heT].
       (* We move the lambda now. *)
       pose (tλ :=
               sTransport (sProd n2 A2' B2') (sProd n1 A1' B1')
@@ -2760,7 +2760,7 @@ Proof.
       }
       destruct hqv as [qv hqv].
       (* We move terms back into tA2 *)
-      destruct (sort_heq_ex hg hqA) as [eA heA].
+      destruct (opt_sort_heq_ex hg hqA) as [eA heA].
       pose (ttu2 := sTransport tA1 tA2 eA tu2).
       assert (hq : ∑ q, Σ ;;; Γ' |-i q : sHeq tA1 tu1 tA2 ttu2).
       { exists (optHeqTrans qu (sHeqTransport eA tu2)).
@@ -2870,7 +2870,7 @@ Proof.
       }
       destruct hqu as [qu hqu].
       (* tu2 isn't in the right place, so we need to chain one last equality. *)
-      destruct (sort_heq_ex hg hqA) as [eA heA].
+      destruct (opt_sort_heq_ex hg hqA) as [eA heA].
       pose (ttu2 := sTransport tA1 tA2 eA tu2).
       assert (hq : ∑ q, Σ ;;; Γ' |-i q : sHeq tA1 tu1 tA2 ttu2).
       { exists (optHeqTrans qu (sHeqTransport eA tu2)).
@@ -2893,7 +2893,7 @@ Proof.
       destruct pE as [pE hpE].
       assert (eE : ∑ eE, Σ ;;; Γ' |-i eE : sEq (sSort s) (sEq tA2 ttu2 ttu2)
                                               (sEq tA1 tu1 tu1)).
-      { eapply (sort_heq_ex hg hpE). }
+      { eapply (opt_sort_heq_ex hg hpE). }
       destruct eE as [eE hE].
       pose (trefl2 := sTransport (sEq tA2 ttu2 ttu2)
                                  (sEq tA1 tu1 tu1)

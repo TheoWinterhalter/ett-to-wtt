@@ -1403,12 +1403,11 @@ Proof.
                 apply type_Sort. apply (typing_wf h').
           }
           specialize (hp hs hAs).
-          pose proof (sort_heq hg hp) as hq.
+          pose proof (opt_sort_heq hg hp) as hq.
           destruct (istype_type hg hp) as [? hEq].
           ttinv hEq.
           eapply type_Transport' ; try eassumption.
-          * eapply opt_HeqToEq ; eassumption.
-          * subst. assumption.
+          subst. assumption.
       }
   - assumption.
 Defined.
