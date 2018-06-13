@@ -143,6 +143,49 @@ Proof.
   all: assumption.
 Defined.
 
+(* For optimisation, we remark that we can decide whenever an heterogenous
+   equality is reflexivity.
+ *)
+Inductive isHeqRefl : sterm -> Type :=
+| is_HeqRefl A u : isHeqRefl (sHeqRefl A u).
+
+Definition decHeqRefl t : dec (isHeqRefl t).
+  refine (
+    match t with
+    | sHeqRefl A u => inleft (is_HeqRefl A u)
+    | _ => inright (fun e => _)
+    end
+  ). all: inversion e.
+Defined.
+
+(* Optimised symmetry *)
+Definition optHeqSym p :=
+  match p with
+  | sHeqRefl A u => sHeqRefl A u
+  | _ => sHeqSym p
+  end.
+
+Lemma opt_HeqSym :
+  forall {Σ Γ A a B b p},
+    type_glob Σ ->
+    Σ ;;; Γ |-i p : sHeq A a B b ->
+    Σ ;;; Γ |-i optHeqSym p : sHeq B b A a.
+Proof.
+  intros Σ Γ A a B b p hg h.
+  case (decHeqRefl p).
+  - intros i. destruct i as [C c].
+    simpl. 
+    ttinv h. destruct (heq_conv_inv h2) as [[[eA eu] eA'] ev].
+    destruct (istype_type hg h) as [z heq]. ttinv heq.
+    eapply type_conv.
+    + eapply type_HeqRefl' ; eassumption.
+    + eapply type_Heq ; eassumption.
+    + apply cong_Heq ; assumption.
+  - intros e. destruct p.
+    16: exfalso ; apply e ; constructor.
+    all: simpl ; apply type_HeqSym' ; assumption.
+Defined.
+
 Scheme typing_ind := Induction for XTyping.typing Sort Type
   with wf_ind := Induction for XTyping.wf Sort Type
   with eq_term_ind := Induction for XTyping.eq_term Sort Type.
@@ -824,9 +867,9 @@ Proof.
     + destruct (H _ hΓ)
         as [A' [A'' [u' [v' [p' h']]]]].
       destruct h' as [[[[[? ?] ?] ?] ?] hp'].
-      exists A'', A', v', u', (sHeqSym p').
+      exists A'', A', v', u', (optHeqSym p').
       repeat split ; try assumption.
-      eapply type_HeqSym' ; eassumption.
+      eapply opt_HeqSym ; eassumption.
 
     (* eq_transitivity *)
     + destruct (H _ hΓ)
@@ -997,7 +1040,7 @@ Proof.
       }
       destruct hqq as [qq hqq].
       assert (hql : ∑ ql, Σ ;;; Γ' |-i ql : sHeq T2' (sTransport T1' T2' e t1') T1' t1').
-      { exists (sHeqSym (sHeqTransport e t1')).
+      { exists (optHeqSym (sHeqTransport e t1')).
         destruct ht1' as [_ ht1'].
         eapply type_HeqSym' ; try assumption.
         eapply type_HeqTransport' ; eassumption.
@@ -1428,7 +1471,7 @@ Proof.
                                (sSort (max_sort s1 s2)) (sProd n1 A1' B1')
 
       ).
-      { exists (sHeqSym (sCongProd B1' B2' pA pB)).
+      { exists (optHeqSym (sCongProd B1' B2' pA pB)).
         destruct hB1' as [[[? ?] ?] ?].
         destruct hB2' as [[[? ?] ?] ?].
         eapply type_HeqSym' ; try assumption.
@@ -1716,7 +1759,7 @@ Proof.
       destruct happ as [qapp happ].
       (* Finally we translate the right App to put it in the left Prod *)
       rename e into eA.
-      pose (e := sHeqTypeEq (B2' {0 := tu2}) (B1'{0 := u1'}) (sHeqSym qapp)).
+      pose (e := sHeqTypeEq (B2' {0 := tu2}) (B1'{0 := u1'}) (optHeqSym qapp)).
       pose (tapp := sTransport (B2' {0 := tu2}) (B1'{0 := u1'}) e (sApp tt2 A2' B2' tu2)).
       (* We conclude *)
       exists (B1'{0 := u1'}), (B1'{0 := u1'}).
@@ -1740,7 +1783,7 @@ Proof.
         eapply type_HeqTransport' ; try assumption.
         -- eapply type_App ; eassumption.
         -- eapply type_HeqTypeEq' ; try assumption.
-           ++ eapply type_HeqSym' ; eassumption.
+           ++ eapply opt_HeqSym ; eassumption.
            ++ match goal with
               | |- _ ;;; _ |-i _ : ?S =>
                 change S with (S {0 := tu2})
@@ -2159,7 +2202,7 @@ Proof.
       destruct hpi as [qpi hpi].
       (* Finally we translate the right Pair to put it in the left Sum *)
       rename e into eA.
-      pose (e := sHeqTypeEq (sSum n A2' B2') (sSum n A1' B1') (sHeqSym qpi)).
+      pose (e := sHeqTypeEq (sSum n A2' B2') (sSum n A1' B1') (optHeqSym qpi)).
       pose (tpi := sTransport (sSum n A2' B2') (sSum n A1' B1') e (sPair A2' B2' tu2 tv2)).
       (* We conclude *)
       exists (sSum n A1' B1'), (sSum n A1' B1').
@@ -2183,7 +2226,7 @@ Proof.
         eapply type_HeqTransport' ; try assumption.
         -- eapply type_Pair' ; eassumption.
         -- eapply type_HeqTypeEq' ; try assumption.
-           ++ eapply type_HeqSym' ; eassumption.
+           ++ eapply opt_HeqSym ; eassumption.
            ++ eapply type_Sum ; eassumption.
 
     (* cong_Pi1 *)
@@ -2395,7 +2438,7 @@ Proof.
       destruct hpi as [qpi hpi].
       (* Finally we translate the right Pi1 to put it in the left Sum *)
       rename e into eA.
-      pose (e := sHeqTypeEq A2' A1' (sHeqSym qpi)).
+      pose (e := sHeqTypeEq A2' A1' (optHeqSym qpi)).
       pose (tpi := sTransport A2' A1' e (sPi1 A2' B2' tp2)).
       (* We conclude *)
       exists A1', A1'.
@@ -2417,7 +2460,7 @@ Proof.
         eapply type_HeqTransport' ; try assumption.
         -- eapply type_Pi1' ; eassumption.
         -- eapply type_HeqTypeEq' ; try assumption.
-           ++ eapply type_HeqSym' ; eassumption.
+           ++ eapply opt_HeqSym ; eassumption.
            ++ eassumption.
 
     (* cong_Pi2 *)
@@ -2629,7 +2672,7 @@ Proof.
       destruct hpi as [qpi hpi].
       (* Finally we translate the right Pi1 to put it in the left Sum *)
       rename e into eA.
-      pose (e := sHeqTypeEq (B2' {0 := sPi1 A2' B2' tp2}) (B1' {0 := sPi1 A1' B1' p1'}) (sHeqSym qpi)).
+      pose (e := sHeqTypeEq (B2' {0 := sPi1 A2' B2' tp2}) (B1' {0 := sPi1 A1' B1' p1'}) (optHeqSym qpi)).
       pose (tpi := sTransport (B2' {0 := sPi1 A2' B2' tp2}) (B1' {0 := sPi1 A1' B1' p1'}) e (sPi2 A2' B2' tp2)).
       (* We conclude *)
       exists (B1'{ 0 := sPi1 A1' B1' p1' }), (B1'{ 0 := sPi1 A1' B1' p1' }).
@@ -2653,7 +2696,7 @@ Proof.
         eapply type_HeqTransport' ; try assumption.
         -- eapply type_Pi2' ; eassumption.
         -- eapply type_HeqTypeEq' ; try assumption.
-           ++ eapply type_HeqSym' ; eassumption.
+           ++ eapply opt_HeqSym ; eassumption.
            ++ lift_sort. eapply typing_subst ; try eassumption.
               eapply type_Pi1' ; eassumption.
 
@@ -2886,8 +2929,8 @@ Proof.
          same type. *)
       assert (pE : ∑ pE, Σ ;;; Γ' |-i pE : sHeq (sSort s) (sEq tA2 ttu2 ttu2)
                                                (sSort s) (sEq tA1 tu1 tu1)).
-      { exists (sHeqSym (sCongEq qA q q)).
-        eapply type_HeqSym' ; try assumption.
+      { exists (optHeqSym (sCongEq qA q q)).
+        eapply opt_HeqSym ; try assumption.
         eapply type_CongEq' ; eassumption.
       }
       destruct pE as [pE hpE].
