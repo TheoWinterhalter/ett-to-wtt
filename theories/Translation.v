@@ -802,13 +802,13 @@ Proof.
       destruct hq as [q hq].
       destruct (opt_sort_heq_ex hg hq) as [e' he'].
       (* Now we conclude *)
-      exists B', (sTransport A' B' e' t').
+      exists B', (optTransport A' B' e' t').
       destruct hA' as [[[? ?] ?] ?].
       destruct hB' as [[[? ?] ?] ?].
       destruct ht' as [[[? ?] ?] ?].
       repeat split ; try assumption.
-      * constructor. assumption.
-      * eapply type_Transport ; eassumption.
+      * apply inrel_optTransport. assumption.
+      * eapply opt_Transport ; eassumption.
 
   (** eq_translation **)
 

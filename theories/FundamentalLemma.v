@@ -173,6 +173,18 @@ Proof.
   induction h ; now constructor.
 Defined.
 
+Lemma inrel_optTransport :
+  forall {A B p t t'},
+    t ⊏ t' ->
+    t ⊏ optTransport A B p t'.
+Proof.
+  intros A B p t t' h.
+  unfold optTransport.
+  destruct (Equality.eq_term A B).
+  - assumption.
+  - constructor. assumption.
+Defined.
+
 Ltac lift_sort :=
   match goal with
   | |- _ ;;; _ |-i lift ?n ?k ?t : ?S => change S with (lift n k S)
@@ -330,15 +342,15 @@ Proof.
 
   (* Left transport *)
   - destruct (IHsim Γ Γ1 Γ2) as [q hq].
-    exists (sHeqTrans (sHeqSym (sHeqTransport (llift0 #|Γ1| p) (llift0 #|Γ1| t1))) q).
+    exists (optHeqTrans (optHeqSym (sHeqTransport (llift0 #|Γ1| p) (llift0 #|Γ1| t1))) q).
     intros Γm U1 U2 hm h1 h2.
     pose proof (mix_length1 hm) as ml. rewrite <- ml.
     ttinv h1.
     specialize (hq _ _ _ hm h6 h2).
     destruct (istype_type hg hq) as [s' h'].
     ttinv h'. pose proof (sort_conv_inv h8). subst. clear h8.
-    eapply type_HeqTrans' ; try assumption.
-    + eapply type_HeqSym' ; try assumption.
+    eapply opt_HeqTrans ; try assumption.
+    + eapply opt_HeqSym ; try assumption.
       eapply type_conv.
       * eapply type_HeqTransport' ; try assumption.
         -- eapply type_llift0 ; eassumption.
@@ -367,7 +379,7 @@ Proof.
 
   (* Right transport *)
   - destruct (IHsim Γ Γ1 Γ2) as [q hq].
-    exists (sHeqTrans q (sHeqTransport (rlift0 #|Γ1| p) (rlift0 #|Γ1| t2))).
+    exists (optHeqTrans q (sHeqTransport (rlift0 #|Γ1| p) (rlift0 #|Γ1| t2))).
     intros Γm U1 U2 hm h1 h2.
     pose proof (mix_length1 hm) as ml. rewrite <- ml.
     ttinv h2.
@@ -375,7 +387,7 @@ Proof.
     destruct (istype_type hg hq) as [s' h'].
     ttinv h'. pose proof (sort_conv_inv h8). subst. clear h8.
     cbn.
-    eapply type_HeqTrans' ; try assumption.
+    eapply opt_HeqTrans ; try assumption.
     + eassumption.
     + eapply type_conv.
       * eapply type_HeqTransport' ; try assumption.
@@ -1382,9 +1394,9 @@ Proof.
           - apply inrel_trel. assumption.
         }
         destruct (trel_to_heq Γ' hg simA) as [p hp].
-        exists (sTransport A' A'' (optHeqToEq p) t').
+        exists (optTransport A' A'' (optHeqToEq p) t').
         repeat split.
-        + constructor. assumption.
+        + apply inrel_optTransport. assumption.
         + assumption.
         + intro h.
           rewrite heq in h.
@@ -1406,7 +1418,7 @@ Proof.
           pose proof (opt_sort_heq hg hp) as hq.
           destruct (istype_type hg hp) as [? hEq].
           ttinv hEq.
-          eapply type_Transport' ; try eassumption.
+          eapply opt_Transport ; try eassumption.
           subst. assumption.
       }
   - assumption.
@@ -1448,11 +1460,11 @@ Proof.
     apply Equality.eq_term_spec in eq.
     eapply type_conv ; try eassumption.
     constructor. assumption.
-  - exists (sTransport A' A'' (optHeqToEq p) t').
+  - exists (optTransport A' A'' (optHeqToEq p) t').
     repeat split.
     + assumption.
     + assumption.
-    + constructor. assumption.
+    + apply inrel_optTransport. assumption.
     + destruct (istype_type hg ht') as [s2 hA'].
       specialize (hp (sSort s2) (sSort s) hA' hA'').
       destruct (istype_type hg hp) as [s1 hheq].
@@ -1461,6 +1473,6 @@ Proof.
       ttinv hheq.
       assert (s2 = s).
       { eapply sorts_in_sort ; eassumption. } subst.
-      apply type_Transport with (s := s) ; try assumption.
+      eapply opt_Transport ; try assumption.
       eapply opt_HeqToEq ; eassumption.
 Defined.

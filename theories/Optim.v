@@ -104,7 +104,25 @@ Proof.
     all: try (simpl ; eapply type_HeqTrans' ; eassumption).
 Defined.
 
-(* TODO Optimise sTransport *)
+Definition optTransport A B p t :=
+  if Equality.eq_term A B then t else sTransport A B p t.
+
+Lemma opt_Transport :
+  forall {Σ Γ s A B p t},
+    type_glob Σ ->
+    Σ ;;; Γ |-i p : sEq (sSort s) A B ->
+    Σ ;;; Γ |-i t : A ->
+    Σ ;;; Γ |-i optTransport A B p t : B.
+Proof.
+  intros Σ Γ s A B p t hg hp ht.
+  unfold optTransport, Equality.eq_term.
+  destruct (nl_dec (nl A) (nl B)).
+  - destruct (istype_type hg hp) as [z hT].
+    ttinv hT.
+    eapply type_conv ; try eassumption.
+    constructor. assumption.
+  - eapply type_Transport' ; eassumption.
+Defined.
 
 Definition optHeqToEq p :=
   match p with
