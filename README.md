@@ -94,6 +94,13 @@ Record Pack A1 A2 := pack {
   ProjTe : ProjT1 ≅ ProjT2
 }.
 ```
+In order to produce terms as small / efficient as possible, we provide
+*optimised* versions of some constructors, for instance, transport
+between two syntactically equal terms is remapped to
+reflexivity. Thanks to this, terms that live in ITT should be
+translated to themselves syntactically (and not just up to transport).
+This is done in
+[Optim](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Optim.v).
 [FundamentalLemma](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/FundamentalLemma.v)
 contains the proof of the fundamental lemma, crucial step for our translation.
 [Translation](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Translation.v)
@@ -101,10 +108,7 @@ contains the translation from ETT to ITT.
 
 #### Translation from ITT to TemplateCoq and Coq
 
-Before we transalte from ITT to TemplateCoq, we have a *pruning* phase that removes unnecessary transports
-from ITT terms, it is defined in
-[Pruning](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Pruning.v).
-Then to realise the sugar of ITT, we define some constants in
+To realise the sugar of ITT, we define some constants in
 [Quotes](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Quotes.v)
 and then quote them to TemplateCoq's inner representation of terms.
 The translation from ITT to TemplateCoq is done in
