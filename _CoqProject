@@ -19,7 +19,6 @@ theories/Optim.v
 theories/PackLifts.v
 theories/FundamentalLemma.v
 theories/Translation.v
-theories/Pruning.v
 theories/Quotes.v
 theories/FinalTranslation.v
 theories/FullQuote.v

@@ -7,8 +7,7 @@ From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast LiftSubst Typing Checker.
 From Translation Require Import util SAst SLiftSubst SCommon ITyping
                                 ITypingLemmata ITypingAdmissible XTyping
-                                Translation Pruning FinalTranslation
-                                ExamplesUtil.
+                                Translation FinalTranslation ExamplesUtil.
 
 Open Scope string_scope.
 
