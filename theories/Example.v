@@ -85,21 +85,15 @@ Defined.
 
 Definition itt_tm' := ltac:(let t := eval lazy in itt_tm in exact t).
 
-(* We simplify the produced term *)
+Definition tc_tm : tsl_result term :=
+  tsl_rec (2 ^ 18) Σ [] itt_tm'.
 
-Definition red_itt_tm := prune itt_tm'.
+Definition tc_tm' := ltac:(let t := eval lazy in tc_tm in exact t).
 
-Definition red_itt_tm' := ltac:(let t := eval lazy in red_itt_tm in exact t).
-
-Definition tc_red_tm : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] red_itt_tm'.
-
-Definition tc_red_tm' := ltac:(let t := eval lazy in tc_red_tm in exact t).
-
-Make Definition coq_red_tm :=
+Make Definition coq_tm :=
   ltac:(
     let t := eval lazy in
-             (match tc_red_tm' with
+             (match tc_tm' with
               | Success t => t
               | _ => tSort Universe.type0
               end)
@@ -148,19 +142,15 @@ Defined.
 
 Definition itt_tm0' := ltac:(let t := eval lazy in itt_tm0 in exact t).
 
-Definition red_itt_tm0 := prune itt_tm0.
+Definition tc_tm0 : tsl_result term :=
+  tsl_rec (2 ^ 18) Σ [] itt_tm0'.
 
-Definition red_itt_tm0' := ltac:(let t := eval lazy in red_itt_tm0 in exact t).
+Definition tc_tm0' := ltac:(let t := eval lazy in tc_tm0 in exact t).
 
-Definition tc_red_tm0 : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] red_itt_tm0'.
-
-Definition tc_red_tm0' := ltac:(let t := eval lazy in tc_red_tm0 in exact t).
-
-Make Definition coq_red_tm0 :=
+Make Definition coq_tm0 :=
   ltac:(
     let t := eval lazy in
-             (match tc_red_tm0' with
+             (match tc_tm0' with
               | Success t => t
               | _ => tSort Universe.type0
               end)
@@ -185,19 +175,15 @@ Defined.
 
 Definition itt_nat' := ltac:(let t := eval lazy in itt_nat in exact t).
 
-Definition red_nat := prune itt_nat'.
+Definition tc_nat : tsl_result term :=
+  tsl_rec (2 ^ 18) Σ [] itt_nat'.
 
-Definition red_nat' := ltac:(let t := eval lazy in red_nat in exact t).
-
-Definition tc_red_nat : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] red_nat'.
-
-Definition tc_red_nat' := ltac:(let t := eval lazy in tc_red_nat in exact t).
+Definition tc_nat' := ltac:(let t := eval lazy in tc_nat in exact t).
 
 Make Definition coq_nat :=
   ltac:(
     let t := eval lazy in
-             (match tc_red_nat' with
+             (match tc_nat' with
               | Success t => t
               | _ => tSort Universe.type0
               end)
@@ -221,19 +207,15 @@ Defined.
 
 Definition itt_zero' := ltac:(let t := eval lazy in itt_zero in exact t).
 
-Definition red_zero := prune itt_zero'.
+Definition tc_zero : tsl_result term :=
+  tsl_rec (2 ^ 18) Σ [] itt_zero'.
 
-Definition red_zero' := ltac:(let t := eval lazy in red_zero in exact t).
-
-Definition tc_red_zero : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] red_zero'.
-
-Definition tc_red_zero' := ltac:(let t := eval lazy in tc_red_zero in exact t).
+Definition tc_zero' := ltac:(let t := eval lazy in tc_zero in exact t).
 
 Make Definition coq_zero :=
   ltac:(
     let t := eval lazy in
-             (match tc_red_zero' with
+             (match tc_zero' with
               | Success t => t
               | _ => tSort Universe.type0
               end)
@@ -285,19 +267,15 @@ Defined.
 
 Definition itt_one' := ltac:(let t := eval lazy in itt_one in exact t).
 
-Definition red_one := prune itt_one'.
+Definition tc_one : tsl_result term :=
+  tsl_rec (2 ^ 18) Σ [] itt_one'.
 
-Definition red_one' := ltac:(let t := eval lazy in red_one in exact t).
-
-Definition tc_red_one : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] red_one'.
-
-Definition tc_red_one' := ltac:(let t := eval lazy in tc_red_one in exact t).
+Definition tc_one' := ltac:(let t := eval lazy in tc_one in exact t).
 
 Make Definition coq_one :=
   ltac:(
     let t := eval lazy in
-             (match tc_red_one' with
+             (match tc_one' with
               | Success t => t
               | _ => tSort Universe.type0
               end)
@@ -392,19 +370,15 @@ Defined.
 
 Definition itt_vtest' := ltac:(let t := eval lazy in itt_vtest in exact t).
 
-Definition red_vtest := prune itt_vtest'.
+Definition tc_vtest : tsl_result term :=
+  tsl_rec (2 ^ 18) Σ [] itt_vtest'.
 
-Definition red_vtest' := ltac:(let t := eval lazy in red_vtest in exact t).
-
-Definition tc_red_vtest : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] red_vtest'.
-
-Definition tc_red_vtest' := ltac:(let t := eval lazy in tc_red_vtest in exact t).
+Definition tc_vtest' := ltac:(let t := eval lazy in tc_vtest in exact t).
 
 Make Definition coq_vtest :=
   ltac:(
     let t := eval lazy in
-             (match tc_red_vtest' with
+             (match tc_vtest' with
               | Success t => t
               | _ => tSort Universe.type0
               end)
