@@ -3,7 +3,7 @@ From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils LiftSubst Typing.
 From Translation
 Require Import util SAst SLiftSubst Equality SCommon XTyping Conversion ITyping
-               ITypingInversions ITypingLemmata ITypingAdmissible
+               ITypingInversions ITypingLemmata ITypingAdmissible Optim
                Uniqueness SubjectReduction PackLifts.
 
 Open Scope type_scope.
@@ -1382,7 +1382,7 @@ Proof.
           - apply inrel_trel. assumption.
         }
         destruct (trel_to_heq Γ' hg simA) as [p hp].
-        exists (sTransport A' A'' (sHeqToEq p) t').
+        exists (sTransport A' A'' (optHeqToEq p) t').
         repeat split.
         + constructor. assumption.
         + assumption.
@@ -1407,7 +1407,8 @@ Proof.
           destruct (istype_type hg hp) as [? hEq].
           ttinv hEq.
           eapply type_Transport' ; try eassumption.
-          subst. assumption.
+          * eapply opt_HeqToEq ; eassumption.
+          * subst. assumption.
       }
   - assumption.
 Defined.
@@ -1448,7 +1449,7 @@ Proof.
     apply Equality.eq_term_spec in eq.
     eapply type_conv ; try eassumption.
     constructor. assumption.
-  - exists (sTransport A' A'' (sHeqToEq p) t').
+  - exists (sTransport A' A'' (optHeqToEq p) t').
     repeat split.
     + assumption.
     + assumption.
@@ -1462,5 +1463,5 @@ Proof.
       assert (s2 = s).
       { eapply sorts_in_sort ; eassumption. } subst.
       apply type_Transport with (s := s) ; try assumption.
-      eapply sort_heq ; eassumption.
+      eapply opt_HeqToEq ; eassumption.
 Defined.

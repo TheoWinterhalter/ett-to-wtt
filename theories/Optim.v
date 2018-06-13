@@ -103,3 +103,40 @@ Proof.
     all: destruct q ; try (exfalso ; apply bq ; constructor).
     all: try (simpl ; eapply type_HeqTrans' ; eassumption).
 Defined.
+
+(* TODO Optimise sTransport *)
+
+Definition optHeqToEq p :=
+  match p with
+  | sHeqRefl A a => sRefl A a
+  | sEqToHeq e => e
+  | _ => sHeqToEq p
+  end.
+
+Lemma opt_HeqToEq :
+  forall {Σ Γ A u v p},
+    type_glob Σ ->
+    Σ ;;; Γ |-i p : sHeq A u A v ->
+    Σ ;;; Γ |-i optHeqToEq p : sEq A u v.
+Proof.
+  intros Σ Γ A u v p hg h.
+  assert (hT : isType Σ Γ (sEq A u v)).
+  { eapply istype_type ; try assumption.
+    eapply type_HeqToEq' ; eassumption.
+  }
+  destruct hT.
+  destruct p.
+  all: try (simpl ; eapply type_HeqToEq' ; eassumption).
+  - simpl. rename p1 into B, p2 into b.
+    ttinv h. destruct (heq_conv_inv h2) as [[[BA bu] _] bv].
+    eapply type_conv ; try eassumption.
+    + eapply type_Refl' ; eassumption.
+    + apply cong_Eq ; assumption.
+  - simpl. ttinv h. rename A0 into B, u0 into a, v0 into b.
+    destruct (heq_conv_inv h2) as [[[BA au] _] bv].
+    eapply type_conv ; try eassumption.
+    apply cong_Eq ; assumption.
+Defined.
+
+(* TODO sHeqTransport, sCongProd and co, sEqToHeq, sHeqTypeEq? *)
+
