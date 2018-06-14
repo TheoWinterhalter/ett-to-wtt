@@ -20,6 +20,11 @@ Arguments pi2 {_ _} _.
 Notation "'∑'  x .. y , P" := (pp_sigT (fun x => .. (pp_sigT (fun y => P)) ..))
   (at level 200, x binder, y binder, right associativity) : type_scope.
 
+Arguments Build_pp_sigT {_ _} _ _.
+
+Notation "( x ; .. ; y ; z )" :=
+  (Build_pp_sigT x (.. (Build_pp_sigT y z) ..)) : type_scope.
+
 Record pp_prod (A B : Type) : Type := mk_pp_prod
   {
     pi1_ : A;
