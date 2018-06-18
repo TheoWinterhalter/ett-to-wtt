@@ -2940,3 +2940,31 @@ Proof.
 Defined.
 
 End Translation.
+
+(* Consistency of ETT relative to consistency of ITT. *)
+Corollary consistency :
+  forall {Σ t},
+    type_glob Σ ->
+    Σ ;;; [] |-x t : sProd nAnon (sSort 0) (sRel 0) ->
+    ∑ t', Σ ;;; [] |-i t' : sProd nAnon (sSort 0) (sRel 0).
+Proof.
+  intros Σ t hg h.
+  set (T := sProd nAnon (sSort 0) (sRel 0)) in *.
+  assert (h' : Σ ;;;; [] |--- [ T ] : sSort 1
+             # ⟦ [] |--- [ T ] : sSort 1 ⟧).
+  { repeat split.
+    - constructor.
+    - constructor.
+    - apply inrel_refl. repeat constructor.
+    - change 1 with (max_sort 1 0). econstructor.
+      + econstructor. constructor.
+      + refine (type_Rel _ _ _ _ _).
+        * repeat econstructor.
+        * auto with arith.
+  }
+  destruct (complete_translation hg) as [[_ thm] _].
+  destruct (thm _ _ _ h [] ltac:(repeat constructor)) as [A' [t'' h'']].
+  destruct (change_type hg h'' h') as [t' [_ ht']].
+  exists t'. assumption.
+Defined.
+  
