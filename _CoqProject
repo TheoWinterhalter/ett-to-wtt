@@ -2,6 +2,7 @@
 -arg "-w default,-notation-overridden"
 
 theories/util.v
+theories/Sorts.v
 theories/SAst.v
 theories/Equality.v
 theories/SLiftSubst.v
