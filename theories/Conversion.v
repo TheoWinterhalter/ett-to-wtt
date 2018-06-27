@@ -8,6 +8,10 @@ Open Scope s_scope.
 
 (*! Reduction. *)
 
+Section Red1.
+
+Context `{Sort_notion : Sorts.notion}.
+
 Inductive red1 (Σ : sglobal_context) : sterm -> sterm -> Prop :=
 (*! Computation *)
 
@@ -467,21 +471,31 @@ Inductive red1 (Σ : sglobal_context) : sterm -> sterm -> Prop :=
     red1 Σ (sProjTe p) (sProjTe p')
 .
 
+End Red1.
+
 Derive Signature for red1.
 
 Notation " Σ '|-i' t ▷ u " :=
   (red1 Σ t u) (at level 50, t, u at next level).
+
+Section Red.
+
+Context `{Sort_notion : Sorts.notion}.
 
 (* Reflexive and transitive closure of 1-step reduction. *)
 Inductive red Σ t : sterm -> Prop :=
 | refl_red : red Σ t t
 | trans_red u v : red1 Σ t u -> red Σ u v -> red Σ t v.
 
+End Red.
+
 Notation " Σ '|-i' t ▷⃰ u " :=
   (red Σ t u) (at level 50, t, u at next level).
 
 
 Section nlred.
+
+  Context `{Sort_notion : Sorts.notion}.
 
   (* We have to use this definition to trick Equations into not doing anything
    about this equality.
@@ -532,6 +546,10 @@ End nlred.
 
 (*! Conversion *)
 
+Section Conv.
+
+Context `{Sort_notion : Sorts.notion}.
+
 Reserved Notation " Σ '|-i' t = u " (at level 50, t, u at next level).
 
 Inductive conv (Σ : sglobal_context) : sterm -> sterm -> Prop :=
@@ -541,12 +559,20 @@ Inductive conv (Σ : sglobal_context) : sterm -> sterm -> Prop :=
 
 where " Σ '|-i' t = u " := (@conv Σ t u) : i_scope.
 
+End Conv.
+
+Notation " Σ '|-i' t = u " := 
+  (@conv _ Σ t u) (at level 50, t, u at next level) : i_scope.
 Derive Signature for conv.
 
 Open Scope i_scope.
 
+Section Conversion.
+
+Context `{Sort_notion : Sorts.notion}.
+
 Lemma conv_refl :
-  forall Σ t , Σ |-i t = t.
+  forall Σ t, Σ |-i t = t.
 Proof.
   intros Σ t.
   apply conv_eq. reflexivity.
@@ -588,14 +614,19 @@ Proof.
     eapply IHh ; assumption.
 Defined.
 
-(* TODO? WARNING AXIOM *)
+(* TODO[REMOVE] WARNING AXIOM *)
 (* We dedice to have confluence of reduction as an axiom.
    The idea is that it then allows to derive transitivity of conversion
    without having to assume it, meaning we get a lot of properties
    like injectivity of constructors.
  *)
-
 (* PARTIAL AXIOM Transitivity *)
+
+(* WARNING AXIOM
+   The only axiom that we take is transitivity of conversion.
+   This should rely on confluence of the reduction which we believe is
+   orthogonal to the object of the paper / formalisation.
+ *)
 Axiom conv_trans_AXIOM :
   forall {Σ t u v},
     Σ |-i t = u ->
@@ -625,6 +656,8 @@ Proof.
       * eapply conv_red_r ; eassumption.
       * eapply conv_red_r ; eassumption.
 Defined.
+
+End Conversion.
 
 (*! Congruences for conversion *)
 
@@ -709,6 +742,10 @@ Tactic Notation "conv" "rewrite" "<-" hyp(h1) "," hyp(h2) "," hyp(h3) "," hyp(h4
 Tactic Notation "conv" "rewrite" "<-" hyp(h1) "," hyp(h2) "," hyp(h3) "," hyp(h4)
        "," hyp(h5) "," hyp(h6) "," hyp(h7) :=
   conv rewrite <- h1 ; conv rewrite <- h2, h3, h4, h5, h6, h7.
+
+Section Congruence.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Lemma cong_Heq :
   forall {Σ A a B b A' a' B' b'},
@@ -961,6 +998,8 @@ Proof.
     econstructor ; eassumption.
 Defined.
 
+End Congruence.
+
 Ltac red_rewrite h :=
   let h' := fresh "h" in
   match type of h with
@@ -1006,6 +1045,8 @@ Tactic Notation "red" "rewrite" hyp(h1) "," hyp(h2) "," hyp(h3) "," hyp(h4)
   red rewrite h1 ; red rewrite h2, h3, h4, h5, h6, h7.
 
 Section conv_substs.
+
+  Context `{Sort_notion : Sorts.notion}.
 
   Ltac sp h n :=
     lazymatch goal with
@@ -1084,6 +1125,10 @@ Section conv_substs.
 
 End conv_substs.
 
+Section Substitution.
+
+Context `{Sort_notion : Sorts.notion}.
+
 Lemma substs_conv :
   forall {Σ n u1 u2 t},
     Σ |-i u1 = u2 ->
@@ -1111,9 +1156,11 @@ Proof.
   - eapply subst_conv. assumption.
 Defined.
 
+End Substitution.
+
 (*! Inversion results about conversion *)
 
-Lemma sort_conv_inv :
+Lemma sort_conv_inv `{Sort_notion : Sorts.notion} :
   forall {Σ s1 s2},
     Σ |-i sSort s1 = sSort s2 ->
     s1 = s2.
@@ -1140,6 +1187,10 @@ Ltac invconv h :=
     split_hyps ; repeat split ; try assumption ;
     eapply conv_red_r ; eassumption
   ].
+
+Section Inversions.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Lemma heq_conv_inv :
   forall {Σ A a B b A' a' B' b'},
@@ -1181,3 +1232,5 @@ Proof.
   intros Σ nx ny A B A' B' h.
   invconv h.
 Defined.
+
+End Inversions.

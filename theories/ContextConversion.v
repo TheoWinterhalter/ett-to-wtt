@@ -4,8 +4,12 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util SAst SLiftSubst Equality SCommon Conversion ITyping
+Require Import util Sorts SAst SLiftSubst Equality SCommon Conversion ITyping
                ITypingInversions ITypingLemmata.
+
+Section ContextConversion.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Inductive ctxconv Σ : scontext -> scontext -> Type :=
 | ctxconv_nil : ctxconv Σ [] []
@@ -24,7 +28,7 @@ Proof.
   - constructor.
     + assumption.
     + apply conv_refl.
-Qed.
+Defined.
 
 Fact ctxconv_length :
   forall {Σ Γ Δ},
@@ -34,7 +38,9 @@ Proof.
   intros Σ Γ Δ h. induction h.
   - reflexivity.
   - cbn. f_equal. assumption.
-Qed.
+Defined.
+
+End ContextConversion.
 
 Ltac lift_sort :=
   match goal with
@@ -52,6 +58,8 @@ Ltac lift_sort :=
 
 Section ctxconv.
 
+  Context `{Sort_notion : Sorts.notion}.
+
   Fact safe_nth_conv :
     forall {Σ Γ Δ},
       ctxconv Σ Γ Δ ->
@@ -64,10 +72,6 @@ Section ctxconv.
       + cbn. assumption.
       + cbn. apply IHh.
   Defined.
-
-  (* This should be the normal definition. *)
-  Definition isType Σ Γ A :=
-    exists s, Σ ;;; Γ |-i A : sSort s.
 
   Inductive ctxctx Σ : scontext -> scontext -> Prop :=
   | ctxctx_nil : ctxctx Σ [] []
@@ -179,7 +183,7 @@ Section ctxconv.
       + eapply typing_lift01 ; try eassumption ; ih.
       + refine (type_Rel _ _ _ _ _) ; [| cbn ; omega ].
         econstructor ; try eassumption. ih.
-    - eapply type_HeqTrans with (B := B) ; ih.
+    - eapply type_HeqTrans with (B0 := B) ; ih.
     - econstructor ; try ih.
       eapply type_ctxconv'.
       + eassumption.
@@ -259,7 +263,7 @@ Section ctxconv.
         eexists ; econstructor ; ih.
       + econstructor ; try assumption.
         apply conv_refl.
-    - eapply type_ProjT2 with (A1 := A1) ; ih.
+    - eapply type_ProjT2 with (A3 := A1) ; ih.
     - eapply type_Ax.
       + assumption.
       + assumption.

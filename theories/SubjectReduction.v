@@ -4,10 +4,12 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util SAst SLiftSubst Equality SCommon Conversion ITyping
+Require Import util Sorts SAst SLiftSubst Equality SCommon Conversion ITyping
                ITypingInversions ITypingLemmata ContextConversion Uniqueness.
 
 Section subjred.
+
+  Context `{Sort_notion : Sorts.notion}.
 
   Ltac sr' hg hr IHhr :=
     intros Γ ? ht ;
@@ -456,9 +458,9 @@ Section subjred.
       apply cong_Heq ; try assumption ; try apply conv_refl.
     - canvas. apply conv_sym. assumption.
     - canvas.
-      eapply type_HeqTrans with (B := B) (b := b) ; try eassumption.
+      eapply type_HeqTrans with (B0 := B) (b0 := b) ; try eassumption.
     - canvas.
-      eapply type_HeqTrans with (B := B) (b := b) ; try eassumption.
+      eapply type_HeqTrans with (B0 := B) (b0 := b) ; try eassumption.
     - canvas.
       + econstructor.
         * eapply type_HeqTransport ; [ .. | eassumption | eassumption ] ; eassumption.
@@ -490,7 +492,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -502,7 +504,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -535,7 +537,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -547,7 +549,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -592,7 +594,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -604,7 +606,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -620,7 +622,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -632,7 +634,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -644,7 +646,7 @@ Section subjred.
                          try eassumption.
                        *** econstructor ; try eassumption.
                        *** eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -655,7 +657,7 @@ Section subjred.
                    --- eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -690,7 +692,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -702,7 +704,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -718,7 +720,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -730,7 +732,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -741,7 +743,7 @@ Section subjred.
                    --- eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -753,7 +755,7 @@ Section subjred.
                          try eassumption.
                        *** econstructor ; try eassumption.
                        *** eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -786,7 +788,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -798,7 +800,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -809,7 +811,7 @@ Section subjred.
                 ** eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -820,7 +822,7 @@ Section subjred.
                 ** eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -851,7 +853,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -863,7 +865,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -874,7 +876,7 @@ Section subjred.
                 ** eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -885,7 +887,7 @@ Section subjred.
                 ** eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -936,7 +938,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -948,7 +950,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -995,7 +997,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1007,7 +1009,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1078,7 +1080,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1090,7 +1092,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1123,7 +1125,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1135,7 +1137,7 @@ Section subjred.
                    eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                      try eassumption.
                    eapply typing_wf. eassumption.
-                ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
                        econstructor ; try eassumption.
                    --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1182,7 +1184,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1194,7 +1196,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1242,7 +1244,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1254,7 +1256,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1322,7 +1324,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1334,7 +1336,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1379,7 +1381,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1391,7 +1393,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1445,7 +1447,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1457,7 +1459,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1511,7 +1513,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A1 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+                   --- cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1523,7 +1525,7 @@ Section subjred.
                        eapply @type_lift with (Δ := [ sPack A1 A2 ]) (Ξ := [ A2 ]) ;
                          try eassumption.
                        eapply typing_wf. eassumption.
-                   --- cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+                   --- cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
                            econstructor ; try eassumption.
                        +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1610,7 +1612,7 @@ Section subjred.
       + econstructor ; try eassumption.
       + econstructor ; try eassumption.
     - canvas.
-      + eapply type_HeqTypeEq with (u := u) (v := v) ; try assumption.
+      + eapply type_HeqTypeEq with (u0 := u) (v0 := v) ; try assumption.
         * econstructor ; try eassumption.
           -- econstructor ; try eassumption.
              econstructor ; try eassumption.
@@ -1619,7 +1621,7 @@ Section subjred.
       + econstructor ; try eassumption.
         econstructor. eapply typing_wf. eassumption.
     - canvas.
-      + eapply type_HeqTypeEq with (u := u) (v := v) ; try assumption.
+      + eapply type_HeqTypeEq with (u0 := u) (v0 := v) ; try assumption.
         * econstructor ; try eassumption.
           -- econstructor ; try eassumption.
              econstructor ; try eassumption.
@@ -1635,20 +1637,20 @@ Section subjred.
       + eassumption.
       + apply conv_sym. assumption.
     - canvas.
-      + eapply type_ProjT2 with (A1 := A1) ; try eassumption.
+      + eapply type_ProjT2 with (A3 := A1) ; try eassumption.
       + eassumption.
     - canvas.
       + econstructor ; try eassumption.
-        * eapply type_ProjTe with (A1 := A1) (A2 := A2) ; try eassumption.
+        * eapply type_ProjTe with (A3 := A1) (A4 := A2) ; try eassumption.
         * econstructor ; try eassumption.
           -- econstructor ; try eassumption.
-          -- eapply type_ProjT2 with (A1 := A1) ; try eassumption.
+          -- eapply type_ProjT2 with (A3 := A1) ; try eassumption.
         * apply cong_Heq ; try apply conv_refl.
           -- conv rewrite heq. apply conv_refl.
           -- conv rewrite heq. apply conv_refl.
       + econstructor ; try eassumption.
         * econstructor ; try eassumption.
-        * eapply type_ProjT2 with (A1 := A1) ; try eassumption.
+        * eapply type_ProjT2 with (A3 := A1) ; try eassumption.
 
     Unshelve. all: auto.
   Qed.
@@ -1656,6 +1658,8 @@ Section subjred.
 End subjred.
 
 Section nltype.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Ltac resolve :=
   match goal with
@@ -1906,7 +1910,7 @@ Proof.
                  --- go. eapply typing_wf. eassumption.
                  --- apply conv_refl.
               ** eapply typing_wf. eassumption.
-           ++ cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+           ++ cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
               ** lift_sort. eapply typing_lift01 ; try eassumption.
                  go.
               ** lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1921,7 +1925,7 @@ Proof.
                  --- go. eapply typing_wf. eassumption.
                  --- apply conv_refl.
               ** eapply typing_wf. eassumption.
-           ++ cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+           ++ cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
               ** lift_sort. eapply typing_lift01 ; try eassumption.
                  go.
               ** lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1957,7 +1961,7 @@ Proof.
                  --- econstructor.
                      +++ eapply typing_wf. eassumption.
                      +++ go.
-              ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+              ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -1974,7 +1978,7 @@ Proof.
                  --- econstructor.
                      +++ eapply typing_wf. eassumption.
                      +++ go.
-              ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+              ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2000,7 +2004,7 @@ Proof.
                  --- econstructor.
                      +++ eapply typing_wf. eassumption.
                      +++ go.
-              ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+              ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2017,7 +2021,7 @@ Proof.
                  --- econstructor.
                      +++ eapply typing_wf. eassumption.
                      +++ go.
-              ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+              ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2031,7 +2035,7 @@ Proof.
                  --- go.
                      +++ eapply typing_wf. eassumption.
                      +++ go.
-              ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+              ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2045,7 +2049,7 @@ Proof.
                  --- go.
                      +++ eapply typing_wf. eassumption.
                      +++ go.
-              ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+              ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2085,7 +2089,7 @@ Proof.
                  --- econstructor.
                      +++ eapply typing_wf. eassumption.
                      +++ go.
-              ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+              ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2102,7 +2106,7 @@ Proof.
                  --- econstructor.
                      +++ eapply typing_wf. eassumption.
                      +++ go.
-              ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+              ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  +++ lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2157,7 +2161,7 @@ Proof.
                  --- go. eapply typing_wf. eassumption.
                  --- apply conv_refl.
               ** eapply typing_wf. eassumption.
-           ++ cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+           ++ cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
               ** lift_sort. eapply typing_lift01 ; try eassumption.
                  go.
               ** lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2172,7 +2176,7 @@ Proof.
                  --- go. eapply typing_wf. eassumption.
                  --- apply conv_refl.
               ** eapply typing_wf. eassumption.
-           ++ cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+           ++ cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
               ** lift_sort. eapply typing_lift01 ; try eassumption.
                  go.
               ** lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2204,7 +2208,7 @@ Proof.
                    try eassumption.
                  --- apply IHht7. assumption.
                  --- eapply typing_wf. eassumption.
-              ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+              ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2217,7 +2221,7 @@ Proof.
                    try eassumption.
                  --- apply IHht8. assumption.
                  --- eapply typing_wf. eassumption.
-              ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+              ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2275,7 +2279,7 @@ Proof.
                    try eassumption.
                  --- apply IHht6. assumption.
                  --- eapply typing_wf. eassumption.
-              ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+              ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2288,7 +2292,7 @@ Proof.
                    try eassumption.
                  --- apply IHht7. assumption.
                  --- eapply typing_wf. eassumption.
-              ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+              ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2336,7 +2340,7 @@ Proof.
                    try eassumption.
                  --- apply IHht6. assumption.
                  --- eapply typing_wf. eassumption.
-              ** cbn. eapply type_ProjT1 with (A2 := lift0 1 A2).
+              ** cbn. eapply type_ProjT1 with (A4 := lift0 1 A2).
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2349,7 +2353,7 @@ Proof.
                    try eassumption.
                  --- apply IHht7. assumption.
                  --- eapply typing_wf. eassumption.
-              ** cbn. eapply type_ProjT2 with (A1 := lift0 1 A1).
+              ** cbn. eapply type_ProjT2 with (A3 := lift0 1 A1).
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
                      go.
                  --- lift_sort. eapply typing_lift01 ; try eassumption.
@@ -2416,7 +2420,7 @@ Proof.
     + go.
     + go.
       * go.
-      * eapply type_ProjT2 with (A1 := A1) ; eassumption.
+      * eapply type_ProjT2 with (A3 := A1) ; eassumption.
     + go. symmetry. cbn. f_equal ; try assumption.
       * f_equal. assumption.
       * f_equal. assumption.
@@ -2428,7 +2432,7 @@ Defined.
 
 End nltype.
 
-Theorem subj_conv :
+Theorem subj_conv `{Sort_notion : Sorts.notion} :
   forall {Σ Γ t u T U},
     type_glob Σ ->
     Σ |-i t = u ->

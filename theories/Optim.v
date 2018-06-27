@@ -3,8 +3,12 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils LiftSubst Typing.
 From Translation
-Require Import util SAst SLiftSubst Equality SCommon XTyping Conversion ITyping
-               ITypingInversions ITypingLemmata ITypingAdmissible.
+Require Import util Sorts SAst SLiftSubst Equality SCommon XTyping Conversion
+               ITyping ITypingInversions ITypingLemmata ITypingAdmissible.
+
+Section Optim.
+
+Context `{Sort_notion : Sorts.notion}.
 
 (* For optimisation, we remark that we can decide whenever an heterogenous
    equality is reflexivity.
@@ -181,3 +185,4 @@ Defined.
 
 (* TODO sHeqTransport, sCongProd and co, sEqToHeq, sHeqTypeEq? *)
 
+End Optim.

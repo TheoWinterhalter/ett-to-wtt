@@ -4,8 +4,12 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils LiftSubst Typing.
 From Translation
-Require Import util SAst SLiftSubst Equality SCommon XTyping
+Require Import util Sorts SAst SLiftSubst Equality SCommon XTyping
                Conversion ITyping ITypingLemmata ITypingAdmissible.
+
+Section Pack.
+
+Context `{Sort_notion : Sorts.notion}.
 
 (* In order to do things properly we need to extend the context heterogenously,
    this is done by extending the context with packed triples
@@ -90,8 +94,6 @@ Fixpoint llift γ δ (t:sterm)  : sterm :=
   | sAx id => sAx id
   end.
 
-Notation llift0 γ t := (llift γ 0 t).
-
 Fixpoint rlift γ δ t : sterm :=
   match t with
   | sRel i =>
@@ -163,7 +165,14 @@ Fixpoint rlift γ δ t : sterm :=
   | sAx id => sAx id
   end.
 
+End Pack.
+
+Notation llift0 γ t := (llift γ 0 t).
 Notation rlift0 γ t := (rlift γ 0 t).
+
+Section Mix.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Inductive ismix Σ Γ : forall (Γ1 Γ2 Γm : scontext), Type :=
 | mixnil : ismix Σ Γ [] [] []
@@ -552,7 +561,7 @@ Proof.
   - cbn. assumption.
   - cbn. econstructor.
     + assumption.
-    + eapply type_Pack with (s := s) ; assumption.
+    + eapply type_Pack with (s0 := s) ; assumption.
 Defined.
 
 Fact mix'_length1 :
@@ -1673,3 +1682,5 @@ Proof.
       cbn. case_eq (l ?= S n) ; intro e9 ; bprop e9 ; try omega.
       reflexivity.
 Defined.
+
+End Mix.

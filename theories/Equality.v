@@ -1,7 +1,11 @@
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
-From Translation Require Import util SAst SLiftSubst.
+From Translation Require Import util Sorts SAst SLiftSubst.
+
+Section Equality.
+
+Context `{Sort_notion : Sorts.notion}.
 
 (*! Equality between terms *)
 (* This goes through the definition of a nameless syntax *)
@@ -108,7 +112,7 @@ Section nldec.
   Ltac nl_dec_tac nl_dec :=
     repeat match goal with
            | t : nlterm, u : nlterm |- _ => fcase (nl_dec t u)
-           | s : sort, z : sort |- _ => fcase (Nat.eq_dec s z)
+           | s : sort, z : sort |- _ => fcase (Sorts.eq_dec s z)
            | n : nat, m : nat |- _ => fcase (Nat.eq_dec n m)
            | i : ident, i' : ident |- _ => fcase (string_dec i i')
            end.
@@ -227,3 +231,6 @@ Proof.
   apply eq_term_spec.
   apply nl_subst ; assumption.
 Defined.
+
+End Equality.
+

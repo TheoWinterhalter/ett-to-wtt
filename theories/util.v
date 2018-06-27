@@ -103,6 +103,12 @@ Ltac propb :=
   | |- (_ =? _) = false => apply beq_nat_false
   end.
 
+Ltac destruct_andb :=
+  match goal with
+  | H : _ && _ = true |- _ =>
+    destruct (andb_prop _ _ H) ; clear H
+  end.
+
 
 
 

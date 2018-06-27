@@ -5,11 +5,15 @@ From Equations Require Import Equations DepElimDec.
 From Template
 Require Import config Ast utils monad_utils LiftSubst Typing Checker.
 From Translation
-Require Import util SAst SLiftSubst SCommon ITyping Quotes.
+Require Import util Sorts SAst SLiftSubst SCommon ITyping Quotes.
 
 Import MonadNotation.
 
 Module T := Typing.
+
+Section Final.
+
+Context `{Sort_notion : Sorts.notion}.
 
 (* From Simon Boulier *)
 Inductive tsl_error :=
@@ -46,11 +50,11 @@ Instance monad_exc : MonadExc tsl_error tsl_result :=
   }.
 
 (* For now, we'll let TemplateCoq deal with universes on its own. *)
-Fixpoint sort_to_universe (s : sort) : Universe.t :=
-  match s with
-  | 0 => (* Universe.type0 *) []
-  | S n => []
-  end.
+Definition sort_to_universe (s : sort) : Universe.t := [].
+  (* match s with *)
+  (* | 0 => (* Universe.type0 *) [] *)
+  (* | S n => [] *)
+  (* end. *)
 
 Definition hnf (Σ : global_context) (Γ : context) (t : term) : typing_result term :=
   r <- hnf_stack (Datatypes.fst Σ) Γ t ;;
@@ -399,3 +403,5 @@ Fixpoint tsl_ctx (fuel : nat) (Σ : global_context) (Γ : scontext)
     A' <- tsl_rec fuel Σ Γ' a ;;
     ret (Γ' ,, vass nAnon A')
   end.
+
+End Final.
