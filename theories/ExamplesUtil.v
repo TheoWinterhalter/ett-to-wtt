@@ -146,7 +146,7 @@ Lemma type_Prod' :
   forall {Σ Γ n A B s1 s2},
     Σ ;;; Γ |-i A : sSort s1 ->
     (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i B : sSort s2) ->
-    Σ ;;; Γ |-i sProd n A B : sSort (max_sort s1 s2).
+    Σ ;;; Γ |-i sProd n A B : sSort (Sorts.max s1 s2).
 Proof.
   intros Σ' Γ n A B s1 s2 hA hB.
   eapply IT.type_Prod.
@@ -189,7 +189,7 @@ Lemma type_Sum' :
   forall {Σ Γ n A B s1 s2},
     Σ ;;; Γ |-i A : sSort s1 ->
     (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i B : sSort s2) ->
-    Σ ;;; Γ |-i sSum n A B : sSort (max_sort s1 s2).
+    Σ ;;; Γ |-i sSum n A B : sSort (Sorts.max s1 s2).
 Proof.
   intros Σ' Γ n A B s1 s2 hA hB.
   eapply IT.type_Sum.
@@ -286,27 +286,13 @@ Definition ttaxiom_nat_ty :=
 Definition rtaxiom_nat_ty :=
   ltac:(let u := eval lazy in ttaxiom_nat_ty in exact u).
 
-(* Variable axf' : nat -> sort. *)
-
-(* Definition axf (i : nat) := *)
-(*   match i with *)
-(*   | 4 => 1 *)
-(*   | 15 => 1 *)
-(*   | 69 => 1 *)
-(*   | 70 => 1 *)
-(*   | 71 => 1 *)
-(*   | 3 => 1 *)
-(*   | 2 => 1 *)
-(*   | 72 => 1 *)
-(*   | i => 0 *)
-(*   end. *)
 Definition fq_ax_nat_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_nat_ty (fun _ => 0) 0.
+  fullquote (2 ^ 18) Σ [] rtaxiom_nat_ty.
 Definition rfq_ax_nat_ty :=
   ltac:(let u := eval lazy in fq_ax_nat_ty in exact u).
 Definition ax_nat_ty :=
   match rfq_ax_nat_ty with
-  | Success (t,_) => t
+  | Success t => t
   | _ => sRel 0
   end.
 Definition rtax_nat_ty :=
@@ -332,12 +318,12 @@ Definition rtaxiom_nat_rect_ty :=
 (*   end. *)
 
 Definition fq_ax_nat_rect_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_ty (fun _ => 0) 0.
+  fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_ty.
 Definition rfq_ax_nat_rect_ty :=
   ltac:(let u := eval lazy in fq_ax_nat_rect_ty in exact u).
 Definition ax_nat_rect_ty :=
   match rfq_ax_nat_rect_ty with
-  | Success (t,_) => t
+  | Success t => t
   | _ => sRel 0
   end.
 Definition rtax_nat_rect_ty :=
@@ -356,12 +342,12 @@ Definition ttaxiom_nat_rect_zero_ty :=
 Definition rtaxiom_nat_rect_zero_ty :=
   ltac:(let u := eval lazy in ttaxiom_nat_rect_zero_ty in exact u).
 Definition fq_ax_nat_rect_zero_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_zero_ty (fun _ => 0) 0.
+  fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_zero_ty.
 Definition rfq_ax_nat_rect_zero_ty :=
   ltac:(let u := eval lazy in fq_ax_nat_rect_zero_ty in exact u).
 Definition ax_nat_rect_zero_ty :=
   match rfq_ax_nat_rect_zero_ty with
-  | Success (t,_) => t
+  | Success t => t
   | _ => sRel 0
   end.
 Definition rtax_nat_rect_zero_ty :=
@@ -380,12 +366,12 @@ Definition ttaxiom_nat_rect_succ_ty :=
 Definition rtaxiom_nat_rect_succ_ty :=
   ltac:(let u := eval lazy in ttaxiom_nat_rect_succ_ty in exact u).
 Definition fq_ax_nat_rect_succ_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_succ_ty (fun _ => 0) 0.
+  fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_succ_ty.
 Definition rfq_ax_nat_rect_succ_ty :=
   ltac:(let u := eval lazy in fq_ax_nat_rect_succ_ty in exact u).
 Definition ax_nat_rect_succ_ty :=
   match rfq_ax_nat_rect_succ_ty with
-  | Success (t,_) => t
+  | Success t => t
   | _ => sRel 0
   end.
 Definition rtax_nat_rect_succ_ty :=
@@ -404,12 +390,12 @@ Definition ttaxiom_vec_ty :=
 Definition rtaxiom_vec_ty :=
   ltac:(let u := eval lazy in ttaxiom_vec_ty in exact u).
 Definition fq_ax_vec_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vec_ty (fun _ => 0) 0.
+  fullquote (2 ^ 18) Σ [] rtaxiom_vec_ty.
 Definition rfq_ax_vec_ty :=
   ltac:(let u := eval lazy in fq_ax_vec_ty in exact u).
 Definition ax_vec_ty :=
   match rfq_ax_vec_ty with
-  | Success (t,_) => t
+  | Success t => t
   | _ => sRel 0
   end.
 Definition rtax_vec_ty :=
@@ -428,12 +414,12 @@ Definition ttaxiom_vnil_ty :=
 Definition rtaxiom_vnil_ty :=
   ltac:(let u := eval lazy in ttaxiom_vnil_ty in exact u).
 Definition fq_ax_vnil_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vnil_ty (fun _ => 0) 0.
+  fullquote (2 ^ 18) Σ [] rtaxiom_vnil_ty.
 Definition rfq_ax_vnil_ty :=
   ltac:(let u := eval lazy in fq_ax_vnil_ty in exact u).
 Definition ax_vnil_ty :=
   match rfq_ax_vnil_ty with
-  | Success (t,_) => t
+  | Success t => t
   | _ => sRel 0
   end.
 Definition rtax_vnil_ty :=
@@ -452,12 +438,12 @@ Definition ttaxiom_vcons_ty :=
 Definition rtaxiom_vcons_ty :=
   ltac:(let u := eval lazy in ttaxiom_vcons_ty in exact u).
 Definition fq_ax_vcons_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vcons_ty (fun _ => 0) 0.
+  fullquote (2 ^ 18) Σ [] rtaxiom_vcons_ty.
 Definition rfq_ax_vcons_ty :=
   ltac:(let u := eval lazy in fq_ax_vcons_ty in exact u).
 Definition ax_vcons_ty :=
   match rfq_ax_vcons_ty with
-  | Success (t,_) => t
+  | Success t => t
   | _ => sRel 0
   end.
 Definition rtax_vcons_ty :=
@@ -476,12 +462,12 @@ Definition ttaxiom_vec_rect_ty :=
 Definition rtaxiom_vec_rect_ty :=
   ltac:(let u := eval lazy in ttaxiom_vec_rect_ty in exact u).
 Definition fq_ax_vec_rect_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_ty (fun _ => 0) 0.
+  fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_ty.
 Definition rfq_ax_vec_rect_ty :=
   ltac:(let u := eval lazy in fq_ax_vec_rect_ty in exact u).
 Definition ax_vec_rect_ty :=
   match rfq_ax_vec_rect_ty with
-  | Success (t,_) => t
+  | Success t => t
   | _ => sRel 0
   end.
 Definition rtax_vec_rect_ty :=
@@ -500,12 +486,12 @@ Definition ttaxiom_vec_rect_vnil_ty :=
 Definition rtaxiom_vec_rect_vnil_ty :=
   ltac:(let u := eval lazy in ttaxiom_vec_rect_vnil_ty in exact u).
 Definition fq_ax_vec_rect_vnil_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_vnil_ty (fun _ => 0) 0.
+  fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_vnil_ty.
 Definition rfq_ax_vec_rect_vnil_ty :=
   ltac:(let u := eval lazy in fq_ax_vec_rect_vnil_ty in exact u).
 Definition ax_vec_rect_vnil_ty :=
   match rfq_ax_vec_rect_vnil_ty with
-  | Success (t,_) => t
+  | Success t => t
   | _ => sRel 0
   end.
 Definition rtax_vec_rect_vnil_ty :=
@@ -524,12 +510,12 @@ Definition ttaxiom_vec_rect_vcons_ty :=
 Definition rtaxiom_vec_rect_vcons_ty :=
   ltac:(let u := eval lazy in ttaxiom_vec_rect_vcons_ty in exact u).
 Definition fq_ax_vec_rect_vcons_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_vcons_ty (fun _ => 0) 0.
+  fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_vcons_ty.
 Definition rfq_ax_vec_rect_vcons_ty :=
   ltac:(let u := eval lazy in fq_ax_vec_rect_vcons_ty in exact u).
 Definition ax_vec_rect_vcons_ty :=
   match rfq_ax_vec_rect_vcons_ty with
-  | Success (t,_) => t
+  | Success t => t
   | _ => sRel 0
   end.
 Definition rtax_vec_rect_vcons_ty :=
@@ -590,14 +576,14 @@ Definition pn := nNamed "pppp".
 
 Fixpoint multiProd (bl : list sterm) :=
   match bl with
-  | [] => sSort (succ_sort 0)
+  | [] => sSort (succ tt)
   | [ A ] => A
   | A :: bl => sProd pn A (multiProd bl)
   end.
 
 Fixpoint multiLam (bl : list sterm) (t : sterm) :=
   match bl with
-  | [] => sSort 0
+  | [] => sSort tt
   | [ A ] => t
   | A :: bl => sLambda pn A (multiProd bl) (multiLam bl t)
   end.
@@ -619,7 +605,7 @@ Lemma type_multiProd :
       Σi ;;; Γ |-x multiProd bl : sSort s.
 Proof.
   intro bl. induction bl ; intros Γ hwf h.
-  - cbn. exists (succ_sort (succ_sort 0)). apply type_Sort. assumption.
+  - cbn. exists (@succ Sorts.type_in_type tt). apply type_Sort. assumption.
   - destruct bl.
     + cbn. dependent destruction h.
       eexists. eassumption.
@@ -677,7 +663,7 @@ Lemma type_multiLam :
     Σi ;;; Γ |-x multiLam bl t : multiProd bl.
 Proof.
   intro bl. induction bl ; intros Γ t hwf hwb.
-  - cbn. apply type_Sort. assumption.
+  - cbn. refine (type_Sort _ _ _ _). assumption.
   - destruct bl.
     + cbn. dependent destruction hwb. assumption.
     + change (multiProd (a :: s :: bl))
@@ -720,7 +706,7 @@ Proof.
 Defined.
 
 Definition type_translation {Γ t A} h {Γ'} hΓ :=
-  pi2_ (pi1_ (@complete_translation Σi hΣi)) Γ t A h Γ' hΓ.
+  pi2_ (pi1_ (@complete_translation _ Σi hΣi)) Γ t A h Γ' hΓ.
 
 
 
@@ -734,7 +720,7 @@ Lemma xtype_Prod' :
   forall {Σ Γ n A B s1 s2},
     Σ ;;; Γ |-x A : sSort s1 ->
     (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : sSort s2) ->
-    Σ ;;; Γ |-x sProd n A B : sSort (max_sort s1 s2).
+    Σ ;;; Γ |-x sProd n A B : sSort (Sorts.max s1 s2).
 Proof.
   intros Σ Γ n A B s1 s2 hA hB.
   eapply type_Prod.
@@ -780,7 +766,7 @@ Lemma xtype_Sum' :
   forall {Σ Γ n A B s1 s2},
     Σ ;;; Γ |-x A : sSort s1 ->
     (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : sSort s2) ->
-    Σ ;;; Γ |-x sSum n A B : sSort (max_sort s1 s2).
+    Σ ;;; Γ |-x sSum n A B : sSort (Sorts.max s1 s2).
 Proof.
   intros Σ' Γ n A B s1 s2 hA hB.
   eapply type_Sum.
