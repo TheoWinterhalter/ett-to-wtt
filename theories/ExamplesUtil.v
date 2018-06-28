@@ -3,9 +3,12 @@
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import utils Ast LiftSubst Typing Checker.
-From Translation Require Import util Quotes SAst SLiftSubst SCommon ITyping
-     ITypingInversions ITypingLemmata ITypingAdmissible XTyping
+From Translation Require Import util Quotes Sorts SAst SLiftSubst SCommon
+     ITyping ITypingInversions ITypingLemmata ITypingAdmissible XTyping
      FundamentalLemma Translation FinalTranslation FullQuote.
+
+(* For efficiency reasons we use type in type for examples. *)
+Existing Instance Sorts.type_in_type.
 
 (* The context for Template Coq *)
 

@@ -504,6 +504,15 @@ Definition mkHeqTypeEq (A u B v p : term) : term :=
   tApp tHeqTypeEq [ A ; u ; B ; v ; p ].
 
 
+(* In order to quote ETT terms, that would be otherwise ill-typed in ITT,
+   we rely on a trick.
+   We define an axiom candidate A B t that is, t (of type A) is a candidate
+   of type B, which we write {! t !}.
+ *)
+Axiom candidate : forall A B (t : A), B.
+
+Notation "'{!' t '!}'" := (candidate _ _ t).
+
 (* For examples *)
 
 Inductive vec A : nat -> Type :=

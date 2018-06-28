@@ -5,8 +5,8 @@ From Equations Require Import Equations DepElimDec.
 From Template
 Require Import Ast utils monad_utils LiftSubst Typing Checker.
 From Translation
-Require Import util Sorts SAst SLiftSubst SCommon ITyping Quotes FinalTranslation.
-
+Require Import util Sorts SAst SLiftSubst SCommon ITyping Quotes 
+               FinalTranslation.
 Import MonadNotation.
 
 Inductive fq_error :=
@@ -66,6 +66,8 @@ Fixpoint fullquote (fuel : nat) (Σ : global_context) (Γ : context) (t : term)
         ret (sLambda nx A' B' t')
       | TypeError e => raise (TypingError "Lambda" e (Γ ,, vass nx A) t)
       end
+    | tApp (tConst "Translation.Quotes.candidate" []) [ _ ; _ ; t ] =>
+      fullquote fuel Σ Γ t
     (* The following examples should be handled more generically,
        with a correspondance table. [TODO]
      *)
