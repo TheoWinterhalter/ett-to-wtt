@@ -20,19 +20,50 @@ Fail Definition pseudoid := fun (A B : Type) (e : A = B) (x : A) => x : B.
 (* Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}. *)
 Quote Definition pseudoid := (fun (A B : Type) (e : A = B) (x : A) => {! x !} : B).
 
+Definition pretm_pseudoid :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid empty empty.
 Definition tm_pseudoid :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid.
+  Eval lazy in 
+  match pretm_pseudoid with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
 
-(* We actually just want the definition! *)
-(* Quote Recursively Definition fold_pseudoid := pseudoid. *)
-(* Definition tc_pseudoid := *)
-(*   Eval lazy in *)
-(*   let Σ := pair (Datatypes.fst fold_pseudoid) init_graph in *)
-(*   let t := Datatypes.snd fold_pseudoid in *)
-(*   match hnf Σ [] t with *)
-(*   | Checked t => t *)
-(*   | _ => tRel 0 *)
-(*   end. *)
+Quote Definition pseudoid_type := (forall (A B : Type) (e : A = B) (x : A), B).
+Definition prety_pseudoid :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_type empty empty.
+Definition ty_pseudoid :=
+  Eval lazy in 
+  match prety_pseudoid with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Lemma type_pseudoid : Σi ;;; [] |-x tm_pseudoid : ty_pseudoid.
+Proof.
+  unfold tm_pseudoid, ty_pseudoid.
+  ettcheck. cbn.
+  eapply reflection with (e := sRel 1).
+  ettcheck.
+Defined.
+
+Definition itt_pseudoid : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_pseudoid istrans_nil in t.
+
+Definition tc_pseudoid : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_pseudoid empty.
+
+Make Definition coq_pseudoid :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_pseudoid with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
 
 (*! EXAMPLE 1:
     λ A B e x ⇒ x : ∀ (A B : Type), A = B → A → B

@@ -19,25 +19,25 @@ Inductive vec A : nat -> Type :=
 Arguments vnil {_}.
 Arguments vcons {_} _ _ _.
 
-Definition axiom_nat_ty := ltac:(let t := type of axiom_nat in exact t).
-Definition axiom_zero_ty := ltac:(let t := type of axiom_zero in exact t).
-Definition axiom_succ_ty := ltac:(let t := type of axiom_succ in exact t).
-Definition axiom_nat_rect_ty :=
-  ltac:(let t := type of axiom_nat_rect in exact t).
-Definition axiom_nat_rect_zero_ty :=
-  ltac:(let t := type of axiom_nat_rect_zero in exact t).
-Definition axiom_nat_rect_succ_ty :=
-  ltac:(let t := type of axiom_nat_rect_succ in exact t).
+(* Definition axiom_nat_ty := ltac:(let t := type of axiom_nat in exact t). *)
+(* Definition axiom_zero_ty := ltac:(let t := type of axiom_zero in exact t). *)
+(* Definition axiom_succ_ty := ltac:(let t := type of axiom_succ in exact t). *)
+(* Definition axiom_nat_rect_ty := *)
+(*   ltac:(let t := type of axiom_nat_rect in exact t). *)
+(* Definition axiom_nat_rect_zero_ty := *)
+(*   ltac:(let t := type of axiom_nat_rect_zero in exact t). *)
+(* Definition axiom_nat_rect_succ_ty := *)
+(*   ltac:(let t := type of axiom_nat_rect_succ in exact t). *)
 
-Definition axiom_vec_ty := ltac:(let t := type of axiom_vec in exact t).
-Definition axiom_vnil_ty := ltac:(let t := type of axiom_vnil in exact t).
-Definition axiom_vcons_ty := ltac:(let t := type of axiom_vcons in exact t).
-Definition axiom_vec_rect_ty :=
-  ltac:(let t := type of axiom_vec_rect in exact t).
-Definition axiom_vec_rect_vnil_ty :=
-  ltac:(let t := type of axiom_vec_rect_vnil in exact t).
-Definition axiom_vec_rect_vcons_ty :=
-  ltac:(let t := type of axiom_vec_rect_vcons in exact t).
+(* Definition axiom_vec_ty := ltac:(let t := type of axiom_vec in exact t). *)
+(* Definition axiom_vnil_ty := ltac:(let t := type of axiom_vnil in exact t). *)
+(* Definition axiom_vcons_ty := ltac:(let t := type of axiom_vcons in exact t). *)
+(* Definition axiom_vec_rect_ty := *)
+(*   ltac:(let t := type of axiom_vec_rect in exact t). *)
+(* Definition axiom_vec_rect_vnil_ty := *)
+(*   ltac:(let t := type of axiom_vec_rect_vnil in exact t). *)
+(* Definition axiom_vec_rect_vcons_ty := *)
+(*   ltac:(let t := type of axiom_vec_rect_vcons in exact t). *)
 
 (* We define a term that mentions everything that the global context should
    have. *)
@@ -72,31 +72,31 @@ Definition glob_term :=
   let _ := @eq_to_heq in
   let _ := @heq_type_eq in
   (* Axiomatising nat *)
-  let _ := @axiom_nat in
-  let _ := @axiom_nat_ty in
-  let _ := @axiom_zero in
-  let _ := @axiom_zero_ty in
-  let _ := @axiom_succ in
-  let _ := @axiom_succ_ty in
-  let _ := @axiom_nat_rect in
-  let _ := @axiom_nat_rect_ty in
-  let _ := @axiom_nat_rect_zero in
-  let _ := @axiom_nat_rect_zero_ty in
-  let _ := @axiom_nat_rect_succ in
-  let _ := @axiom_nat_rect_succ_ty in
+  (* let _ := @axiom_nat in *)
+  (* let _ := @axiom_nat_ty in *)
+  (* let _ := @axiom_zero in *)
+  (* let _ := @axiom_zero_ty in *)
+  (* let _ := @axiom_succ in *)
+  (* let _ := @axiom_succ_ty in *)
+  (* let _ := @axiom_nat_rect in *)
+  (* let _ := @axiom_nat_rect_ty in *)
+  (* let _ := @axiom_nat_rect_zero in *)
+  (* let _ := @axiom_nat_rect_zero_ty in *)
+  (* let _ := @axiom_nat_rect_succ in *)
+  (* let _ := @axiom_nat_rect_succ_ty in *)
   (* Vec *)
-  let _ := @axiom_vec in
-  let _ := @axiom_vnil in
-  let _ := @axiom_vcons in
-  let _ := @axiom_vec_rect in
-  let _ := @axiom_vec_rect_vnil in
-  let _ := @axiom_vec_rect_vcons in
-  let _ := @axiom_vec_ty in
-  let _ := @axiom_vnil_ty in
-  let _ := @axiom_vcons_ty in
-  let _ := @axiom_vec_rect_ty in
-  let _ := @axiom_vec_rect_vnil_ty in
-  let _ := @axiom_vec_rect_vcons_ty in
+  (* let _ := @axiom_vec in *)
+  (* let _ := @axiom_vnil in *)
+  (* let _ := @axiom_vcons in *)
+  (* let _ := @axiom_vec_rect in *)
+  (* let _ := @axiom_vec_rect_vnil in *)
+  (* let _ := @axiom_vec_rect_vcons in *)
+  (* let _ := @axiom_vec_ty in *)
+  (* let _ := @axiom_vnil_ty in *)
+  (* let _ := @axiom_vcons_ty in *)
+  (* let _ := @axiom_vec_rect_ty in *)
+  (* let _ := @axiom_vec_rect_vnil_ty in *)
+  (* let _ := @axiom_vec_rect_vcons_ty in *)
   (* Candidate *)
   let _ := @candidate in
   Type.
@@ -285,250 +285,242 @@ Ltac ittcheck' := ittcheck1 ; try (lazy ; omega).
 Ltac ittcheck := repeat ittcheck'.
 
 (* Getting axiom_nat as an axiom for ITT/ETT *)
-Quote Recursively Definition taxiom_nat_ty := axiom_nat_ty.
-Definition ttaxiom_nat_ty :=
-  let t := Datatypes.snd taxiom_nat_ty in
-  match hnf Σ [] t with
-  | Checked t => t
-  | _ => tRel 0
-  end.
-Definition rtaxiom_nat_ty :=
-  ltac:(let u := eval lazy in ttaxiom_nat_ty in exact u).
+(* Quote Recursively Definition taxiom_nat_ty := axiom_nat_ty. *)
+(* Definition ttaxiom_nat_ty := *)
+(*   let t := Datatypes.snd taxiom_nat_ty in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
+(*   end. *)
+(* Definition rtaxiom_nat_ty := *)
+(*   ltac:(let u := eval lazy in ttaxiom_nat_ty in exact u). *)
 
-Definition fq_ax_nat_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_nat_ty.
-Definition rfq_ax_nat_ty :=
-  ltac:(let u := eval lazy in fq_ax_nat_ty in exact u).
-Definition ax_nat_ty :=
-  match rfq_ax_nat_ty with
-  | Success t => t
-  | _ => sRel 0
-  end.
-Definition rtax_nat_ty :=
-  ltac:(let u := eval lazy in ax_nat_ty in exact u).
+(* Definition fq_ax_nat_ty := *)
+(*   fullquote (2 ^ 18) Σ [] rtaxiom_nat_ty. *)
+(* Definition rfq_ax_nat_ty := *)
+(*   ltac:(let u := eval lazy in fq_ax_nat_ty in exact u). *)
+(* Definition ax_nat_ty := *)
+(*   match rfq_ax_nat_ty with *)
+(*   | Success t => t *)
+(*   | _ => sRel 0 *)
+(*   end. *)
+(* Definition rtax_nat_ty := *)
+(*   ltac:(let u := eval lazy in ax_nat_ty in exact u). *)
 
 (* Getting axiom_nat_rect as an axiom for ITT/ETT *)
-Quote Recursively Definition taxiom_nat_rect_ty := axiom_nat_rect_ty.
-Definition ttaxiom_nat_rect_ty :=
-  let t := Datatypes.snd taxiom_nat_rect_ty in
-  match hnf Σ [] t with
-  | Checked t => t
-  | _ => tRel 0
-  end.
-Definition rtaxiom_nat_rect_ty :=
-  ltac:(let u := eval lazy in ttaxiom_nat_rect_ty in exact u).
-
-(* Variable axf' : nat -> sort. *)
-
-(* Maybe we shouldn't use 0 for all sorts. *)
-(* Definition axf (i : nat) := *)
-(*   match i with *)
-(*   | i => 0 *)
+(* Quote Recursively Definition taxiom_nat_rect_ty := axiom_nat_rect_ty. *)
+(* Definition ttaxiom_nat_rect_ty := *)
+(*   let t := Datatypes.snd taxiom_nat_rect_ty in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
 (*   end. *)
+(* Definition rtaxiom_nat_rect_ty := *)
+(*   ltac:(let u := eval lazy in ttaxiom_nat_rect_ty in exact u). *)
 
-Definition fq_ax_nat_rect_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_ty.
-Definition rfq_ax_nat_rect_ty :=
-  ltac:(let u := eval lazy in fq_ax_nat_rect_ty in exact u).
-Definition ax_nat_rect_ty :=
-  match rfq_ax_nat_rect_ty with
-  | Success t => t
-  | _ => sRel 0
-  end.
-Definition rtax_nat_rect_ty :=
-  ltac:(let u := eval lazy in ax_nat_rect_ty in exact u).
+(* Definition fq_ax_nat_rect_ty := *)
+(*   fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_ty. *)
+(* Definition rfq_ax_nat_rect_ty := *)
+(*   ltac:(let u := eval lazy in fq_ax_nat_rect_ty in exact u). *)
+(* Definition ax_nat_rect_ty := *)
+(*   match rfq_ax_nat_rect_ty with *)
+(*   | Success t => t *)
+(*   | _ => sRel 0 *)
+(*   end. *)
+(* Definition rtax_nat_rect_ty := *)
+(*   ltac:(let u := eval lazy in ax_nat_rect_ty in exact u). *)
 
 
 
 (* axiom_nat_rect_zero *)
-Quote Recursively Definition taxiom_nat_rect_zero_ty := axiom_nat_rect_zero_ty.
-Definition ttaxiom_nat_rect_zero_ty :=
-  let t := Datatypes.snd taxiom_nat_rect_zero_ty in
-  match hnf Σ [] t with
-  | Checked t => t
-  | _ => tRel 0
-  end.
-Definition rtaxiom_nat_rect_zero_ty :=
-  ltac:(let u := eval lazy in ttaxiom_nat_rect_zero_ty in exact u).
-Definition fq_ax_nat_rect_zero_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_zero_ty.
-Definition rfq_ax_nat_rect_zero_ty :=
-  ltac:(let u := eval lazy in fq_ax_nat_rect_zero_ty in exact u).
-Definition ax_nat_rect_zero_ty :=
-  match rfq_ax_nat_rect_zero_ty with
-  | Success t => t
-  | _ => sRel 0
-  end.
-Definition rtax_nat_rect_zero_ty :=
-  ltac:(let u := eval lazy in ax_nat_rect_zero_ty in exact u).
+(* Quote Recursively Definition taxiom_nat_rect_zero_ty := axiom_nat_rect_zero_ty. *)
+(* Definition ttaxiom_nat_rect_zero_ty := *)
+(*   let t := Datatypes.snd taxiom_nat_rect_zero_ty in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
+(*   end. *)
+(* Definition rtaxiom_nat_rect_zero_ty := *)
+(*   ltac:(let u := eval lazy in ttaxiom_nat_rect_zero_ty in exact u). *)
+(* Definition fq_ax_nat_rect_zero_ty := *)
+(*   fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_zero_ty. *)
+(* Definition rfq_ax_nat_rect_zero_ty := *)
+(*   ltac:(let u := eval lazy in fq_ax_nat_rect_zero_ty in exact u). *)
+(* Definition ax_nat_rect_zero_ty := *)
+(*   match rfq_ax_nat_rect_zero_ty with *)
+(*   | Success t => t *)
+(*   | _ => sRel 0 *)
+(*   end. *)
+(* Definition rtax_nat_rect_zero_ty := *)
+(*   ltac:(let u := eval lazy in ax_nat_rect_zero_ty in exact u). *)
 
 
 
 (* axiom_nat_rect_succ *)
-Quote Recursively Definition taxiom_nat_rect_succ_ty := axiom_nat_rect_succ_ty.
-Definition ttaxiom_nat_rect_succ_ty :=
-  let t := Datatypes.snd taxiom_nat_rect_succ_ty in
-  match hnf Σ [] t with
-  | Checked t => t
-  | _ => tRel 0
-  end.
-Definition rtaxiom_nat_rect_succ_ty :=
-  ltac:(let u := eval lazy in ttaxiom_nat_rect_succ_ty in exact u).
-Definition fq_ax_nat_rect_succ_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_succ_ty.
-Definition rfq_ax_nat_rect_succ_ty :=
-  ltac:(let u := eval lazy in fq_ax_nat_rect_succ_ty in exact u).
-Definition ax_nat_rect_succ_ty :=
-  match rfq_ax_nat_rect_succ_ty with
-  | Success t => t
-  | _ => sRel 0
-  end.
-Definition rtax_nat_rect_succ_ty :=
-  ltac:(let u := eval lazy in ax_nat_rect_succ_ty in exact u).
+(* Quote Recursively Definition taxiom_nat_rect_succ_ty := axiom_nat_rect_succ_ty. *)
+(* Definition ttaxiom_nat_rect_succ_ty := *)
+(*   let t := Datatypes.snd taxiom_nat_rect_succ_ty in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
+(*   end. *)
+(* Definition rtaxiom_nat_rect_succ_ty := *)
+(*   ltac:(let u := eval lazy in ttaxiom_nat_rect_succ_ty in exact u). *)
+(* Definition fq_ax_nat_rect_succ_ty := *)
+(*   fullquote (2 ^ 18) Σ [] rtaxiom_nat_rect_succ_ty. *)
+(* Definition rfq_ax_nat_rect_succ_ty := *)
+(*   ltac:(let u := eval lazy in fq_ax_nat_rect_succ_ty in exact u). *)
+(* Definition ax_nat_rect_succ_ty := *)
+(*   match rfq_ax_nat_rect_succ_ty with *)
+(*   | Success t => t *)
+(*   | _ => sRel 0 *)
+(*   end. *)
+(* Definition rtax_nat_rect_succ_ty := *)
+(*   ltac:(let u := eval lazy in ax_nat_rect_succ_ty in exact u). *)
 
 
 
 (* axiom_vec *)
-Quote Recursively Definition taxiom_vec_ty := axiom_vec_ty.
-Definition ttaxiom_vec_ty :=
-  let t := Datatypes.snd taxiom_vec_ty in
-  match hnf Σ [] t with
-  | Checked t => t
-  | _ => tRel 0
-  end.
-Definition rtaxiom_vec_ty :=
-  ltac:(let u := eval lazy in ttaxiom_vec_ty in exact u).
-Definition fq_ax_vec_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vec_ty.
-Definition rfq_ax_vec_ty :=
-  ltac:(let u := eval lazy in fq_ax_vec_ty in exact u).
-Definition ax_vec_ty :=
-  match rfq_ax_vec_ty with
-  | Success t => t
-  | _ => sRel 0
-  end.
-Definition rtax_vec_ty :=
-  ltac:(let u := eval lazy in ax_vec_ty in exact u).
+(* Quote Recursively Definition taxiom_vec_ty := axiom_vec_ty. *)
+(* Definition ttaxiom_vec_ty := *)
+(*   let t := Datatypes.snd taxiom_vec_ty in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
+(*   end. *)
+(* Definition rtaxiom_vec_ty := *)
+(*   ltac:(let u := eval lazy in ttaxiom_vec_ty in exact u). *)
+(* Definition fq_ax_vec_ty := *)
+(*   fullquote (2 ^ 18) Σ [] rtaxiom_vec_ty. *)
+(* Definition rfq_ax_vec_ty := *)
+(*   ltac:(let u := eval lazy in fq_ax_vec_ty in exact u). *)
+(* Definition ax_vec_ty := *)
+(*   match rfq_ax_vec_ty with *)
+(*   | Success t => t *)
+(*   | _ => sRel 0 *)
+(*   end. *)
+(* Definition rtax_vec_ty := *)
+(*   ltac:(let u := eval lazy in ax_vec_ty in exact u). *)
 
 
 
 (* axiom_vnil *)
-Quote Recursively Definition taxiom_vnil_ty := axiom_vnil_ty.
-Definition ttaxiom_vnil_ty :=
-  let t := Datatypes.snd taxiom_vnil_ty in
-  match hnf Σ [] t with
-  | Checked t => t
-  | _ => tRel 0
-  end.
-Definition rtaxiom_vnil_ty :=
-  ltac:(let u := eval lazy in ttaxiom_vnil_ty in exact u).
-Definition fq_ax_vnil_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vnil_ty.
-Definition rfq_ax_vnil_ty :=
-  ltac:(let u := eval lazy in fq_ax_vnil_ty in exact u).
-Definition ax_vnil_ty :=
-  match rfq_ax_vnil_ty with
-  | Success t => t
-  | _ => sRel 0
-  end.
-Definition rtax_vnil_ty :=
-  ltac:(let u := eval lazy in ax_vnil_ty in exact u).
+(* Quote Recursively Definition taxiom_vnil_ty := axiom_vnil_ty. *)
+(* Definition ttaxiom_vnil_ty := *)
+(*   let t := Datatypes.snd taxiom_vnil_ty in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
+(*   end. *)
+(* Definition rtaxiom_vnil_ty := *)
+(*   ltac:(let u := eval lazy in ttaxiom_vnil_ty in exact u). *)
+(* Definition fq_ax_vnil_ty := *)
+(*   fullquote (2 ^ 18) Σ [] rtaxiom_vnil_ty. *)
+(* Definition rfq_ax_vnil_ty := *)
+(*   ltac:(let u := eval lazy in fq_ax_vnil_ty in exact u). *)
+(* Definition ax_vnil_ty := *)
+(*   match rfq_ax_vnil_ty with *)
+(*   | Success t => t *)
+(*   | _ => sRel 0 *)
+(*   end. *)
+(* Definition rtax_vnil_ty := *)
+(*   ltac:(let u := eval lazy in ax_vnil_ty in exact u). *)
 
 
 
 (* axiom_vcons *)
-Quote Recursively Definition taxiom_vcons_ty := axiom_vcons_ty.
-Definition ttaxiom_vcons_ty :=
-  let t := Datatypes.snd taxiom_vcons_ty in
-  match hnf Σ [] t with
-  | Checked t => t
-  | _ => tRel 0
-  end.
-Definition rtaxiom_vcons_ty :=
-  ltac:(let u := eval lazy in ttaxiom_vcons_ty in exact u).
-Definition fq_ax_vcons_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vcons_ty.
-Definition rfq_ax_vcons_ty :=
-  ltac:(let u := eval lazy in fq_ax_vcons_ty in exact u).
-Definition ax_vcons_ty :=
-  match rfq_ax_vcons_ty with
-  | Success t => t
-  | _ => sRel 0
-  end.
-Definition rtax_vcons_ty :=
-  ltac:(let u := eval lazy in ax_vcons_ty in exact u).
+(* Quote Recursively Definition taxiom_vcons_ty := axiom_vcons_ty. *)
+(* Definition ttaxiom_vcons_ty := *)
+(*   let t := Datatypes.snd taxiom_vcons_ty in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
+(*   end. *)
+(* Definition rtaxiom_vcons_ty := *)
+(*   ltac:(let u := eval lazy in ttaxiom_vcons_ty in exact u). *)
+(* Definition fq_ax_vcons_ty := *)
+(*   fullquote (2 ^ 18) Σ [] rtaxiom_vcons_ty. *)
+(* Definition rfq_ax_vcons_ty := *)
+(*   ltac:(let u := eval lazy in fq_ax_vcons_ty in exact u). *)
+(* Definition ax_vcons_ty := *)
+(*   match rfq_ax_vcons_ty with *)
+(*   | Success t => t *)
+(*   | _ => sRel 0 *)
+(*   end. *)
+(* Definition rtax_vcons_ty := *)
+(*   ltac:(let u := eval lazy in ax_vcons_ty in exact u). *)
 
 
 
 (* axiom_vec_rect *)
-Quote Recursively Definition taxiom_vec_rect_ty := axiom_vec_rect_ty.
-Definition ttaxiom_vec_rect_ty :=
-  let t := Datatypes.snd taxiom_vec_rect_ty in
-  match hnf Σ [] t with
-  | Checked t => t
-  | _ => tRel 0
-  end.
-Definition rtaxiom_vec_rect_ty :=
-  ltac:(let u := eval lazy in ttaxiom_vec_rect_ty in exact u).
-Definition fq_ax_vec_rect_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_ty.
-Definition rfq_ax_vec_rect_ty :=
-  ltac:(let u := eval lazy in fq_ax_vec_rect_ty in exact u).
-Definition ax_vec_rect_ty :=
-  match rfq_ax_vec_rect_ty with
-  | Success t => t
-  | _ => sRel 0
-  end.
-Definition rtax_vec_rect_ty :=
-  ltac:(let u := eval lazy in ax_vec_rect_ty in exact u).
+(* Quote Recursively Definition taxiom_vec_rect_ty := axiom_vec_rect_ty. *)
+(* Definition ttaxiom_vec_rect_ty := *)
+(*   let t := Datatypes.snd taxiom_vec_rect_ty in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
+(*   end. *)
+(* Definition rtaxiom_vec_rect_ty := *)
+(*   ltac:(let u := eval lazy in ttaxiom_vec_rect_ty in exact u). *)
+(* Definition fq_ax_vec_rect_ty := *)
+(*   fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_ty. *)
+(* Definition rfq_ax_vec_rect_ty := *)
+(*   ltac:(let u := eval lazy in fq_ax_vec_rect_ty in exact u). *)
+(* Definition ax_vec_rect_ty := *)
+(*   match rfq_ax_vec_rect_ty with *)
+(*   | Success t => t *)
+(*   | _ => sRel 0 *)
+(*   end. *)
+(* Definition rtax_vec_rect_ty := *)
+(*   ltac:(let u := eval lazy in ax_vec_rect_ty in exact u). *)
 
 
 
 (* axiom_vec_rect_vnil *)
-Quote Recursively Definition taxiom_vec_rect_vnil_ty := axiom_vec_rect_vnil_ty.
-Definition ttaxiom_vec_rect_vnil_ty :=
-  let t := Datatypes.snd taxiom_vec_rect_vnil_ty in
-  match hnf Σ [] t with
-  | Checked t => t
-  | _ => tRel 0
-  end.
-Definition rtaxiom_vec_rect_vnil_ty :=
-  ltac:(let u := eval lazy in ttaxiom_vec_rect_vnil_ty in exact u).
-Definition fq_ax_vec_rect_vnil_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_vnil_ty.
-Definition rfq_ax_vec_rect_vnil_ty :=
-  ltac:(let u := eval lazy in fq_ax_vec_rect_vnil_ty in exact u).
-Definition ax_vec_rect_vnil_ty :=
-  match rfq_ax_vec_rect_vnil_ty with
-  | Success t => t
-  | _ => sRel 0
-  end.
-Definition rtax_vec_rect_vnil_ty :=
-  ltac:(let u := eval lazy in ax_vec_rect_vnil_ty in exact u).
+(* Quote Recursively Definition taxiom_vec_rect_vnil_ty := axiom_vec_rect_vnil_ty. *)
+(* Definition ttaxiom_vec_rect_vnil_ty := *)
+(*   let t := Datatypes.snd taxiom_vec_rect_vnil_ty in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
+(*   end. *)
+(* Definition rtaxiom_vec_rect_vnil_ty := *)
+(*   ltac:(let u := eval lazy in ttaxiom_vec_rect_vnil_ty in exact u). *)
+(* Definition fq_ax_vec_rect_vnil_ty := *)
+(*   fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_vnil_ty. *)
+(* Definition rfq_ax_vec_rect_vnil_ty := *)
+(*   ltac:(let u := eval lazy in fq_ax_vec_rect_vnil_ty in exact u). *)
+(* Definition ax_vec_rect_vnil_ty := *)
+(*   match rfq_ax_vec_rect_vnil_ty with *)
+(*   | Success t => t *)
+(*   | _ => sRel 0 *)
+(*   end. *)
+(* Definition rtax_vec_rect_vnil_ty := *)
+(*   ltac:(let u := eval lazy in ax_vec_rect_vnil_ty in exact u). *)
 
 
 
 (* axiom_vec_rect_vcons *)
-Quote Recursively Definition taxiom_vec_rect_vcons_ty := axiom_vec_rect_vcons_ty.
-Definition ttaxiom_vec_rect_vcons_ty :=
-  let t := Datatypes.snd taxiom_vec_rect_vcons_ty in
-  match hnf Σ [] t with
-  | Checked t => t
-  | _ => tRel 0
-  end.
-Definition rtaxiom_vec_rect_vcons_ty :=
-  ltac:(let u := eval lazy in ttaxiom_vec_rect_vcons_ty in exact u).
-Definition fq_ax_vec_rect_vcons_ty :=
-  fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_vcons_ty.
-Definition rfq_ax_vec_rect_vcons_ty :=
-  ltac:(let u := eval lazy in fq_ax_vec_rect_vcons_ty in exact u).
-Definition ax_vec_rect_vcons_ty :=
-  match rfq_ax_vec_rect_vcons_ty with
-  | Success t => t
-  | _ => sRel 0
-  end.
-Definition rtax_vec_rect_vcons_ty :=
-  ltac:(let u := eval lazy in ax_vec_rect_vcons_ty in exact u).
+(* Quote Recursively Definition taxiom_vec_rect_vcons_ty := axiom_vec_rect_vcons_ty. *)
+(* Definition ttaxiom_vec_rect_vcons_ty := *)
+(*   let t := Datatypes.snd taxiom_vec_rect_vcons_ty in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
+(*   end. *)
+(* Definition rtaxiom_vec_rect_vcons_ty := *)
+(*   ltac:(let u := eval lazy in ttaxiom_vec_rect_vcons_ty in exact u). *)
+(* Definition fq_ax_vec_rect_vcons_ty := *)
+(*   fullquote (2 ^ 18) Σ [] rtaxiom_vec_rect_vcons_ty. *)
+(* Definition rfq_ax_vec_rect_vcons_ty := *)
+(*   ltac:(let u := eval lazy in fq_ax_vec_rect_vcons_ty in exact u). *)
+(* Definition ax_vec_rect_vcons_ty := *)
+(*   match rfq_ax_vec_rect_vcons_ty with *)
+(*   | Success t => t *)
+(*   | _ => sRel 0 *)
+(*   end. *)
+(* Definition rtax_vec_rect_vcons_ty := *)
+(*   ltac:(let u := eval lazy in ax_vec_rect_vcons_ty in exact u). *)
 
 
 
@@ -536,18 +528,18 @@ Definition rtax_vec_rect_vcons_ty :=
 (* The global context *)
 
 Definition Σi : sglobal_context := [
-  decl "vec_rect_vcons" rtax_vec_rect_vcons_ty ;
-  decl "vec_rect_vnil" rtax_vec_rect_vnil_ty ;
-  decl "vec_rect" rtax_vec_rect_ty ;
-  decl "vcons" rtax_vcons_ty ;
-  decl "vnil" rtax_vnil_ty ;
-  decl "vec" rtax_vec_ty ;
-  decl "nat_rect_succ" rtax_nat_rect_succ_ty ;
-  decl "nat_rect_zero" rtax_nat_rect_zero_ty ;
-  decl "nat_rect" rtax_nat_rect_ty ;
-  decl "succ" (sAx "nat" ==> sAx "nat") ;
-  decl "zero" (sAx "nat") ;
-  decl "nat" rtax_nat_ty
+  (* decl "vec_rect_vcons" rtax_vec_rect_vcons_ty ; *)
+  (* decl "vec_rect_vnil" rtax_vec_rect_vnil_ty ; *)
+  (* decl "vec_rect" rtax_vec_rect_ty ; *)
+  (* decl "vcons" rtax_vcons_ty ; *)
+  (* decl "vnil" rtax_vnil_ty ; *)
+  (* decl "vec" rtax_vec_ty ; *)
+  (* decl "nat_rect_succ" rtax_nat_rect_succ_ty ; *)
+  (* decl "nat_rect_zero" rtax_nat_rect_zero_ty ; *)
+  (* decl "nat_rect" rtax_nat_rect_ty ; *)
+  (* decl "succ" (sAx "nat" ==> sAx "nat") ; *)
+  (* decl "zero" (sAx "nat") ; *)
+  (* decl "nat" rtax_nat_ty *)
 ].
 
 Arguments Σi : simpl never.
@@ -555,18 +547,18 @@ Arguments Σi : simpl never.
 Fact hΣi : type_glob Σi.
 Proof.
   repeat glob ; lazy.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
 Defined.
 
 (* Now some useful lemmata *)
