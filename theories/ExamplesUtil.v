@@ -12,6 +12,13 @@ Existing Instance Sorts.type_in_type.
 
 (* The context for Template Coq *)
 
+Inductive vec A : nat -> Type :=
+| vnil : vec A 0
+| vcons : A -> forall n, vec A n -> vec A (S n).
+
+Arguments vnil {_}.
+Arguments vcons {_} _ _ _.
+
 Definition axiom_nat_ty := ltac:(let t := type of axiom_nat in exact t).
 Definition axiom_zero_ty := ltac:(let t := type of axiom_zero in exact t).
 Definition axiom_succ_ty := ltac:(let t := type of axiom_succ in exact t).

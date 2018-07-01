@@ -14,6 +14,8 @@ Inductive fq_error :=
 | NotHandled
 | TypingError (msg : string) (e : type_error) (Γ : context) (t : term)
 | WrongType (wanted : string) (got : term)
+| UnknownInductive (id : string)
+| UnknownConst (id : string)
 .
 
 Inductive fq_result A :=
@@ -46,7 +48,8 @@ Close Scope s_scope.
 Local Existing Instance Sorts.type_in_type.
 
 Fixpoint fullquote (fuel : nat) (Σ : global_context) (Γ : context) (t : term)
-         {struct fuel} : fq_result sterm :=
+         (indt : assoc sterm) (constt : assoc sterm) {struct fuel}
+  : fq_result sterm :=
   match fuel with
   | 0 => raise NotEnoughFuel
   | S fuel =>
@@ -54,47 +57,33 @@ Fixpoint fullquote (fuel : nat) (Σ : global_context) (Γ : context) (t : term)
     | tRel n => ret (sRel n)
     | tSort _ => ret (sSort tt)
     | tProd nx A B =>
-      A' <- fullquote fuel Σ Γ A ;;
-      B' <- fullquote fuel Σ (Γ ,, vass nx A) B  ;;
+      A' <- fullquote fuel Σ Γ A indt constt ;;
+      B' <- fullquote fuel Σ (Γ ,, vass nx A) B indt constt ;;
       ret (sProd nx A' B')
     | tLambda nx A t =>
       match infer_hnf fuel Σ (Γ ,, vass nx A) t with
       | Checked B =>
-        A' <- fullquote fuel Σ Γ A ;;
-        B' <- fullquote fuel Σ (Γ ,, vass nx A) B ;;
-        t' <- fullquote fuel Σ (Γ ,, vass nx A) t ;;
+        A' <- fullquote fuel Σ Γ A indt constt ;;
+        B' <- fullquote fuel Σ (Γ ,, vass nx A) B indt constt ;;
+        t' <- fullquote fuel Σ (Γ ,, vass nx A) t indt constt ;;
         ret (sLambda nx A' B' t')
       | TypeError e => raise (TypingError "Lambda" e (Γ ,, vass nx A) t)
       end
     | tApp (tConst "Translation.Quotes.candidate" []) [ _ ; _ ; t ] =>
-      fullquote fuel Σ Γ t
-    (* The following examples should be handled more generically,
-       with a correspondance table. [TODO]
-     *)
-    | tInd {| inductive_mind := "Coq.Init.Datatypes.nat"; inductive_ind := 0 |} [] =>
-      ret (sAx "nat")
-    | tConstruct {| inductive_mind := "Coq.Init.Datatypes.nat"; inductive_ind := 0 |} 0 [] =>
-      ret (sAx "zero")
-    | tConstruct {| inductive_mind := "Coq.Init.Datatypes.nat"; inductive_ind := 0 |} 1 [] =>
-      ret (sAx "succ")
-    | tConst "Coq.Init.Datatypes.nat_rect" [] =>
-      ret (sAx "nat_rect")
-    | tConst "Coq.Init.Datatypes.nat_rect_zero" [] =>
-      ret (sAx "nat_rect_zero")
-    | tConst "Coq.Init.Datatypes.nat_rect_succ" [] =>
-      ret (sAx "nat_rect_succ")
-    | tInd {| inductive_mind := "Translation.Quotes.vec"; inductive_ind := 0 |} [] =>
-      ret (sAx "vec")
-    | tConstruct {| inductive_mind := "Translation.Quotes.vec"; inductive_ind := 0 |} 0 [] =>
-      ret (sAx "vnil")
-    | tConstruct {| inductive_mind := "Translation.Quotes.vec"; inductive_ind := 0 |} 1 [] =>
-      ret (sAx "vcons")
-    | tConst "Translation.Quotes.vec_rect" [] =>
-      ret (sAx "vec_rect")
-    (* Resuming *)
+      fullquote fuel Σ Γ t indt constt
+    | tInd {| inductive_mind := id ; inductive_ind := _ |} [] =>
+      match assoc_at id indt with
+      | Some t => ret t
+      | None => raise (UnknownInductive id)
+      end
+    | tConst id [] =>
+      match assoc_at id constt with
+      | Some t => ret t
+      | None => raise (UnknownConst id)
+      end
     | tApp (tInd {| inductive_mind := "Translation.util.pp_sigT"; inductive_ind := 0 |} []) [ A ; B ] =>
-      A' <- fullquote fuel Σ Γ A  ;;
-      B' <- fullquote fuel Σ Γ B  ;;
+      A' <- fullquote fuel Σ Γ A indt constt ;;
+      B' <- fullquote fuel Σ Γ B indt constt ;;
       ret (sSum nAnon A' (sApp (lift0 1 B') (lift0 1 A') (sSort tt) (sRel 0)))
     (* We cannot quote both ∑ and * to Σ-types *)
     (* | tApp (tInd {| inductive_mind := "Translation.util.pp_prod"; inductive_ind := 0 |} []) [ A ; B ] => *)
@@ -104,26 +93,26 @@ Fixpoint fullquote (fuel : nat) (Σ : global_context) (Γ : context) (t : term)
     (*   let '(B') := B' in *)
     (*   ret (sSum nAnon A' (lift0 1 B')) *)
     | tApp (tInd {| inductive_mind := "Coq.Init.Logic.eq"; inductive_ind := 0 |} []) [ A ; u ; v ] =>
-      A' <- fullquote fuel Σ Γ A  ;;
-      u' <- fullquote fuel Σ Γ u  ;;
-      v' <- fullquote fuel Σ Γ v  ;;
+      A' <- fullquote fuel Σ Γ A indt constt ;;
+      u' <- fullquote fuel Σ Γ u indt constt ;;
+      v' <- fullquote fuel Σ Γ v indt constt ;;
       ret (sEq A' u' v')
     | tApp u [] =>
-      fullquote fuel Σ Γ u 
+      fullquote fuel Σ Γ u indt constt
     | tApp u [ v ] =>
       match infer_hnf fuel Σ Γ u with
       | Checked (tProd nx A B) =>
-        u' <- fullquote fuel Σ Γ u  ;;
-        A' <- fullquote fuel Σ Γ A  ;;
-        B' <- fullquote fuel Σ (Γ ,, vass nx A) B  ;;
-        v' <- fullquote fuel Σ Γ v  ;;
+        u' <- fullquote fuel Σ Γ u indt constt ;;
+        A' <- fullquote fuel Σ Γ A indt constt ;;
+        B' <- fullquote fuel Σ (Γ ,, vass nx A) B indt constt ;;
+        v' <- fullquote fuel Σ Γ v indt constt ;;
         ret (sApp u' A' B' v')
       | Checked T => raise (WrongType "Prod" T)
       | TypeError e => raise (TypingError "App1" e Γ u)
       end
     | tApp u (v :: l) =>
-      fullquote fuel Σ Γ (tApp (tApp u [ v ]) l)
-    | tCast t _ _ => fullquote fuel Σ Γ t
+      fullquote fuel Σ Γ (tApp (tApp u [ v ]) l) indt constt
+    | tCast t _ _ => fullquote fuel Σ Γ t indt constt
     | _ => raise NotHandled
     end
   end.
