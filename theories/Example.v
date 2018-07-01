@@ -7,10 +7,32 @@ From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast LiftSubst Typing Checker.
 From Translation Require Import util Sorts SAst SLiftSubst SCommon ITyping
                                 ITypingLemmata ITypingAdmissible XTyping
-                                Translation FinalTranslation ExamplesUtil.
+                                Quotes Translation FinalTranslation
+                                FullQuote ExamplesUtil.
 
 Open Scope string_scope.
 Open Scope x_scope.
+
+(*! EXAMPLE 1 (NEW) *)
+
+Fail Definition pseudoid := fun (A B : Type) (e : A = B) (x : A) => x : B.
+
+(* Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}. *)
+Quote Definition pseudoid := (fun (A B : Type) (e : A = B) (x : A) => {! x !} : B).
+
+Definition tm_pseudoid :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid.
+
+(* We actually just want the definition! *)
+(* Quote Recursively Definition fold_pseudoid := pseudoid. *)
+(* Definition tc_pseudoid := *)
+(*   Eval lazy in *)
+(*   let Σ := pair (Datatypes.fst fold_pseudoid) init_graph in *)
+(*   let t := Datatypes.snd fold_pseudoid in *)
+(*   match hnf Σ [] t with *)
+(*   | Checked t => t *)
+(*   | _ => tRel 0 *)
+(*   end. *)
 
 (*! EXAMPLE 1:
     λ A B e x ⇒ x : ∀ (A B : Type), A = B → A → B

@@ -122,7 +122,8 @@ Fixpoint fullquote (fuel : nat) (Σ : global_context) (Γ : context) (t : term)
       | TypeError e => raise (TypingError "App1" e Γ u)
       end
     | tApp u (v :: l) =>
-      fullquote fuel Σ Γ (tApp (tApp u [ v ]) l) 
+      fullquote fuel Σ Γ (tApp (tApp u [ v ]) l)
+    | tCast t _ _ => fullquote fuel Σ Γ t
     | _ => raise NotHandled
     end
   end.

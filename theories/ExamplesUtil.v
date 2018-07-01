@@ -90,6 +90,8 @@ Definition glob_term :=
   let _ := @axiom_vec_rect_ty in
   let _ := @axiom_vec_rect_vnil_ty in
   let _ := @axiom_vec_rect_vcons_ty in
+  (* Candidate *)
+  let _ := @candidate in
   Type.
 
 Quote Recursively Definition glob_prog := @glob_term.
