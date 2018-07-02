@@ -13,6 +13,8 @@ From Translation Require Import util Sorts SAst SLiftSubst SCommon ITyping
 Open Scope string_scope.
 Open Scope x_scope.
 
+Definition nomap : string -> nat -> option sterm := fun _ _ => None.
+
 (*! EXAMPLE 1 *)
 
 Fail Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := x.
@@ -25,7 +27,7 @@ Quote Definition pseudoid_type :=
   ltac:(let T := type of pseudoid in exact T).
 
 Definition pretm_pseudoid :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_term empty empty.
+  Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_term empty empty nomap.
 Definition tm_pseudoid :=
   Eval lazy in 
   match pretm_pseudoid with
@@ -34,7 +36,7 @@ Definition tm_pseudoid :=
   end.
 
 Definition prety_pseudoid :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_type empty empty.
+  Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_type empty empty nomap.
 Definition ty_pseudoid :=
   Eval lazy in 
   match prety_pseudoid with
@@ -77,7 +79,7 @@ Quote Definition realid_type :=
   ltac:(let T := type of realid in exact T).
 
 Definition pretm_realid :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] realid_term empty empty.
+  Eval lazy in fullquote (2 ^ 18) Σ [] realid_term empty empty nomap.
 Definition tm_realid :=
   Eval lazy in 
   match pretm_realid with
@@ -86,7 +88,7 @@ Definition tm_realid :=
   end.
 
 Definition prety_realid :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] realid_type empty empty.
+  Eval lazy in fullquote (2 ^ 18) Σ [] realid_type empty empty nomap.
 Definition ty_realid :=
   Eval lazy in 
   match prety_realid with
@@ -139,9 +141,7 @@ Definition vrev0 {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
            n v m acc.
 
-Quote Definition vrev0_term := 
-  (* ltac:(let t := eval compute in @vrev0 in exact t). *)
-  (* ltac:(pose (t := @vrev0) ; unfold vrev0 in t ; exact t). *)
+Quote Definition vrev0_term :=
   ltac:(let t := eval unfold vrev0 in @vrev0 in exact t).
 Quote Definition vrev0_type := 
   ltac:(let T := type of @vrev0 in exact T).
@@ -166,8 +166,17 @@ Definition constt :=
      "Translation.ExamplesUtil.vec_rect" --> sAx "vec_rect"
   >].
 
+Definition cot (id : string) (n : nat) : option sterm :=
+  match id, n with
+  | "Coq.Init.Datatypes.nat", 0 => Some (sAx "O")
+  | "Coq.Init.Datatypes.nat", 1 => Some (sAx "S")
+  | "Translation.ExamplesUtil.vec", 0 => Some (sAx "vnil")
+  | "Translation.ExamplesUtil.vec", 1 => Some (sAx "vcons")
+  | _,_ => None
+  end.
+
 Definition pretm_vrev0 :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vrev0_term indt constt.
+  Eval lazy in fullquote (2 ^ 18) Σ [] vrev0_term indt constt cot.
 Definition tm_vrev0 :=
   Eval lazy in 
   match pretm_vrev0 with
@@ -176,7 +185,7 @@ Definition tm_vrev0 :=
   end.
 
 Definition prety_vrev0 :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vrev0_type empty empty.
+  Eval lazy in fullquote (2 ^ 18) Σ [] vrev0_type indt constt cot.
 Definition ty_vrev0 :=
   Eval lazy in 
   match prety_vrev0 with
@@ -187,8 +196,6 @@ Definition ty_vrev0 :=
 Lemma type_vrev0 : Σi ;;; [] |-x tm_vrev0 : ty_vrev0.
 Proof.
   unfold tm_vrev0, ty_vrev0.
-  ettcheck. cbn.
-  eapply reflection with (e := sRel 1).
   ettcheck.
 Defined.
 
