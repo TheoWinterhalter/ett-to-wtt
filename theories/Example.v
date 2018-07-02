@@ -8,7 +8,7 @@ From Template Require Import Ast LiftSubst Typing Checker.
 From Translation Require Import util Sorts SAst SLiftSubst SCommon ITyping
                                 ITypingLemmata ITypingAdmissible XTyping
                                 Quotes Translation FinalTranslation
-                                FullQuote ExamplesUtil.
+                                FullQuote ExamplesUtil ExampleQuotes.
 
 Open Scope string_scope.
 Open Scope x_scope.
@@ -122,15 +122,6 @@ Make Definition coq_realid :=
 
 (*! EXAMPLE 3 *)
 
-(* Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m). *)
-(* Proof. *)
-(*   revert m acc. *)
-(*   induction v. *)
-(*   - intros m acc. exact acc. *)
-(*   - intros m acc. specialize (IHv _ (vcons a m acc)). *)
-(*     exact {! IHv !}. *)
-(* Defined. *)
-
 Fail Definition vrev0 {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) 
            (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc))
@@ -145,35 +136,6 @@ Quote Definition vrev0_term :=
   ltac:(let t := eval unfold vrev0 in @vrev0 in exact t).
 Quote Definition vrev0_type := 
   ltac:(let T := type of @vrev0 in exact T).
-
-Notation "s --> t" := (acons s t) (at level 20).
-Notation "[< a ; b ; .. ; c >]" :=
-  (a (b (.. (c empty) ..))).
-Notation "[< a >]" := (a empty).
-Notation "[< >]" := (empty).
-
-(* Notation "[< a --> x ; b --> y ; .. ; c --> z >]" := *)
-(*   (acons a x (acons b y .. (acons c z empty) ..)). *)
-
-Definition indt :=
-  [< "Coq.Init.Datatypes.nat" --> sAx "nat" ;
-     "Translation.ExamplesUtil.vec" --> sAx "vec" ;
-     "Coq.Init.Datatypes.nat" --> sAx "nat"
-  >].
-
-Definition constt :=
-  [< "Coq.Init.Nat.add" --> sAx "add" ;
-     "Translation.ExamplesUtil.vec_rect" --> sAx "vec_rect"
-  >].
-
-Definition cot (id : string) (n : nat) : option sterm :=
-  match id, n with
-  | "Coq.Init.Datatypes.nat", 0 => Some (sAx "O")
-  | "Coq.Init.Datatypes.nat", 1 => Some (sAx "S")
-  | "Translation.ExamplesUtil.vec", 0 => Some (sAx "vnil")
-  | "Translation.ExamplesUtil.vec", 1 => Some (sAx "vcons")
-  | _,_ => None
-  end.
 
 Definition pretm_vrev0 :=
   Eval lazy in fullquote (2 ^ 18) Σ [] vrev0_term indt constt cot.
@@ -197,6 +159,8 @@ Lemma type_vrev0 : Σi ;;; [] |-x tm_vrev0 : ty_vrev0.
 Proof.
   unfold tm_vrev0, ty_vrev0.
   ettcheck.
+  - eapply reflection with (e := sAx "vrev_eq0"). ettcheck.
+  - eapply reflection with (e := sAx "vrev_eq1"). ettcheck.
 Defined.
 
 Definition itt_vrev0 : sterm :=
@@ -216,21 +180,3 @@ Make Definition coq_vrev0 :=
               end)
       in exact t
   ).
-
-(*! EXAMPLE 4 *)
-
-Fail Equations vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
-  vrev vnil acc := acc ;
-  vrev (vcons a n v) acc := vrev v (vcons a m acc).
-
-Equations vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
-  vrev vnil acc := acc ;
-  vrev (vcons a n v) acc := {! vrev v (vcons a m acc) !}.
-
-(* TODO
-   - We need to tell equations to yield a definition with eliminators instead.
-   - Extend the context with what is needed for this to type check:
-     - nat(O,S), vec(vnil, vcons, vec_rect)
-     - vec A (0 + m) = vec A m
-     - vec A (n + S m) = vec A (S n + m)
- *)
