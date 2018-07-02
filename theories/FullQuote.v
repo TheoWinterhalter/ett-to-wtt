@@ -11,7 +11,7 @@ Import MonadNotation.
 
 Inductive fq_error :=
 | NotEnoughFuel
-| NotHandled
+| NotHandled (t : term)
 | TypingError (msg : string) (e : type_error) (Γ : context) (t : term)
 | WrongType (wanted : string) (got : term)
 | UnknownInductive (id : string)
@@ -113,6 +113,6 @@ Fixpoint fullquote (fuel : nat) (Σ : global_context) (Γ : context) (t : term)
     | tApp u (v :: l) =>
       fullquote fuel Σ Γ (tApp (tApp u [ v ]) l) indt constt
     | tCast t _ _ => fullquote fuel Σ Γ t indt constt
-    | _ => raise NotHandled
+    | _ => raise (NotHandled t)
     end
   end.

@@ -99,6 +99,11 @@ Definition glob_term :=
   (* let _ := @axiom_vec_rect_vcons_ty in *)
   (* Candidate *)
   let _ := @candidate in
+  (* For examples *)
+  let _ := nat in
+  let _ := vec in
+  let _ := vec_rect in
+  let _ := Nat.add in
   Type.
 
 Quote Recursively Definition glob_prog := @glob_term.

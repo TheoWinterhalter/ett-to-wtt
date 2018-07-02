@@ -120,6 +120,98 @@ Make Definition coq_realid :=
 
 (*! EXAMPLE 3 *)
 
+(* Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m). *)
+(* Proof. *)
+(*   revert m acc. *)
+(*   induction v. *)
+(*   - intros m acc. exact acc. *)
+(*   - intros m acc. specialize (IHv _ (vcons a m acc)). *)
+(*     exact {! IHv !}. *)
+(* Defined. *)
+
+Fail Definition vrev0 {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) 
+           (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc))
+           n v m acc.
+
+Definition vrev0 {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) 
+           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
+           n v m acc.
+
+Quote Definition vrev0_term := 
+  (* ltac:(let t := eval compute in @vrev0 in exact t). *)
+  (* ltac:(pose (t := @vrev0) ; unfold vrev0 in t ; exact t). *)
+  ltac:(let t := eval unfold vrev0 in @vrev0 in exact t).
+Quote Definition vrev0_type := 
+  ltac:(let T := type of @vrev0 in exact T).
+
+Notation "s --> t" := (acons s t) (at level 20).
+Notation "[< a ; b ; .. ; c >]" :=
+  (a (b (.. (c empty) ..))).
+Notation "[< a >]" := (a empty).
+Notation "[< >]" := (empty).
+
+(* Notation "[< a --> x ; b --> y ; .. ; c --> z >]" := *)
+(*   (acons a x (acons b y .. (acons c z empty) ..)). *)
+
+Definition indt :=
+  [< "Coq.Init.Datatypes.nat" --> sAx "nat" ;
+     "Translation.ExamplesUtil.vec" --> sAx "vec" ;
+     "Coq.Init.Datatypes.nat" --> sAx "nat"
+  >].
+
+Definition constt :=
+  [< "Coq.Init.Nat.add" --> sAx "add" ;
+     "Translation.ExamplesUtil.vec_rect" --> sAx "vec_rect"
+  >].
+
+Definition pretm_vrev0 :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vrev0_term indt constt.
+Definition tm_vrev0 :=
+  Eval lazy in 
+  match pretm_vrev0 with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Definition prety_vrev0 :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vrev0_type empty empty.
+Definition ty_vrev0 :=
+  Eval lazy in 
+  match prety_vrev0 with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Lemma type_vrev0 : Σi ;;; [] |-x tm_vrev0 : ty_vrev0.
+Proof.
+  unfold tm_vrev0, ty_vrev0.
+  ettcheck. cbn.
+  eapply reflection with (e := sRel 1).
+  ettcheck.
+Defined.
+
+Definition itt_vrev0 : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_vrev0 istrans_nil in t.
+
+Definition tc_vrev0 : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_vrev0 empty.
+
+Make Definition coq_vrev0 :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_vrev0 with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
+
+(*! EXAMPLE 4 *)
+
 Fail Equations vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
   vrev vnil acc := acc ;
   vrev (vcons a n v) acc := vrev v (vcons a m acc).
