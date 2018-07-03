@@ -1,4 +1,5 @@
-(* -*- coq-prog-args: ("-emacs" "-type-in-type") -*- *)
+Require Import TypingFlags.Loader.
+Set Type In Type.
 
 (* Quotations of terms for examples *)
 
@@ -359,16 +360,22 @@ Notation "[< >]" := (empty).
 (* Notation "[< a --> x ; b --> y ; .. ; c --> z >]" := *)
 (*   (acons a x (acons b y .. (acons c z empty) ..)). *)
 
-Test Quote @vcons.
+Quote Definition qnat := nat.
+Quote Definition qvec := vec.
+Quote Definition qadd := Nat.add.
+Quote Definition qO := O.
+Quote Definition qS := S.
+Quote Definition qvnil := @vnil.
+Quote Definition qvcons := @vcons.
 
 Definition axoc :=
-  [< "nat" --> tInd {| inductive_mind := "Coq.Init.Datatypes.nat"; inductive_ind := 0 |} [] ;
-     "vec" --> tInd {| inductive_mind := "Top.vec"; inductive_ind := 0 |} [] ;
-     "add" --> tConst "Coq.Init.Nat.add" [] ;
-     "O" --> tConstruct {| inductive_mind := "Coq.Init.Datatypes.nat"; inductive_ind := 0 |} 0 [] ;
-     "S" --> tConstruct {| inductive_mind := "Coq.Init.Datatypes.nat"; inductive_ind := 0 |} 1 [] ;
-     "vnil" --> tConstruct {| inductive_mind := "Top.vec"; inductive_ind := 0 |} 0 [] ;
-     "vcons" --> tConstruct {| inductive_mind := "Top.vec"; inductive_ind := 0 |} 1 []
+  [< "nat" --> qnat ;
+     "vec" --> qvec ;
+     "add" --> qadd ;
+     "O" --> qO ;
+     "S" --> qS ;
+     "vnil" --> qvnil ;
+     "vcons" --> qvcons
   >].
 
 Definition tc_obligation1 : tsl_result term :=
