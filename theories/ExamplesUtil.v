@@ -51,8 +51,10 @@ Definition glob_term :=
   let _ := vec in
   let _ := vec_rect in
   let _ := Nat.add in
-  let _ := vrev_eq0 in
-  let _ := vrev_eq1 in
+  let _ := vrev_obligation1 in
+  let _ := vrev_obligation2 in
+  let _ := vrev_obligation3 in
+  let _ := vrev_obligation4 in
   Type.
 
 Quote Recursively Definition glob_prog := @glob_term.
@@ -354,36 +356,14 @@ Definition ty_add :=
   | Error _ => sRel 0
   end.
 
-(* vrev_eq0 *)
-Quote Definition vrev_eq0_type :=
-  ltac:(let T := type of @vrev_eq0 in exact T).
-Definition prety_vrev_eq0 :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_eq0_type indt constt cot.
-Definition ty_vrev_eq0 :=
-  Eval lazy in
-  match prety_vrev_eq0 with
-  | Success t => t
-  | Error _ => sRel 0
-  end.
-
-(* vrev_eq1 *)
-Quote Definition vrev_eq1_type :=
-  ltac:(let T := type of @vrev_eq1 in exact T).
-Definition prety_vrev_eq1 :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_eq1_type indt constt cot.
-Definition ty_vrev_eq1 :=
-  Eval lazy in
-  match prety_vrev_eq1 with
-  | Success t => t
-  | Error _ => sRel 0
-  end.
-
 
 (* The global context *)
 
 Definition Σi : sglobal_context := [
-  decl "vrev_eq1" ty_vrev_eq1 ;
-  decl "vrev_eq0" ty_vrev_eq0 ;
+  decl "vrev_obligation4" ty_obligation4 ;
+  decl "vrev_obligation3" ty_obligation3 ;
+  decl "vrev_obligation2" ty_obligation2 ;
+  decl "vrev_obligation1" ty_obligation1 ;
   decl "add" ty_add ;
   decl "vec_rect" ty_vec_rect ;
   decl "vcons" ty_vcons ;
@@ -409,6 +389,9 @@ Proof.
   - ittcheck.
   - ittcheck.
   - ittcheck.
+  - ittcheck.
+  - ittcheck.
+  Unshelve. all: exact nAnon.
 Defined.
 
 (* Now some useful lemmata *)
