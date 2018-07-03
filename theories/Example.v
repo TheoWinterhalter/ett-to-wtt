@@ -1,4 +1,5 @@
-(* -*- coq-prog-args: ("-emacs" "-type-in-type") -*- *)
+Require Import TypingFlags.Loader.
+Set Type In Type.
 
 (* Example of the whole translation *)
 
@@ -159,59 +160,46 @@ Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev.
 Proof.
   unfold tm_vrev, ty_vrev.
   ettcheck.
-  - Opaque Σi.
-    assert (xmeta_eq_conv : forall {Σ Γ u v A B}, Σ ;;; Γ |-x u = v : A -> A = B -> Σ ;;; Γ |-x u = v : B).
-    { clear. intros Σ Γ u v A B h e. destruct e. assumption. }
-    eapply eq_symmetry.
-    eapply eq_transitivity.
-    + eapply xmeta_eq_conv.
-      * eapply cong_App.
-        -- eapply eq_reflexivity. ettcheck.
-        -- eapply eq_reflexivity. ettcheck.
-        -- eapply xmeta_eq_conv.
-           ++ eapply eq_beta.
-              ** ettcheck.
-              ** ettcheck.
-              ** ettcheck.
-              ** ettcheck.
-           ++ lazy. reflexivity.
-        -- eapply eq_reflexivity. ettcheck.
-        -- ettcheck.
-        -- ettcheck.
-        -- ettcheck.
-        -- lazy. ettcheck.
-        -- ettcheck.
-        -- ettcheck.
-      * reflexivity.
-    + lazy. eapply eq_transitivity.
-      * eapply xmeta_eq_conv.
-        -- eapply eq_beta.
-           ++ ettcheck.
-           ++ ettcheck.
-           ++ ettcheck.
-           ++ ettcheck.
-        -- reflexivity.
-      * lazy. eapply xmeta_eq_conv.
-        -- eapply cong_Prod.
-           ++ apply eq_reflexivity. ettcheck.
-           ++ eapply cong_Prod.
-              ** apply eq_reflexivity. ettcheck.
-              ** eapply xmeta_eq_conv.
-                 --- eapply cong_App.
-                     +++ apply eq_reflexivity. ettcheck.
-                     +++ apply eq_reflexivity. ettcheck.
-                     +++ apply eq_reflexivity. ettcheck.
-                     +++ (* 0 + x = x *)
-                         (* This suggests that we should use reflection at
-                            top-level for all conversions.
-                            Doing beta-conversions by hand is too cumbersome
-                            anyway.
-                          *)
-Abort.
-(*   - lazy. admit. *)
-(*   - lazy. eapply reflection with (e := sAx "vrev_eq0"). ettcheck. *)
-(*   - lazy. eapply reflection with (e := sAx "vrev_eq1"). ettcheck. *)
-(* Defined. *)
+  - instantiate (1 := nNamed "m").
+    eapply reflection.
+    instantiate (1 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation1") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)).
+    ettcheck.
+    Opaque Σi.
+    all: lazy.
+    all: try eapply eq_reflexivity.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + lazy. ettcheck.
+    + ettcheck.
+    + lazy. ettcheck.
+    + ettcheck.
+    + lazy. ettcheck.
+    + ettcheck.
+    + lazy. ettcheck.
+    + ettcheck.
+    + lazy. ettcheck.
+    + ettcheck.
+    + lazy. ettcheck.
+    + ettcheck.
+  - Opaque Σi. lazy. eapply reflection.
+    instantiate (2 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation2") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)).
+    ettcheck.
+    all: lazy.
+    all: try eapply eq_reflexivity.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    (* TODO Maybe prove something about closure like:
+       to have e such that Γ |- e : T,
+       it is enough to have e' such that |- e' : ∀ Γ, T.
+       That way, we can use the obligations directly.
+     *)
+  - Opaque Σi. lazy. eapply reflection. admit.
+  - Opaque Σi. lazy. eapply reflection. admit.
+Defined.
 
 (* Definition itt_vrev : sterm := *)
 (*   Eval lazy in *)
