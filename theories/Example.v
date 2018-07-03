@@ -159,24 +159,74 @@ Lemma type_vrev0 : Σi ;;; [] |-x tm_vrev0 : ty_vrev0.
 Proof.
   unfold tm_vrev0, ty_vrev0.
   ettcheck.
-  - eapply reflection with (e := sAx "vrev_eq0"). ettcheck.
-  - eapply reflection with (e := sAx "vrev_eq1"). ettcheck.
-Defined.
+  - Opaque Σi.
+    assert (xmeta_eq_conv : forall {Σ Γ u v A B}, Σ ;;; Γ |-x u = v : A -> A = B -> Σ ;;; Γ |-x u = v : B).
+    { clear. intros Σ Γ u v A B h e. destruct e. assumption. }
+    eapply eq_symmetry.
+    eapply eq_transitivity.
+    + eapply xmeta_eq_conv.
+      * eapply cong_App.
+        -- eapply eq_reflexivity. ettcheck.
+        -- eapply eq_reflexivity. ettcheck.
+        -- eapply xmeta_eq_conv.
+           ++ eapply eq_beta.
+              ** ettcheck.
+              ** ettcheck.
+              ** ettcheck.
+              ** ettcheck.
+           ++ lazy. reflexivity.
+        -- eapply eq_reflexivity. ettcheck.
+        -- ettcheck.
+        -- ettcheck.
+        -- ettcheck.
+        -- lazy. ettcheck.
+        -- ettcheck.
+        -- ettcheck.
+      * reflexivity.
+    + lazy. eapply eq_transitivity.
+      * eapply xmeta_eq_conv.
+        -- eapply eq_beta.
+           ++ ettcheck.
+           ++ ettcheck.
+           ++ ettcheck.
+           ++ ettcheck.
+        -- reflexivity.
+      * lazy. eapply xmeta_eq_conv.
+        -- eapply cong_Prod.
+           ++ apply eq_reflexivity. ettcheck.
+           ++ eapply cong_Prod.
+              ** apply eq_reflexivity. ettcheck.
+              ** eapply xmeta_eq_conv.
+                 --- eapply cong_App.
+                     +++ apply eq_reflexivity. ettcheck.
+                     +++ apply eq_reflexivity. ettcheck.
+                     +++ apply eq_reflexivity. ettcheck.
+                     +++ (* 0 + x = x *)
+                         (* This suggests that we should use reflection at
+                            top-level for all conversions.
+                            Doing beta-conversions by hand is too cumbersome
+                            anyway.
+                          *)
+Abort.
+(*   - lazy. admit. *)
+(*   - lazy. eapply reflection with (e := sAx "vrev_eq0"). ettcheck. *)
+(*   - lazy. eapply reflection with (e := sAx "vrev_eq1"). ettcheck. *)
+(* Defined. *)
 
-Definition itt_vrev0 : sterm :=
-  Eval lazy in
-  let '(_ ; t ; _) := type_translation type_vrev0 istrans_nil in t.
+(* Definition itt_vrev0 : sterm := *)
+(*   Eval lazy in *)
+(*   let '(_ ; t ; _) := type_translation type_vrev0 istrans_nil in t. *)
 
-Definition tc_vrev0 : tsl_result term :=
-  Eval lazy in
-  tsl_rec (2 ^ 18) Σ [] itt_vrev0 empty.
+(* Definition tc_vrev0 : tsl_result term := *)
+(*   Eval lazy in *)
+(*   tsl_rec (2 ^ 18) Σ [] itt_vrev0 empty. *)
 
-Make Definition coq_vrev0 :=
-  ltac:(
-    let t := eval lazy in
-             (match tc_vrev0 with
-              | FinalTranslation.Success _ t => t
-              | _ => tRel 0
-              end)
-      in exact t
-  ).
+(* Make Definition coq_vrev0 := *)
+(*   ltac:( *)
+(*     let t := eval lazy in *)
+(*              (match tc_vrev0 with *)
+(*               | FinalTranslation.Success _ t => t *)
+(*               | _ => tRel 0 *)
+(*               end) *)
+(*       in exact t *)
+(*   ). *)

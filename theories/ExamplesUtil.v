@@ -339,6 +339,18 @@ Definition ty_vcons :=
   | Error _ => sRel 0
   end.
 
+(* vec_rect *)
+Quote Definition vec_rect_type :=
+  ltac:(let T := type of @vec_rect in exact T).
+Definition prety_vec_rect :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vec_rect_type indt constt cot.
+Definition ty_vec_rect :=
+  Eval lazy in
+  match prety_vec_rect with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
 (* add *)
 Quote Definition add_type :=
   ltac:(let T := type of @Nat.add in exact T).
@@ -382,6 +394,7 @@ Definition Σi : sglobal_context := [
   decl "vrev_eq1" ty_vrev_eq1 ;
   decl "vrev_eq0" ty_vrev_eq0 ;
   decl "add" ty_add ;
+  decl "vec_rect" ty_vec_rect ;
   decl "vcons" ty_vcons ;
   decl "vnil" ty_vnil ;
   decl "vec" ty_vec ;
@@ -395,6 +408,7 @@ Arguments Σi : simpl never.
 Fact hΣi : type_glob Σi.
 Proof.
   repeat glob ; lazy.
+  - ittcheck.
   - ittcheck.
   - ittcheck.
   - ittcheck.
