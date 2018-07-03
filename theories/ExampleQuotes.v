@@ -1,9 +1,11 @@
+(* -*- coq-prog-args: ("-emacs" "-type-in-type") -*- *)
+
 (* Quotations of terms for examples *)
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast LiftSubst Typing Checker.
-From Translation Require Import util Sorts SAst.
+From Translation Require Import util Sorts SAst Quotes FinalTranslation.
 
 Inductive vec A : nat -> Type :=
 | vnil : vec A 0
@@ -55,7 +57,7 @@ Definition ty_obligation1 : sterm :=
             (sApp (sApp (sAx "vec") (sSort tt) (sProd nAnon (sAx "nat") (sSort tt)) (sRel 0)) (sAx "nat") (sSort tt) (sAx "O"))
             (sRel 4)))))))).
 
-Definition typ_obligation2 : sterm :=
+Definition ty_obligation2 : sterm :=
   sProd (nNamed "A") (sSort tt) (
   sProd (nNamed "n") (sAx "nat") (
   sProd (nNamed "m") (sAx "nat") (
@@ -295,12 +297,158 @@ Definition ty_obligation4 : sterm :=
                                  (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 4))) (sAx "nat") (sAx "nat") 
                               (sRel 1)))))))))))))).
 
-Lemma vrev_eq0 : forall A m, vec A (0 + m) = vec A m.
+(* The global context of obligations *)
+(* We define a term that mentions everything that the global context should
+   have. *)
+Definition glob_term :=
+  let _ := @pp_sigT in
+  let _ := @epair in
+  let _ := @pi1 in
+  let _ := @pi2 in
+  let _ := @eq in
+  let _ := @transport in
+  let _ := @K in
+  let _ := @funext in
+  let _ := @heq in
+  let _ := @heq_to_eq in
+  let _ := @heq_refl in
+  let _ := @heq_sym in
+  let _ := @heq_trans in
+  let _ := @heq_transport in
+  let _ := @Pack in
+  let _ := @ProjT1 in
+  let _ := @ProjT2 in
+  let _ := @ProjTe in
+  let _ := @cong_prod in
+  let _ := @cong_app in
+  let _ := @cong_lambda in
+  let _ := @cong_sum in
+  let _ := @cong_pair in
+  let _ := @cong_pi1 in
+  let _ := @cong_pi2 in
+  let _ := @cong_eq in
+  let _ := @cong_refl in
+  let _ := @eq_to_heq in
+  let _ := @heq_type_eq in
+  (* Candidate *)
+  let _ := @candidate in
+  (* For examples *)
+  let _ := nat in
+  let _ := vec in
+  let _ := vec_rect in
+  let _ := Nat.add in
+  Type.
+
+Quote Recursively Definition glob_prog := @glob_term.
+Definition Σ : global_context :=
+  (* Eval lazy in *)
+  (* reconstruct_global_context (Datatypes.fst glob_prog). *)
+  pair (Datatypes.fst glob_prog) init_graph.
+
+Arguments Σ : simpl never.
+
+
+(* Putting obligations in Coq *)
+
+Notation "s --> t" := (acons s t) (at level 20).
+Notation "[< a ; b ; .. ; c >]" :=
+  (a (b (.. (c empty) ..))).
+Notation "[< a >]" := (a empty).
+Notation "[< >]" := (empty).
+
+(* Notation "[< a --> x ; b --> y ; .. ; c --> z >]" := *)
+(*   (acons a x (acons b y .. (acons c z empty) ..)). *)
+
+Test Quote @vcons.
+
+Definition axoc :=
+  [< "nat" --> tInd {| inductive_mind := "Coq.Init.Datatypes.nat"; inductive_ind := 0 |} [] ;
+     "vec" --> tInd {| inductive_mind := "Top.vec"; inductive_ind := 0 |} [] ;
+     "add" --> tConst "Coq.Init.Nat.add" [] ;
+     "O" --> tConstruct {| inductive_mind := "Coq.Init.Datatypes.nat"; inductive_ind := 0 |} 0 [] ;
+     "S" --> tConstruct {| inductive_mind := "Coq.Init.Datatypes.nat"; inductive_ind := 0 |} 1 [] ;
+     "vnil" --> tConstruct {| inductive_mind := "Top.vec"; inductive_ind := 0 |} 0 [] ;
+     "vcons" --> tConstruct {| inductive_mind := "Top.vec"; inductive_ind := 0 |} 1 []
+  >].
+
+Definition tc_obligation1 : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] ty_obligation1 axoc.
+
+Make Definition coq_obligation1 :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_obligation1 with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
+
+Definition tc_obligation2 : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] ty_obligation2 axoc.
+
+Make Definition coq_obligation2 :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_obligation2 with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
+
+Definition tc_obligation3 : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] ty_obligation3 axoc.
+
+Make Definition coq_obligation3 :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_obligation3 with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
+
+Definition tc_obligation4 : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] ty_obligation4 axoc.
+
+Make Definition coq_obligation4 :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_obligation4 with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
+
+Lemma vrev_obligation1 : coq_obligation1.
 Proof.
-  reflexivity.
+  unfold coq_obligation1.
+  intros A n m v acc. reflexivity.
 Defined.
 
-Lemma vrev_eq1 : forall A n m, vec A (n + S m) = vec A (S n + m).
+Lemma vrev_obligation2 : coq_obligation2.
 Proof.
-  intros A n m. f_equal. omega.
+  unfold coq_obligation2.
+  intros A n m v acc. reflexivity.
+Defined.
+
+Lemma vrev_obligation3 : coq_obligation3.
+Proof.
+  unfold coq_obligation3.
+  intros A n m v acc a n' v' h m' acc'.
+  f_equal. omega.
+Defined.
+
+Lemma vrev_obligation4 : coq_obligation4.
+Proof.
+  unfold coq_obligation4.
+  intros A n m v acc.
+  reflexivity.
 Defined.

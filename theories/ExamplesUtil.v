@@ -239,15 +239,6 @@ Ltac ittcheck := repeat ittcheck'.
 
 (* Preparing the global context (axioms) for examples *)
 
-Notation "s --> t" := (acons s t) (at level 20).
-Notation "[< a ; b ; .. ; c >]" :=
-  (a (b (.. (c empty) ..))).
-Notation "[< a >]" := (a empty).
-Notation "[< >]" := (empty).
-
-(* Notation "[< a --> x ; b --> y ; .. ; c --> z >]" := *)
-(*   (acons a x (acons b y .. (acons c z empty) ..)). *)
-
 Definition indt :=
   [< "Coq.Init.Datatypes.nat" --> sAx "nat" ;
      "Translation.ExampleQuotes.vec" --> sAx "vec"
