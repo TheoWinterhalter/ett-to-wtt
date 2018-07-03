@@ -432,6 +432,16 @@ Proof.
   destruct e. assumption.
 Defined.
 
+Lemma xmeta_eq_conv :
+  forall {Σ Γ u v A B},
+    Σ ;;; Γ |-x u = v : A ->
+    A = B ->
+    Σ ;;; Γ |-x u = v : B.
+Proof.
+  intros Σ Γ u v A B h e.
+  destruct e. exact h.
+Defined.
+
 Lemma type_conv'' :
   forall {Γ t A B s},
     Σi ;;; Γ |-x t : A ->
