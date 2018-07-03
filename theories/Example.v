@@ -122,42 +122,42 @@ Make Definition coq_realid :=
 
 (*! EXAMPLE 3 *)
 
-Fail Definition vrev0 {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) 
            (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc))
            n v m acc.
 
-Definition vrev0 {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) 
            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
            n v m acc.
 
-Quote Definition vrev0_term :=
-  ltac:(let t := eval unfold vrev0 in @vrev0 in exact t).
-Quote Definition vrev0_type := 
-  ltac:(let T := type of @vrev0 in exact T).
+Quote Definition vrev_term :=
+  ltac:(let t := eval unfold vrev in @vrev in exact t).
+Quote Definition vrev_type := 
+  ltac:(let T := type of @vrev in exact T).
 
-Definition pretm_vrev0 :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vrev0_term indt constt cot.
-Definition tm_vrev0 :=
+Definition pretm_vrev :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_term indt constt cot.
+Definition tm_vrev :=
   Eval lazy in 
-  match pretm_vrev0 with
+  match pretm_vrev with
   | Success t => t
   | Error _ => sRel 0
   end.
 
-Definition prety_vrev0 :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vrev0_type indt constt cot.
-Definition ty_vrev0 :=
+Definition prety_vrev :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_type indt constt cot.
+Definition ty_vrev :=
   Eval lazy in 
-  match prety_vrev0 with
+  match prety_vrev with
   | Success t => t
   | Error _ => sRel 0
   end.
 
-Lemma type_vrev0 : Σi ;;; [] |-x tm_vrev0 : ty_vrev0.
+Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev.
 Proof.
-  unfold tm_vrev0, ty_vrev0.
+  unfold tm_vrev, ty_vrev.
   ettcheck.
   - Opaque Σi.
     assert (xmeta_eq_conv : forall {Σ Γ u v A B}, Σ ;;; Γ |-x u = v : A -> A = B -> Σ ;;; Γ |-x u = v : B).
@@ -213,18 +213,18 @@ Abort.
 (*   - lazy. eapply reflection with (e := sAx "vrev_eq1"). ettcheck. *)
 (* Defined. *)
 
-(* Definition itt_vrev0 : sterm := *)
+(* Definition itt_vrev : sterm := *)
 (*   Eval lazy in *)
-(*   let '(_ ; t ; _) := type_translation type_vrev0 istrans_nil in t. *)
+(*   let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t. *)
 
-(* Definition tc_vrev0 : tsl_result term := *)
+(* Definition tc_vrev : tsl_result term := *)
 (*   Eval lazy in *)
-(*   tsl_rec (2 ^ 18) Σ [] itt_vrev0 empty. *)
+(*   tsl_rec (2 ^ 18) Σ [] itt_vrev empty. *)
 
-(* Make Definition coq_vrev0 := *)
+(* Make Definition coq_vrev := *)
 (*   ltac:( *)
 (*     let t := eval lazy in *)
-(*              (match tc_vrev0 with *)
+(*              (match tc_vrev with *)
 (*               | FinalTranslation.Success _ t => t *)
 (*               | _ => tRel 0 *)
 (*               end) *)
