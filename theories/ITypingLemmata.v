@@ -1004,8 +1004,8 @@ Proof.
            ++ erewrite eq_safe_nth. eassumption.
            ++ eassumption.
   - exists (Sorts.succ (Sorts.succ s)). now apply type_Sort.
-  - exists (Sorts.succ (Sorts.max s1 s2)). apply type_Sort. apply (typing_wf H).
-  - exists (Sorts.max s1 s2). apply type_Prod ; assumption.
+  - eexists. apply type_Sort. apply (typing_wf H).
+  - eexists. apply type_Prod ; eassumption.
   - exists s2. change (sSort s2) with ((sSort s2){ 0 := u }).
     eapply typing_subst ; eassumption.
   - eexists. econstructor. eapply typing_wf. eassumption.
@@ -1014,8 +1014,8 @@ Proof.
   - exists s2. change (sSort s2) with ((sSort s2){ 0 := sPi1 A B p }).
     eapply typing_subst ; try eassumption.
     econstructor ; eassumption.
-  - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H).
-  - exists s. now apply type_Eq.
+  - eexists. apply type_Sort. apply (typing_wf H).
+  - eexists. now apply type_Eq.
   - exists s2.
     change (sSort s2) with ((sSort s2){1 := v}{0 := p}).
     eapply typing_subst2.
@@ -1026,20 +1026,20 @@ Proof.
       assumption.
   - eexists. eassumption.
   - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H).
-  - exists s. apply type_Eq ; assumption.
+  - eexists. apply type_Eq ; eassumption.
   - exists s. apply type_Heq ; assumption.
   - exists s. apply type_Heq ; assumption.
   - exists s. apply type_Heq ; assumption.
   - exists s. apply type_Heq. all: try assumption.
     eapply type_Transport ; eassumption.
-  - exists (Sorts.succ (Sorts.max s z)).
+  - eexists.
     apply type_Heq.
     + eapply type_Sort. apply (typing_wf H).
     + eapply type_Sort. apply (typing_wf H).
     + apply type_Prod ; assumption.
     + apply type_Prod ; assumption.
-  - exists (Sorts.max s z). apply type_Heq.
-    + apply type_Prod ; assumption.
+  - eexists. apply type_Heq.
+    + apply type_Prod ; eassumption.
     + apply type_Prod ; assumption.
     + eapply type_Lambda ; eassumption.
     + eapply type_Lambda ; eassumption.
@@ -1050,7 +1050,7 @@ Proof.
       eapply typing_subst ; eassumption.
     + eapply type_App ; eassumption.
     + eapply type_App ; eassumption.
-  - exists (Sorts.succ (Sorts.max s z)).
+  - eexists.
     apply type_Heq.
     + eapply type_Sort. apply (typing_wf H).
     + eapply type_Sort. apply (typing_wf H).
@@ -1079,18 +1079,18 @@ Proof.
       econstructor ; eassumption.
     + econstructor ; eassumption.
     + econstructor ; eassumption.
-  - exists (Sorts.succ s). apply type_Heq.
+  - eexists. apply type_Heq.
     + apply type_Sort ; apply (typing_wf H).
     + apply type_Sort ; apply (typing_wf H).
     + apply type_Eq ; assumption.
     + apply type_Eq ; assumption.
-  - exists s. apply type_Heq.
-    + apply type_Eq ; assumption.
+  - eexists. apply type_Heq.
+    + apply type_Eq ; eassumption.
     + apply type_Eq ; assumption.
     + eapply type_Refl ; eassumption.
     + eapply type_Refl ; eassumption.
   - exists s. apply type_Heq ; assumption.
-  - exists (Sorts.succ s). eapply type_Eq ; try assumption.
+  - eexists. eapply type_Eq ; try assumption.
     apply type_Sort. apply (typing_wf H).
   - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H).
   - exists s. assumption.

@@ -40,7 +40,7 @@ Lemma inversionProd :
     exists s1 s2,
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (Σ |-i sSort (Sorts.max s1 s2) = T).
+      (Σ |-i sSort (Sorts.prod_sort s1 s2) = T).
 Proof.
   intros Σ Γ n A B T h.
   dependent induction h.
@@ -93,7 +93,7 @@ Lemma inversionSum :
     exists s1 s2,
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (Σ |-i sSort (Sorts.max s1 s2) = T).
+      (Σ |-i sSort (Sorts.sum_sort s1 s2) = T).
 Proof.
   intros Σ Γ n A B T h.
   dependent induction h.
@@ -162,7 +162,7 @@ Lemma inversionEq :
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i u : A) *
       (Σ ;;; Γ |-i v : A) *
-      (Σ |-i sSort s = T).
+      (Σ |-i sSort (Sorts.eq_sort s) = T).
 Proof.
   intros Σ Γ A u v T h.
   dependent induction h.
@@ -370,8 +370,8 @@ Lemma inversionCongProd :
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ ,, A1 |-i B1 : sSort z) *
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
-      (Σ |-i sHeq (sSort (Sorts.max s z)) (sProd nx A1 B1)
-                 (sSort (Sorts.max s z)) (sProd ny A2 B2)
+      (Σ |-i sHeq (sSort (Sorts.prod_sort s z)) (sProd nx A1 B1)
+                 (sSort (Sorts.prod_sort s z)) (sProd ny A2 B2)
           = T).
 Proof.
   intros Σ Γ B1 B2 pA pB T h.
@@ -460,8 +460,8 @@ Lemma inversionCongSum :
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ ,, A1 |-i B1 : sSort z) *
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
-      (Σ |-i sHeq (sSort (Sorts.max s z)) (sSum nx A1 B1)
-                 (sSort (Sorts.max s z)) (sSum ny A2 B2)
+      (Σ |-i sHeq (sSort (Sorts.sum_sort s z)) (sSum nx A1 B1)
+                 (sSort (Sorts.sum_sort s z)) (sSum ny A2 B2)
           = T).
 Proof.
   intros Σ Γ B1 B2 pA pB T h.
@@ -575,7 +575,8 @@ Lemma inversionCongEq :
       (Σ ;;; Γ |-i u2 : A2) *
       (Σ ;;; Γ |-i v1 : A1) *
       (Σ ;;; Γ |-i v2 : A2) *
-      (Σ |-i sHeq (sSort s) (sEq A1 u1 v1) (sSort s) (sEq A2 u2 v2) = T).
+      (Σ |-i sHeq (sSort (Sorts.eq_sort s)) (sEq A1 u1 v1)
+            (sSort (Sorts.eq_sort s)) (sEq A2 u2 v2) = T).
 Proof.
   intros Σ Γ pA pu pv T h.
   dependent induction h.

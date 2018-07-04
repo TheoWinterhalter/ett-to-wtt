@@ -57,8 +57,8 @@ Definition trans_Prod {Σ Γ n A B s1 s2 Γ' A' B'} :
   Σ ;;;; Γ' |--- [A'] : sSort s1 # ⟦ Γ |--- [A] : sSort s1 ⟧ ->
   Σ ;;;; Γ' ,, A' |--- [B'] : sSort s2
   # ⟦ Γ ,, A |--- [B]: sSort s2 ⟧ ->
-  Σ ;;;; Γ' |--- [sProd n A' B']: sSort (Sorts.max s1 s2)
-  # ⟦ Γ |--- [ sProd n A B]: sSort (Sorts.max s1 s2) ⟧.
+  Σ ;;;; Γ' |--- [sProd n A' B']: sSort (Sorts.prod_sort s1 s2)
+  # ⟦ Γ |--- [ sProd n A B]: sSort (Sorts.prod_sort s1 s2) ⟧.
 Proof.
   intros hΓ hA hB.
   destruct hΓ. destruct hA as [[? ?] ?]. destruct hB as [[? ?] ?].
@@ -74,8 +74,8 @@ Definition trans_Sum {Σ Γ n A B s1 s2 Γ' A' B'} :
   Σ ;;;; Γ' |--- [A'] : sSort s1 # ⟦ Γ |--- [A] : sSort s1 ⟧ ->
   Σ ;;;; Γ' ,, A' |--- [B'] : sSort s2
   # ⟦ Γ ,, A |--- [B]: sSort s2 ⟧ ->
-  Σ ;;;; Γ' |--- [sSum n A' B']: sSort (Sorts.max s1 s2)
-  # ⟦ Γ |--- [ sSum n A B]: sSort (Sorts.max s1 s2) ⟧.
+  Σ ;;;; Γ' |--- [sSum n A' B']: sSort (Sorts.sum_sort s1 s2)
+  # ⟦ Γ |--- [ sSum n A B]: sSort (Sorts.sum_sort s1 s2) ⟧.
 Proof.
   intros hΓ hA hB.
   destruct hΓ. destruct hA as [[? ?] ?]. destruct hB as [[? ?] ?].
@@ -91,7 +91,8 @@ Definition trans_Eq {Σ Γ A u v s Γ' A' u' v'} :
   Σ ;;;; Γ' |--- [A'] : sSort s # ⟦ Γ |--- [A] : sSort s ⟧ ->
   Σ ;;;; Γ' |--- [u'] : A' # ⟦ Γ |--- [u] : A ⟧ ->
   Σ ;;;; Γ' |--- [v'] : A' # ⟦ Γ |--- [v] : A ⟧ ->
-  Σ ;;;; Γ' |--- [sEq A' u' v'] : sSort s # ⟦ Γ |--- [sEq A u v] : sSort s ⟧.
+  Σ ;;;; Γ' |--- [sEq A' u' v'] : sSort (Sorts.eq_sort s) 
+  # ⟦ Γ |--- [sEq A u v] : sSort (Sorts.eq_sort s) ⟧.
 Proof.
   intros hΓ hA hu hv.
   destruct hA as [[[? ?] ?] ?].
@@ -241,7 +242,7 @@ Proof.
       clear hb' b' S'.
       destruct T' ; inversion hh. subst. clear hh th.
       (* Now we conclude *)
-      exists (sSort (Sorts.max s1 s2)), (sProd n t'' b'').
+      exists (sSort (Sorts.prod_sort s1 s2)), (sProd n t'' b'').
       now apply trans_Prod.
 
     (* type_Lambda *)
@@ -331,7 +332,7 @@ Proof.
       clear hb' b' S'.
       destruct T' ; inversion hh. subst. clear hh th.
       (* Now we conclude *)
-      exists (sSort (Sorts.max s1 s2)), (sSum n t'' b'').
+      exists (sSort (Sorts.sum_sort s1 s2)), (sSum n t'' b'').
       now apply trans_Sum.
 
     (* type_Pair *)
@@ -456,7 +457,7 @@ Proof.
       destruct (X1 _ hΓ) as [A'' [v'' hv'']].
       destruct (change_type hg hv'' hA') as [v' hv'].
       (* Now we conclude *)
-      exists (sSort s), (sEq A' u' v').
+      exists (sSort (Sorts.eq_sort s)), (sEq A' u' v').
       apply trans_Eq ; assumption.
 
     (* type_Refl *)
@@ -904,7 +905,7 @@ Proof.
       }
       destruct hp5 as [p5 hp5].
       (* We can finally conclude! *)
-      exists (sSort (Sorts.max s1 s2)), (sSort (Sorts.max s1 s2)).
+      exists (sSort (Sorts.prod_sort s1 s2)), (sSort (Sorts.prod_sort s1 s2)).
       exists (sProd n1 A1' B1'), (sProd n2 A2' tB2).
       exists (sCongProd B1' tB2 p1 p5).
       destruct hA1' as [[[? ?] ?] ?].
@@ -1152,8 +1153,10 @@ Proof.
          This is where the path between the two types comes into action.
        *)
       assert (hty : ∑ pty,
-        Σ ;;; Γ' |-i pty : sHeq (sSort (Sorts.max s1 s2)) (sProd n2 A2' B2')
-                               (sSort (Sorts.max s1 s2)) (sProd n1 A1' B1')
+        Σ ;;; Γ' |-i pty : sHeq (sSort (Sorts.prod_sort s1 s2)) 
+                               (sProd n2 A2' B2')
+                               (sSort (Sorts.prod_sort s1 s2))
+                               (sProd n1 A1' B1')
 
       ).
       { exists (optHeqSym (sCongProd B1' B2' pA pB)).
@@ -1622,7 +1625,7 @@ Proof.
       }
       destruct hp5 as [p5 hp5].
       (* We can finally conclude! *)
-      exists (sSort (Sorts.max s1 s2)), (sSort (Sorts.max s1 s2)).
+      exists (sSort (Sorts.sum_sort s1 s2)), (sSort (Sorts.sum_sort s1 s2)).
       exists (sSum n1 A1' B1'), (sSum n2 A2' tB2).
       exists (sCongSum B1' tB2 p1 p5).
       destruct hA1' as [[[? ?] ?] ?].
@@ -2511,7 +2514,8 @@ Proof.
         - eapply type_HeqTransport ; eassumption.
       }
       destruct hq as [qv' hqv'].
-      exists (sSort s), (sSort s), (sEq tA1 tu1 tv1), (sEq tA2 ttu2 ttv2).
+      exists (sSort (Sorts.eq_sort s)), (sSort (Sorts.eq_sort s)).
+      exists (sEq tA1 tu1 tv1), (sEq tA2 ttu2 ttv2).
       exists (sCongEq qA qu' qv').
       destruct htu1 as [[[? ?] ?] ?].
       destruct htu2 as [[[? ?] ?] ?].
@@ -2520,6 +2524,8 @@ Proof.
       destruct htv1 as [[[? ?] ?] ?].
       destruct htv2 as [[[? ?] ?] ?].
       repeat split ; try eassumption.
+      * econstructor ; assumption.
+      * econstructor ; assumption.
       * econstructor ; assumption.
       * econstructor ; try assumption.
         -- econstructor ; eassumption.
@@ -2612,15 +2618,17 @@ Proof.
       destruct hq as [q hq].
       (* We're still not there yet as we need to have two translations of the
          same type. *)
-      assert (pE : ∑ pE, Σ ;;; Γ' |-i pE : sHeq (sSort s) (sEq tA2 ttu2 ttu2)
-                                               (sSort s) (sEq tA1 tu1 tu1)).
+      assert (pE : ∑ pE, Σ ;;; Γ' |-i pE : 
+                         sHeq (sSort (Sorts.eq_sort s)) (sEq tA2 ttu2 ttu2)
+                              (sSort (Sorts.eq_sort s)) (sEq tA1 tu1 tu1)).
       { exists (optHeqSym (sCongEq qA q q)).
         eapply opt_HeqSym ; try assumption.
         eapply type_CongEq' ; eassumption.
       }
       destruct pE as [pE hpE].
-      assert (eE : ∑ eE, Σ ;;; Γ' |-i eE : sEq (sSort s) (sEq tA2 ttu2 ttu2)
-                                              (sEq tA1 tu1 tu1)).
+      assert (eE : ∑ eE, Σ ;;; Γ' |-i eE : 
+                         sEq (sSort (Sorts.eq_sort s)) (sEq tA2 ttu2 ttu2)
+                             (sEq tA1 tu1 tu1)).
       { eapply (opt_sort_heq_ex hg hpE). }
       destruct eE as [eE hE].
       pose (trefl2 := sTransport (sEq tA2 ttu2 ttu2)
@@ -2688,7 +2696,7 @@ Proof.
     - constructor.
     - constructor.
     - apply inrel_refl. repeat constructor.
-    - change 1 with (Sorts.max 1 0). econstructor.
+    - change 1 with (Sorts.prod_sort 1 0). econstructor.
       + econstructor. constructor.
       + refine (type_Rel _ _ _ _ _).
         * repeat econstructor.
