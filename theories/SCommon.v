@@ -2,6 +2,11 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation Require Import util SAst SLiftSubst.
+From Translation Require Sorts.
+
+Section Common.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Definition scontext := list sterm.
 
@@ -14,22 +19,24 @@ Record squash (A : Set) : Prop := { _ : A }.
 
 (* Common lemmata *)
 
-Definition max_sort := max.
+(* Lemma max_id : *)
+(*   forall s, @Sorts.max Sorts.nat_sorts s s = s. *)
+(* Proof. *)
+(*   intro s. cbn. auto with arith. *)
+(* Defined. *)
 
-Lemma max_id :
-  forall s, max_sort s s = s.
-Proof.
-  intro s. unfold max_sort. auto with arith.
-Defined.
+(* Lemma max_id : *)
+(*   forall s, @Sorts.max Sorts.type_in_type s s = s. *)
+(* Proof. *)
+(*   intro s. cbn. auto with arith. *)
+(* Defined. *)
 
-Definition succ_sort := S.
-
-Lemma max_succ_id :
-  forall s, max_sort (succ_sort s) s = succ_sort s.
-Proof.
-  intro s. unfold max_sort, succ_sort.
-  auto with arith.
-Defined.
+(* Lemma max_succ_id : *)
+(*   forall s, max_sort (succ_sort s) s = succ_sort s. *)
+(* Proof. *)
+(*   intro s. unfold max_sort, succ_sort. *)
+(*   auto with arith. *)
+(* Defined. *)
 
 Definition sapp_context (Γ Γ' : scontext) : scontext := (Γ' ++ Γ)%list.
 Notation " Γ  ,,, Γ' " := (sapp_context Γ Γ') (at level 25, Γ' at next level, left associativity) : s_scope.
@@ -261,3 +268,12 @@ Proof.
     + cbn. replace (#|Δ| - 0) with #|Δ| by omega. reflexivity.
     + cbn. erewrite IHΔ. reflexivity.
 Defined.
+
+End Common.
+
+Delimit Scope s_scope with s.
+Notation " Γ ,, d " :=
+  (ssnoc Γ d) (at level 20, d at next level) : s_scope.
+Notation " Γ  ,,, Γ' " :=
+  (sapp_context Γ Γ')
+    (at level 25, Γ' at next level, left associativity) : s_scope.

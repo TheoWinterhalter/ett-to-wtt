@@ -2,12 +2,11 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast LiftSubst.
 From Translation Require Import util SAst.
-
-(* Set Asymmetric Patterns. *)
+From Translation Require Sorts.
 
 Open Scope type_scope.
 
-Fixpoint lift n k t : sterm :=
+Fixpoint lift `{Sort_notion : Sorts.notion} n k t : sterm :=
   match t with
   | sRel i => if Nat.leb k i then sRel (n + i) else sRel i
   | sLambda na T V M => sLambda na (lift n k T) (lift n (S k) V) (lift n (S k) M)
@@ -74,7 +73,7 @@ Fixpoint lift n k t : sterm :=
 
 Notation lift0 n t := (lift n 0 t).
 
-Fixpoint subst t k u :=
+Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
   match u with
   | sRel n =>
     match k ?= n with
@@ -147,6 +146,12 @@ Fixpoint subst t k u :=
 
 Notation subst0 t u := (subst t 0 u).
 Notation "M { j := N }" := (subst N j M) (at level 10, right associativity) : s_scope.
+
+Open Scope s_scope.
+
+Section LiftSubst.
+
+Context `{Sort_notion : Sorts.notion}.
 
 (** Substitutes [t1 ; .. ; tn] in u for [Rel 0; .. Rel (n-1)]*)
 Definition substl l t :=
@@ -234,8 +239,6 @@ Fixpoint closed_above k t :=
   end.
 
 Definition closed t := closed_above 0 t = true.
-
-Open Scope s_scope.
 
 (* Lemmata regarding lifts and subst *)
 
@@ -589,12 +592,6 @@ Ltac erewrite_close_above_lift_id :=
     erewrite H by (first [ eassumption | omega ])
   end.
 
-Ltac destruct_andb :=
-  match goal with
-  | H : _ && _ = true |- _ =>
-    destruct (andb_prop _ _ H) ; clear H
-  end.
-
 Fact closed_above_lift_id :
   forall t n k l,
     closed_above l t = true ->
@@ -680,3 +677,31 @@ Proof.
   - eassumption.
   - omega.
 Defined.
+
+End LiftSubst.
+
+(* Exporting the tactics that were defined inside the section. *)
+
+Ltac erewrite_close_above_lift :=
+  match goal with
+  | H : forall n k l, k <= l -> _ = _ |- _ =>
+    erewrite H by omega
+  end.
+
+Ltac erewrite_close_above_lift_id :=
+  match goal with
+  | H : forall n k l, _ -> k >= l -> _ = _ |- _ =>
+    erewrite H by (first [ eassumption | omega ])
+  end.
+
+Ltac erewrite_close_above_subst :=
+  match goal with
+  | H : forall u l n, _ -> _ -> _ -> _ = _ |- _ =>
+    erewrite H by (try omega ; try easy)
+  end.
+
+Ltac erewrite_close_above_subst_id :=
+  match goal with
+  | H : forall n l u, _ -> _ -> _ = _ |- _ =>
+    erewrite H by (first [ eassumption | omega ])
+  end.

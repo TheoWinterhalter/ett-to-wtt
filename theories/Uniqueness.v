@@ -7,6 +7,10 @@ From Translation
 Require Import util SAst SLiftSubst Equality SCommon Conversion ITyping
                ITypingInversions ITypingLemmata ContextConversion.
 
+Section Uniqueness.
+
+Context `{Sort_notion : Sorts.notion}.
+
 Ltac unitac h1 h2 :=
   ttinv h1 ; ttinv h2 ;
   eapply conv_trans ; [
@@ -217,3 +221,5 @@ Proof.
     apply cong_Heq ; try assumption ; apply conv_refl.
   - rewrite h4 in h0. inversion h0. subst. assumption.
 Defined.
+
+End Uniqueness.

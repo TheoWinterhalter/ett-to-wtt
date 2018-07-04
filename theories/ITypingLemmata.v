@@ -10,6 +10,10 @@ Require Import util SAst SLiftSubst SCommon Conversion
 Open Scope type_scope.
 Open Scope i_scope.
 
+Section Lemmata.
+
+Context `{Sort_notion : Sorts.notion}.
+
 (* Typing up to equality *)
 Lemma meta_ctx_conv :
   forall {Σ Γ Δ t A},
@@ -243,9 +247,9 @@ Proof.
                 try apply weak_glob_conv ;
                 eassumption
                ).
-      - eapply type_HeqTrans with (B := B) (b := b).
+      - eapply type_HeqTrans with (B0 := B) (b0 := b).
         all: apply weak_glob_type ; eassumption.
-      - eapply type_ProjT2 with (A1 := A1).
+      - eapply type_ProjT2 with (A3 := A1).
         all: apply weak_glob_type ; eassumption.
       - eapply type_Ax.
         + eapply weak_glob_wf ; eassumption.
@@ -412,7 +416,7 @@ Proof.
       - cbn. eapply type_Pi1 ; eih.
       - cbn.
         change (#|Ξ|) with (0 + #|Ξ|)%nat.
-        rewrite substP1.
+        rewrite substP1. cbn.
         eapply type_Pi2 ; eih.
       - cbn. apply type_Eq ; eih.
       - cbn. eapply type_Refl ; eih.
@@ -727,7 +731,7 @@ Proof.
       - cbn. eapply type_Pi1 ; esh.
       - cbn.
         change (#|Δ|) with (0 + #|Δ|)%nat.
-        rewrite substP4.
+        rewrite substP4. cbn.
         eapply type_Pi2 ; esh.
       - cbn. eapply type_Eq ; esh.
       - cbn. eapply type_Refl ; esh.
@@ -754,7 +758,9 @@ Proof.
       - cbn. eapply type_HeqToEq ; esh.
       - cbn. eapply type_HeqRefl ; esh.
       - cbn. eapply type_HeqSym ; esh.
-      - cbn. eapply type_HeqTrans with (B := B0{ #|Δ| := u }) (b := b{ #|Δ| := u }) ; esh.
+      - cbn. 
+        eapply type_HeqTrans
+          with (B1 := B0{ #|Δ| := u }) (b0 := b{ #|Δ| := u }) ; esh.
       - cbn. eapply type_HeqTransport ; esh.
       - cbn. eapply type_CongProd ; esh.
         cbn. f_equal.
@@ -997,9 +1003,9 @@ Proof.
            ++ assumption.
            ++ erewrite eq_safe_nth. eassumption.
            ++ eassumption.
-  - exists (succ_sort (succ_sort s)). now apply type_Sort.
-  - exists (succ_sort (max_sort s1 s2)). apply type_Sort. apply (typing_wf H).
-  - exists (max_sort s1 s2). apply type_Prod ; assumption.
+  - exists (Sorts.succ (Sorts.succ s)). now apply type_Sort.
+  - exists (Sorts.succ (Sorts.max s1 s2)). apply type_Sort. apply (typing_wf H).
+  - exists (Sorts.max s1 s2). apply type_Prod ; assumption.
   - exists s2. change (sSort s2) with ((sSort s2){ 0 := u }).
     eapply typing_subst ; eassumption.
   - eexists. econstructor. eapply typing_wf. eassumption.
@@ -1008,7 +1014,7 @@ Proof.
   - exists s2. change (sSort s2) with ((sSort s2){ 0 := sPi1 A B p }).
     eapply typing_subst ; try eassumption.
     econstructor ; eassumption.
-  - exists (succ_sort s). apply type_Sort. apply (typing_wf H).
+  - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H).
   - exists s. now apply type_Eq.
   - exists s2.
     change (sSort s2) with ((sSort s2){1 := v}{0 := p}).
@@ -1019,20 +1025,20 @@ Proof.
     + cbn. rewrite !lift_subst, lift00.
       assumption.
   - eexists. eassumption.
-  - exists (succ_sort s). apply type_Sort. apply (typing_wf H).
+  - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H).
   - exists s. apply type_Eq ; assumption.
   - exists s. apply type_Heq ; assumption.
   - exists s. apply type_Heq ; assumption.
   - exists s. apply type_Heq ; assumption.
   - exists s. apply type_Heq. all: try assumption.
     eapply type_Transport ; eassumption.
-  - exists (succ_sort (max_sort s z)).
+  - exists (Sorts.succ (Sorts.max s z)).
     apply type_Heq.
     + eapply type_Sort. apply (typing_wf H).
     + eapply type_Sort. apply (typing_wf H).
     + apply type_Prod ; assumption.
     + apply type_Prod ; assumption.
-  - exists (max_sort s z). apply type_Heq.
+  - exists (Sorts.max s z). apply type_Heq.
     + apply type_Prod ; assumption.
     + apply type_Prod ; assumption.
     + eapply type_Lambda ; eassumption.
@@ -1044,7 +1050,7 @@ Proof.
       eapply typing_subst ; eassumption.
     + eapply type_App ; eassumption.
     + eapply type_App ; eassumption.
-  - exists (succ_sort (max_sort s z)).
+  - exists (Sorts.succ (Sorts.max s z)).
     apply type_Heq.
     + eapply type_Sort. apply (typing_wf H).
     + eapply type_Sort. apply (typing_wf H).
@@ -1073,7 +1079,7 @@ Proof.
       econstructor ; eassumption.
     + econstructor ; eassumption.
     + econstructor ; eassumption.
-  - exists (succ_sort s). apply type_Heq.
+  - exists (Sorts.succ s). apply type_Heq.
     + apply type_Sort ; apply (typing_wf H).
     + apply type_Sort ; apply (typing_wf H).
     + apply type_Eq ; assumption.
@@ -1084,9 +1090,9 @@ Proof.
     + eapply type_Refl ; eassumption.
     + eapply type_Refl ; eassumption.
   - exists s. apply type_Heq ; assumption.
-  - exists (succ_sort s). eapply type_Eq ; try assumption.
+  - exists (Sorts.succ s). eapply type_Eq ; try assumption.
     apply type_Sort. apply (typing_wf H).
-  - exists (succ_sort s). apply type_Sort. apply (typing_wf H).
+  - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H).
   - exists s. assumption.
   - exists s. assumption.
   - exists s. apply type_Heq ; try assumption.
@@ -1104,3 +1110,5 @@ Proof.
     + cbn. apply nil_cat.
   - exists s. assumption.
 Defined.
+
+End Lemmata.

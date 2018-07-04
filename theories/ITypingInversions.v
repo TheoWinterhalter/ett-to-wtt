@@ -4,7 +4,11 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util SAst SLiftSubst Equality SCommon Conversion ITyping.
+Require Import util Sorts SAst SLiftSubst Equality SCommon Conversion ITyping.
+
+Section Inversions.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Lemma inversionRel :
   forall {Σ Γ n T},
@@ -22,7 +26,7 @@ Defined.
 Lemma inversionSort :
   forall {Σ Γ s T},
     Σ ;;; Γ |-i sSort s : T ->
-    Σ |-i sSort (succ_sort s) = T.
+    Σ |-i sSort (Sorts.succ s) = T.
 Proof.
   intros Σ Γ s T h.
   dependent induction h.
@@ -36,7 +40,7 @@ Lemma inversionProd :
     exists s1 s2,
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (Σ |-i sSort (max_sort s1 s2) = T).
+      (Σ |-i sSort (Sorts.max s1 s2) = T).
 Proof.
   intros Σ Γ n A B T h.
   dependent induction h.
@@ -89,7 +93,7 @@ Lemma inversionSum :
     exists s1 s2,
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (Σ |-i sSort (max_sort s1 s2) = T).
+      (Σ |-i sSort (Sorts.max s1 s2) = T).
 Proof.
   intros Σ Γ n A B T h.
   dependent induction h.
@@ -366,8 +370,8 @@ Lemma inversionCongProd :
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ ,, A1 |-i B1 : sSort z) *
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
-      (Σ |-i sHeq (sSort (max_sort s z)) (sProd nx A1 B1)
-                 (sSort (max_sort s z)) (sProd ny A2 B2)
+      (Σ |-i sHeq (sSort (Sorts.max s z)) (sProd nx A1 B1)
+                 (sSort (Sorts.max s z)) (sProd ny A2 B2)
           = T).
 Proof.
   intros Σ Γ B1 B2 pA pB T h.
@@ -456,8 +460,8 @@ Lemma inversionCongSum :
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ ,, A1 |-i B1 : sSort z) *
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
-      (Σ |-i sHeq (sSort (max_sort s z)) (sSum nx A1 B1)
-                 (sSort (max_sort s z)) (sSum ny A2 B2)
+      (Σ |-i sHeq (sSort (Sorts.max s z)) (sSum nx A1 B1)
+                 (sSort (Sorts.max s z)) (sSum ny A2 B2)
           = T).
 Proof.
   intros Σ Γ B1 B2 pA pB T h.
@@ -706,6 +710,8 @@ Proof.
     exists ty. split ; try assumption.
     eapply conv_trans ; eassumption.
 Defined.
+
+End Inversions.
 
 (* Tactic to apply inversion automatically *)
 

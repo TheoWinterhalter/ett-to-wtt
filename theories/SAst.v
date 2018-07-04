@@ -1,9 +1,11 @@
 (*! Common syntax to ITT and ETT *)
 
 From Template Require Import Ast.
-From Translation Require Import util.
+From Translation Require Import util Sorts.
 
-Definition sort := nat.
+Section Ast.
+
+Context `{Sorts.notion}.
 
 Inductive sterm : Type :=
 | sRel (n : nat)
@@ -47,3 +49,5 @@ Inductive sterm : Type :=
 (* External axioms *)
 | sAx (id : ident)
 .
+
+End Ast.

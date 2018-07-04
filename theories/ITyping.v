@@ -2,11 +2,15 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util SAst SLiftSubst SCommon Conversion.
+Require Import util Sorts SAst SLiftSubst SCommon Conversion.
 
 Open Scope s_scope.
 
 (*! Typing *)
+
+Section ITyping.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Reserved Notation " Σ ;;; Γ '|-i' t : T " (at level 50, Γ, t, T at next level).
 
@@ -18,12 +22,12 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
 
 | type_Sort Γ s :
     wf Σ Γ ->
-    Σ ;;; Γ |-i (sSort s) : sSort (succ_sort s)
+    Σ ;;; Γ |-i (sSort s) : sSort (Sorts.succ s)
 
 | type_Prod Γ n t b s1 s2 :
     Σ ;;; Γ |-i t : sSort s1 ->
     Σ ;;; Γ ,, t |-i b : sSort s2 ->
-    Σ ;;; Γ |-i (sProd n t b) : sSort (max_sort s1 s2)
+    Σ ;;; Γ |-i (sProd n t b) : sSort (Sorts.max s1 s2)
 
 | type_Lambda Γ n n' t b s1 s2 bty :
     Σ ;;; Γ |-i t : sSort s1 ->
@@ -41,7 +45,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
 | type_Sum Γ n t b s1 s2 :
     Σ ;;; Γ |-i t : sSort s1 ->
     Σ ;;; Γ ,, t |-i b : sSort s2 ->
-    Σ ;;; Γ |-i (sSum n t b) : sSort (max_sort s1 s2)
+    Σ ;;; Γ |-i (sSum n t b) : sSort (Sorts.max s1 s2)
 
 | type_Pair Γ n A B u v s1 s2 :
     Σ ;;; Γ |-i A : sSort s1 ->
@@ -144,8 +148,8 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ ,, A1 |-i B1 : sSort z ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z ->
     Σ ;;; Γ |-i sCongProd B1 B2 pA pB :
-    sHeq (sSort (max_sort s z)) (sProd nx A1 B1)
-         (sSort (max_sort s z)) (sProd ny A2 B2)
+    sHeq (sSort (Sorts.max s z)) (sProd nx A1 B1)
+         (sSort (Sorts.max s z)) (sProd ny A2 B2)
 
 | type_CongLambda Γ s z nx ny A1 A2 B1 B2 t1 t2 pA pB pt :
     Σ ;;; Γ |-i pA : sHeq (sSort s) A1 (sSort s) A2 ->
@@ -196,8 +200,8 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ ,, A1 |-i B1 : sSort z ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z ->
     Σ ;;; Γ |-i sCongSum B1 B2 pA pB :
-    sHeq (sSort (max_sort s z)) (sSum nx A1 B1)
-         (sSort (max_sort s z)) (sSum ny A2 B2)
+    sHeq (sSort (Sorts.max s z)) (sSum nx A1 B1)
+         (sSort (Sorts.max s z)) (sSum ny A2 B2)
 
 | type_CongPair Γ s z nx ny A1 A2 B1 B2 u1 u2 v1 v2 pA pB pu pv :
     Σ ;;; Γ |-i pA : sHeq (sSort s) A1 (sSort s) A2 ->
@@ -333,15 +337,25 @@ with wf (Σ : sglobal_context) : scontext -> Prop :=
     wf Σ (Γ ,, A)
 .
 
+End ITyping.
+
+Notation " Σ ;;; Γ '|-i' t : T " := 
+  (@typing _ Σ Γ t T) (at level 50, Γ, t, T at next level) : i_scope.
+
 Derive Signature for typing.
 Derive Signature for wf.
 
 Delimit Scope i_scope with i.
 
-(* Temporary:
+(* Syntactic restriction.
    We define the notion of ETT compatibility to restrict the syntax
    to the one that is allowed in ETT.
+   [TODO Move?]
  *)
+Section Xcomp.
+
+Context `{Sort_notion : Sorts.notion}.
+
 Inductive Xcomp : sterm -> Type :=
 | xcomp_Rel n : Xcomp (sRel n)
 | xcomp_Sort s : Xcomp (sSort s)
@@ -393,7 +407,13 @@ Inductive Xcomp : sterm -> Type :=
     Xcomp (sAx id)
 .
 
+End Xcomp.
+
 Derive Signature for Xcomp.
+
+Section Global.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Definition isType (Σ : sglobal_context) (Γ : scontext) (t : sterm) :=
   exists s, Σ ;;; Γ |-i t : sSort s.
@@ -405,8 +425,6 @@ Inductive fresh_glob (id : ident) : sglobal_context -> Prop :=
     (dname d) <> id ->
     fresh_glob id (d :: Σ).
 
-Derive Signature for fresh_glob.
-
 Inductive type_glob : sglobal_context -> Type :=
 | type_glob_nil : type_glob []
 | type_glob_cons Σ d :
@@ -416,4 +434,7 @@ Inductive type_glob : sglobal_context -> Type :=
     Xcomp (dtype d) ->
     type_glob (d :: Σ).
 
+End Global.
+
+Derive Signature for fresh_glob.
 Derive Signature for type_glob.

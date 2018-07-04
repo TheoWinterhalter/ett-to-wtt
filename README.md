@@ -9,8 +9,10 @@ This project can be compiled with Coq 8.8 and requires
 [Equations](http://mattam82.github.io/Coq-Equations/) to compile.
 
 If you want to compile the examples, you also need 
-[TemplateCoq](https://github.com/Template-Coq/template-coq).
-For the moment, I need for some changes to be integrated to it, so in
+[TemplateCoq](https://github.com/Template-Coq/template-coq)
+and
+[TypingFlags](https://github.com/SimonBoulier/TypingFlags).
+For the moment, I need for some changes to be integrated to TemplateCoq, so in
 the mean time you can clone
 [my fork](https://github.com/TheoWinterhalter/template-coq/tree/univ-fix)
 and run

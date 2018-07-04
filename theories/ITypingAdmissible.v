@@ -2,10 +2,14 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util SAst SLiftSubst SCommon Conversion ITyping ITypingInversions
-               ITypingLemmata Uniqueness SubjectReduction.
+Require Import util Sorts SAst SLiftSubst SCommon Conversion ITyping
+               ITypingInversions ITypingLemmata Uniqueness SubjectReduction.
 
-Corollary sorts_in_sort :
+Section Admissible.
+
+Context `{Sort_notion : Sorts.notion}.
+
+Lemma sorts_in_sort :
   forall {Σ Γ s1 s2 s3},
     Σ ;;; Γ |-i sSort s1 : sSort s3 ->
     Σ ;;; Γ |-i sSort s2 : sSort s3 ->
@@ -15,8 +19,7 @@ Proof.
   ttinv h1. ttinv h2.
   pose proof (conv_trans h (conv_sym h0)) as eq.
   pose proof (sort_conv_inv eq).
-  unfold succ_sort, sort in *.
-  omega.
+  apply succ_inj. assumption.
 Defined.
 
 (* We state some admissible typing rules *)
@@ -33,7 +36,7 @@ Proof.
   ttinv h0. ttinv h5.
   pose proof (conv_trans h1 (conv_sym h6)) as eq.
   pose proof (sort_conv_inv eq).
-  assert (s1 = s2) by (unfold succ_sort, sort in * ; omega).
+  assert (s1 = s2) by (apply succ_inj ; assumption).
   subst. clear eq H h1 h6.
   assumption.
 Defined.
@@ -173,8 +176,8 @@ Lemma type_CongProd'' :
     Σ ;;; Γ ,, A1 |-i B1 : sSort z ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z ->
     Σ ;;; Γ |-i sCongProd B1 B2 pA pB :
-    sHeq (sSort (max_sort s z)) (sProd nx A1 B1)
-         (sSort (max_sort s z)) (sProd ny A2 B2).
+    sHeq (sSort (Sorts.max s z)) (sProd nx A1 B1)
+         (sSort (Sorts.max s z)) (sProd ny A2 B2).
 Proof.
   intros Σ Γ s z nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
   destruct (istype_type hg hpA) as [? ipA]. ttinv ipA.
@@ -210,8 +213,8 @@ Lemma type_CongProd' :
     Σ ;;; Γ ,, A1 |-i B1 : sSort z1 ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z2 ->
     Σ ;;; Γ |-i sCongProd B1 B2 pA pB :
-    sHeq (sSort (max_sort s1 z1)) (sProd nx A1 B1)
-         (sSort (max_sort s2 z2)) (sProd ny A2 B2).
+    sHeq (sSort (Sorts.max s1 z1)) (sProd nx A1 B1)
+         (sSort (Sorts.max s2 z2)) (sProd ny A2 B2).
 Proof.
   intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
   destruct (prod_sorts hg hpA hpB) as [e1 e2].
@@ -330,8 +333,8 @@ Lemma type_CongSum'' :
     Σ ;;; Γ ,, A1 |-i B1 : sSort z ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z ->
     Σ ;;; Γ |-i sCongSum B1 B2 pA pB :
-    sHeq (sSort (max_sort s z)) (sSum nx A1 B1)
-         (sSort (max_sort s z)) (sSum ny A2 B2).
+    sHeq (sSort (Sorts.max s z)) (sSum nx A1 B1)
+         (sSort (Sorts.max s z)) (sSum ny A2 B2).
 Proof.
   intros Σ Γ s z nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
   destruct (istype_type hg hpA) as [? ipA]. ttinv ipA.
@@ -350,8 +353,8 @@ Lemma type_CongSum' :
     Σ ;;; Γ ,, A1 |-i B1 : sSort z1 ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z2 ->
     Σ ;;; Γ |-i sCongSum B1 B2 pA pB :
-    sHeq (sSort (max_sort s1 z1)) (sSum nx A1 B1)
-         (sSort (max_sort s2 z2)) (sSum ny A2 B2).
+    sHeq (sSort (Sorts.max s1 z1)) (sSum nx A1 B1)
+         (sSort (Sorts.max s2 z2)) (sSum ny A2 B2).
 Proof.
   intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
   destruct (prod_sorts hg hpA hpB) as [e1 e2].
@@ -644,3 +647,5 @@ Proof.
   eapply type_conv ; try eassumption.
   eapply type_Sort. eapply typing_wf. eassumption.
 Defined.
+
+End Admissible.

@@ -1,469 +1,364 @@
-(* -*- coq-prog-args: ("-emacs" "-type-in-type") -*- *)
+Require Import TypingFlags.Loader.
+Set Type In Type.
 
 (* Example of the whole translation *)
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast LiftSubst Typing Checker.
-From Translation Require Import util SAst SLiftSubst SCommon ITyping
+From Translation Require Import util Sorts SAst SLiftSubst SCommon ITyping
                                 ITypingLemmata ITypingAdmissible XTyping
-                                Translation FinalTranslation ExamplesUtil.
+                                Quotes Translation FinalTranslation
+                                FullQuote ExamplesUtil ExampleQuotes.
 
 Open Scope string_scope.
+Open Scope x_scope.
 
-(*! EXAMPLE 1:
-    λ A B e x ⇒ x : ∀ (A B : Type), A = B → A → B
-    It uses reflection to be well-typed.
-    It gets translated to
-    λ A B e x ⇒ transport e x : ∀ (A B : Type), A = B → A → B.
-*)
+Definition nomap : string -> nat -> option sterm := fun _ _ => None.
 
-(* We begin with an ETT derivation *)
+(*! EXAMPLE 1 *)
 
-Definition tyl :=
-  [ sSort 0 ;
-    sSort 0 ;
-    sEq (sSort 0) (sRel 1) (sRel 0) ;
-    sRel 2 ;
-    sRel 2
-  ].
+Fail Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := x.
 
-Definition ty : sterm := multiProd tyl.
+Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 
-Definition tm : sterm := multiLam tyl (sRel 0).
+Quote Definition pseudoid_term := 
+  ltac:(let t := eval compute in pseudoid in exact t).
+Quote Definition pseudoid_type := 
+  ltac:(let T := type of pseudoid in exact T).
 
-Fact tmty : Σi ;;; [] |-x tm : ty.
+Definition pretm_pseudoid :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_term empty empty nomap.
+Definition tm_pseudoid :=
+  Eval lazy in 
+  match pretm_pseudoid with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Definition prety_pseudoid :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_type empty empty nomap.
+Definition ty_pseudoid :=
+  Eval lazy in 
+  match prety_pseudoid with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Lemma type_pseudoid : Σi ;;; [] |-x tm_pseudoid : ty_pseudoid.
 Proof.
-  eapply type_multiLam.
-  - constructor.
-  - econstructor.
-    + eapply type_Sort. constructor.
-    + econstructor.
-      * eapply type_Sort.
-        repeat econstructor.
-      * econstructor.
-        -- eapply type_Eq.
-           ++ repeat constructor.
-              ** repeat econstructor.
-           ++ refine (type_Rel _ _ _ _ _).
-              ** repeat econstructor.
-              ** cbn. omega.
-           ++ refine (type_Rel _ _ _ _ _).
-              ** repeat econstructor.
-              ** cbn. omega.
-        -- econstructor.
-           ++ refine (type_Rel _ _ _ _ _).
-              ** repeat econstructor.
-              ** cbn. omega.
-           ++ econstructor.
-              ** refine (type_Rel _ _ _ _ _).
-                 --- repeat econstructor.
-                 --- cbn. omega.
-              ** eapply type_conv''.
-                 --- refine (type_Rel _ _ _ _ _).
-                     +++ repeat econstructor.
-                     +++ cbn. omega.
-                 --- cbn. eapply reflection.
-                     instantiate (2 := sRel 1).
-                     refine (type_Rel _ _ _ _ _).
-                     +++ repeat econstructor.
-                     +++ cbn. omega.
-                 --- refine (type_Rel _ _ _ _ _).
-                     +++ repeat econstructor.
-                     +++ cbn. omega.
-  Unshelve.
-  all: cbn; omega.
-Defined.
-
-(* Then we translate this ETT derivation to get an ITT term *)
-
-Definition itt_tm : sterm.
-  destruct (type_translation tmty istrans_nil) as [A [t h]].
-  exact t.
-Defined.
-
-Definition itt_tm' := ltac:(let t := eval lazy in itt_tm in exact t).
-
-Definition tc_tm : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] itt_tm'.
-
-Definition tc_tm' := ltac:(let t := eval lazy in tc_tm in exact t).
-
-Make Definition coq_tm :=
-  ltac:(
-    let t := eval lazy in
-             (match tc_tm' with
-              | Success t => t
-              | _ => tSort Universe.type0
-              end)
-      in exact t
-  ).
-
-(*! EXAMPLE 2:
-    λ A x ⇒ x : ∀ (A : Type), A → A
-    It gets translated to itself.
-*)
-
-Definition tyl0 :=
-  [ sSort 0 ;
-    sRel 0 ;
-    sRel 1
-  ].
-
-Definition ty0 : sterm := multiProd tyl0.
-
-Definition tm0 : sterm := multiLam tyl0 (sRel 0).
-
-Lemma tmty0 : Σi ;;; [] |-x tm0 : ty0.
-Proof.
-  eapply type_multiLam.
-  - constructor.
-  - econstructor.
-    + repeat econstructor.
-    + econstructor.
-      * refine (type_Rel _ _ _ _ _).
-        -- repeat econstructor.
-        -- cbn. omega.
-      * econstructor.
-        -- refine (type_Rel _ _ _ _ _).
-           ++ repeat econstructor.
-           ++ cbn. omega.
-        -- refine (type_Rel _ _ _ _ _).
-           ++ repeat econstructor.
-           ++ cbn. omega.
-  Unshelve. all: cbn; omega.
-Defined.
-
-Definition itt_tm0 : sterm.
-  destruct (type_translation tmty0 istrans_nil) as [A [t [_ h]]].
-  exact t.
-Defined.
-
-Definition itt_tm0' := ltac:(let t := eval lazy in itt_tm0 in exact t).
-
-Definition tc_tm0 : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] itt_tm0'.
-
-Definition tc_tm0' := ltac:(let t := eval lazy in tc_tm0 in exact t).
-
-Make Definition coq_tm0 :=
-  ltac:(
-    let t := eval lazy in
-             (match tc_tm0' with
-              | Success t => t
-              | _ => tSort Universe.type0
-              end)
-      in exact t
-  ).
-
-
-(*! EXAMPLE 3:
-    nat
-    It gets translated to itself.
-*)
-
-Lemma natty : Σi ;;; [] |-x sAx "nat" : sSort 0.
-Proof.
+  unfold tm_pseudoid, ty_pseudoid.
+  ettcheck. cbn.
+  eapply reflection with (e := sRel 1).
   ettcheck.
 Defined.
 
-Definition itt_nat : sterm.
-  destruct (type_translation natty istrans_nil) as [A [t [_ h]]].
-  exact t.
-Defined.
+Definition itt_pseudoid : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_pseudoid istrans_nil in t.
 
-Definition itt_nat' := ltac:(let t := eval lazy in itt_nat in exact t).
+Definition tc_pseudoid : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_pseudoid empty.
 
-Definition tc_nat : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] itt_nat'.
-
-Definition tc_nat' := ltac:(let t := eval lazy in tc_nat in exact t).
-
-Make Definition coq_nat :=
+Make Definition coq_pseudoid :=
   ltac:(
     let t := eval lazy in
-             (match tc_nat' with
-              | Success t => t
-              | _ => tSort Universe.type0
+             (match tc_pseudoid with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
               end)
       in exact t
   ).
 
-(*! EXAMPLE 3':
-    zero
-    It gets translated to itself.
-*)
+(*! EXAMPLE 2 *)
 
-Lemma zeroty : Σi ;;; [] |-x sAx "zero" : sAx "nat".
+Definition realid := fun (A B : Type) (x : A) => x.
+Quote Definition realid_term := 
+  ltac:(let t := eval compute in realid in exact t).
+Quote Definition realid_type := 
+  ltac:(let T := type of realid in exact T).
+
+Definition pretm_realid :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] realid_term empty empty nomap.
+Definition tm_realid :=
+  Eval lazy in 
+  match pretm_realid with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Definition prety_realid :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] realid_type empty empty nomap.
+Definition ty_realid :=
+  Eval lazy in 
+  match prety_realid with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Lemma type_realid : Σi ;;; [] |-x tm_realid : ty_realid.
 Proof.
+  unfold tm_realid, ty_realid.
   ettcheck.
 Defined.
 
-Definition itt_zero : sterm.
-  destruct (type_translation zeroty istrans_nil) as [A [t [_ h]]].
-  exact t.
-Defined.
+Definition itt_realid : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_realid istrans_nil in t.
 
-Definition itt_zero' := ltac:(let t := eval lazy in itt_zero in exact t).
+Definition tc_realid : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_realid empty.
 
-Definition tc_zero : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] itt_zero'.
-
-Definition tc_zero' := ltac:(let t := eval lazy in tc_zero in exact t).
-
-Make Definition coq_zero :=
+Make Definition coq_realid :=
   ltac:(
     let t := eval lazy in
-             (match tc_zero' with
-              | Success t => t
-              | _ => tSort Universe.type0
+             (match tc_realid with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
               end)
       in exact t
   ).
 
-(*! EXAMPLE 3'':
-    succ zero
-    It gets translated to itself.
-*)
+(*! EXAMPLE 3 *)
 
-Definition sNat := sAx "nat".
-Definition sZero := sAx "zero".
-Definition sSucc n :=
-  sApp (sAx "succ") sNat sNat n.
+Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) 
+           (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc))
+           n v m acc.
 
-Lemma type_zero :
-  forall {Γ},
-    wf Σi Γ ->
-    Σi ;;; Γ |-x sZero : sNat.
-Proof.
-  unfold sZero, sNat.
-  intros Γ h.
-  ettcheck.
-Defined.
+Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) 
+           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
+           n v m acc.
 
-Lemma type_succ :
-  forall {Γ n},
-    Σi ;;; Γ |-x n : sNat ->
-    Σi ;;; Γ |-x sSucc n : sNat.
-Proof.
-  unfold sSucc, sNat.
-  intros Γ n h.
-  pose proof (typing_wf h) as hw.
-  ettcheck. assumption.
-Defined.
+Quote Definition vrev_term :=
+  ltac:(let t := eval unfold vrev in @vrev in exact t).
+Quote Definition vrev_type := 
+  ltac:(let T := type of @vrev in exact T).
 
-Definition sOne := sSucc sZero.
+Definition pretm_vrev :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_term indt constt cot.
+Definition tm_vrev :=
+  Eval lazy in 
+  match pretm_vrev with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
 
-Lemma onety : Σi ;;; [] |-x sOne : sNat.
-Proof.
-  unfold sOne. eapply type_succ. eapply type_zero. constructor.
-Defined.
+Definition prety_vrev :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_type indt constt cot.
+Definition ty_vrev :=
+  Eval lazy in 
+  match prety_vrev with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
 
-Definition itt_one : sterm.
-  destruct (type_translation onety istrans_nil) as [A [t [_ h]]].
-  exact t.
-Defined.
+(* TODO Move in ExamplesUtil *)
+Fixpoint Prods (Γ : scontext) (T : sterm) :=
+  match Γ with
+  | A :: Γ => Prods Γ (sProd nAnon A T)
+  | [] => T
+  end.
 
-Definition itt_one' := ltac:(let t := eval lazy in itt_one in exact t).
-
-Definition tc_one : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] itt_one'.
-
-Definition tc_one' := ltac:(let t := eval lazy in tc_one in exact t).
-
-Make Definition coq_one :=
-  ltac:(
-    let t := eval lazy in
-             (match tc_one' with
-              | Success t => t
-              | _ => tSort Universe.type0
-              end)
-      in exact t
-  ).
-
-
-(*! EXAMPLE 4.1:
-    vcons one zero vnil
-    It gets translated to itself (but checking takes a long time!).
-*)
-
-Open Scope type_scope.
-
-Definition sVec A n :=
-  Apps (sAx "vec") [ (nNamed "A", sSort 0) ; (nAnon, sNat) ] (sSort 0) [ A ; n ].
-
-Definition sVnil A :=
-  sApp (sAx "vnil")
-       (sSort 0)
-       (sVec (sRel 0) sZero)
-       A.
-
-Definition sVcons A a n v :=
-  Apps
-    (sAx "vcons")
-    [ (nNamed "A", sSort 0) ;
-      (nAnon, sRel 0) ;
-      (nNamed "n", sNat) ;
-      (nAnon, sVec (sRel 2) (sRel 0))
-    ]
-    (sVec (sRel 3) (sSucc (sRel 1)))
-    [ A ; a ; n ; v ].
-
-Lemma type_vec :
-  forall {Γ A n},
-    Σi ;;; Γ |-x A : sSort 0 ->
-    Σi ;;; Γ |-x n : sNat ->
-    Σi ;;; Γ |-x sVec A n : sSort 0.
-Proof.
-  unfold sVcons, sVec, sVnil, sOne, sSucc, sNat, sZero.
-  intros Γ A n hA hn.
-  pose proof (typing_wf hA) as hw.
-  simpl. ettcheck. all: assumption.
-Defined.
-
-Lemma type_vnil :
-  forall {Γ A},
-    Σi ;;; Γ |-x A : sSort 0 ->
-    Σi ;;; Γ |-x sVnil A : sVec A sZero.
-Proof.
-  unfold sVcons, sVec, sVnil, sSucc, sNat, sZero.
-  intros Γ A h. simpl.
-  pose proof (typing_wf h) as hw.
-  Opaque lift.
-  ettcheck. all: try assumption.
-  - unfold sVec, sNat. simpl. ettcheck.
-  - simpl. rewrite lift00. constructor.
-    ettcheck. assumption.
-Defined.
-
-Transparent lift.
-
-(* Lemma type_vcons : *)
-(*   forall {Γ A a n v}, *)
-(*     Σi ;;; Γ |-x A : sSort 0 -> *)
-(*     Σi ;;; Γ |-x a : A -> *)
-(*     Σi ;;; Γ |-x n : sNat -> *)
-(*     Σi ;;; Γ |-x v : sVec A n -> *)
-(*     Σi ;;; Γ |-x sVcons A a n v : sVec A (sSucc n). *)
+(* Lemma close_goal_ex : *)
+(*   forall {Σ Γ Δ t T}, *)
+(*     Σ ;;; Δ |-x t : Prods Γ T -> *)
+(*     Σ ;;; Δ ,,, Γ |-x T : Ty -> *)
+(*     ∑ t', Σ ;;; Δ ,,, Γ |-x t' : T. *)
 (* Proof. *)
-(*   unfold sVcons, sVec, sVnil, sSucc, sNat, sZero. *)
-(*   intros Γ A a n v hA ha hn hv. *)
-(*   pose proof (typing_wf ha) as hw. *)
-(*   simpl. *)
+(*   intros Σ Γ Δ t T h hT. *)
+(*   revert Δ t T h hT. induction Γ as [| A Γ]. *)
+(*   - intros Δ t T h hT. *)
+(*     rewrite cat_nil. eexists. eassumption. *)
+(*   - intros Δ t T h hT. cbn in h. *)
+(*     destruct (IHΓ _ _ _ h) as [t' ht']. *)
+(*     + admit. *)
+(*     +  *)
+
+
+
+Lemma close_goal_ex :
+  forall {Σ Γ t T},
+    Σ ;;; [] |-x t : Prods Γ T ->
+    Σ ;;; Γ |-x T : Ty ->
+    ∑ t', Σ ;;; Γ |-x t' : T.
+Proof.
+  intros Σ Γ t T h hT.
+  revert t T h hT. induction Γ as [| A Γ].
+  - intros t T h hT. eexists. eassumption.
+  - intros t T h hT. cbn in h.
+    destruct (IHΓ _ _ h) as [t' ht'].
+    + pose proof (typing_wf hT) as hw.
+      inversion hw. subst. destruct s.
+      eapply xtype_Prod'.
+      * eassumption.
+      * intros _. eassumption.
+    + eexists. eapply xmeta_conv.
+      * eapply xtype_App'.
+        -- (* Need type_lift *)
+Admitted.
+
+Definition closet {Σ Γ t T} h hT :=
+  let '(t' ; _) := @close_goal_ex Σ Γ t T h hT in t'.
+
+Definition close_goal :
+  forall {Σ Γ t T}
+    (h : Σ ;;; [] |-x t : Prods Γ T)
+    (hT : Σ ;;; Γ |-x T : Ty),
+    Σ ;;; Γ |-x closet h hT : T.
+Proof.
+  intros Σ Γ t T h hT.
+  eapply close_goal_ex.
+Defined.
+
+
+
+
+
+(* Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev. *)
+(* Proof. *)
+(*   unfold tm_vrev, ty_vrev. *)
 (*   ettcheck. *)
-(*   all: rewrite ?lift00. all: try eassumption. *)
-(*   - *)
+(*   - eapply close_goal. *)
+(*     eapply reflection with (e := sAx "vrev_obligation1"). *)
+(*     (* It would need the exact same type to work, *)
+(*        names are going to be a problem otherwise. *)
+(*      *) *)
+(*     ettcheck. *)
 
-Definition vtest := sVcons sNat sOne sZero (sVnil sNat).
+(*   - instantiate (1 := nNamed "m"). *)
+(*     eapply reflection. *)
+(*     instantiate (1 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation1") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
+(*     ettcheck. *)
+(*     Opaque Σi. *)
+(*     all: lazy. *)
+(*     all: try eapply eq_reflexivity. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*   - Opaque Σi. lazy. eapply reflection. *)
+(*     instantiate (2 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation2") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
+(*     ettcheck. *)
+(*     all: lazy. *)
+(*     all: try eapply eq_reflexivity. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*   - Opaque Σi. lazy. eapply reflection. *)
+(*     instantiate (1 := sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation3") _ _ (sRel 10)) _ _ (sRel 9)) _ _ (sRel 8)) _ _ (sRel 7)) _ _ (sRel 6)) _ _ (sRel 5)) _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
+(*     ettcheck. *)
+(*     all: lazy. *)
+(*     all: try eapply eq_reflexivity. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*   - Opaque Σi. lazy. eapply reflection. *)
+(*     instantiate (2 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation2") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
+(*     ettcheck. *)
+(*     all: lazy. *)
+(*     all: try eapply eq_reflexivity. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. lazy. ettcheck. *)
+(* Defined. *)
 
-Lemma vtestty : Σi ;;; [] |-x vtest : sVec sNat sOne.
-Proof.
-  unfold vtest, sVcons, sVec, sVnil, sOne, sSucc, sNat, sZero. lazy.
-  ettcheck.
-Defined.
+(* Definition itt_vrev : sterm := *)
+(*   Eval lazy in *)
+(*   let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t. *)
 
-Definition itt_vtest : sterm.
-  destruct (type_translation vtestty istrans_nil) as [A [t [_ h]]].
-  exact t.
-Defined.
+(* Definition tc_vrev : tsl_result term := *)
+(*   Eval lazy in *)
+(*   tsl_rec (2 ^ 18) Σ [] itt_vrev empty. *)
 
-Definition itt_vtest' := ltac:(let t := eval lazy in itt_vtest in exact t).
-
-Definition tc_vtest : tsl_result term :=
-  tsl_rec (2 ^ 18) Σ [] itt_vtest'.
-
-Definition tc_vtest' := ltac:(let t := eval lazy in tc_vtest in exact t).
-
-Make Definition coq_vtest :=
-  ltac:(
-    let t := eval lazy in
-             (match tc_vtest' with
-              | Success t => t
-              | _ => tSort Universe.type0
-              end)
-      in exact t
-  ).
-
-
-(*! EXAMPLE 4.2:
-    plus
-*)
-Definition snatrec P Pz Ps n :=
-  Apps
-    (sAx "nat_rect")
-    [ (nNamed "P", sNat ==> sSort 0) ;
-      (nAnon, sApp (sRel 0) sNat (sSort 0) sZero) ;
-      (nAnon, sProd (nNamed "n") sNat (sApp (sRel 2) sNat (sSort 0) (sRel 0) ==> sApp (sRel 2) sNat (sSort 0) (sSucc (sRel 0)))) ;
-      (nNamed "n", sNat)
-    ]
-    (sApp (sRel 3) sNat (sSort 0) (sRel 0))
-    [ P ; Pz ; Ps ; n ].
-
-Definition plus n m :=
-  snatrec (sLambda (nNamed "n") sNat (sSort 0) sNat)
-          m
-          (multiLam [ sNat ; sNat ; sNat ] (sSucc (sRel 0)))
-          n.
-
-Definition cplus :=
-  sLambda (nNamed "n") sNat (sNat ==> sNat)
-  (sLambda (nNamed "m") sNat sNat (plus (sRel 1) (sRel 0))).
-
-Ltac ettcong :=
-  lazymatch goal with
-  | |- ?Σ ;;; ?Γ |-x ?t = _ : ?T =>
-    lazymatch t with
-    | sRel ?n => eapply eq_reflexivity
-    | sSort _ => eapply eq_reflexivity
-    | sProd _ _ _ => eapply cong_Prod
-    | sLambda _ _ _ _ => eapply cong_Lambda
-    | sApp _ _ _ _ => eapply cong_App
-    | sSum _ _ _ => eapply cong_Sum
-    | sPair _ _ _ _ => eapply cong_Pair
-    | sPi1 _ _ _ => eapply cong_Pi1
-    | sPi2 _ _ _ => eapply cong_Pi2
-    | sEq _ _ _ => eapply cong_Eq
-    | sRefl _ _ => eapply cong_Refl
-    | sAx _ => eapply eq_reflexivity
-    | _ => fail "No congruence rule for" t
-    end
-  | _ => fail "Not applicable"
-  end.
-
-Lemma xmeta_eq_conv :
-  forall {Σ Γ A B T U},
-    Σ ;;; Γ |-x A = B : U ->
-    T = U ->
-    Σ ;;; Γ |-x A = B : T.
-Proof.
-  intros Σ Γ A B T U h e. destruct e. assumption.
-Defined.
-
-Ltac ettconvcheck1 :=
-  lazymatch goal with
-  | |- ?Σ ;;; ?Γ |-x ?t = ?u : ?T =>
-    first [
-      eapply xmeta_eq_conv ; [ ettcong | lazy ; reflexivity ]
-    | eapply eq_conv ; [ ettcong | .. ]
-    (* | eapply meta_ctx_conv ; [ *)
-    (*     eapply meta_conv ; [ ettintro | lazy ; try reflexivity ] *)
-    (*   | cbn ; try reflexivity *)
-    (*   ] *)
-    ]
-  | |- wf ?Σ ?Γ => first [ assumption | econstructor ]
-  | |- sSort _ = sSort _ => first [ lazy ; reflexivity | shelve ]
-  | |- type_glob _ => first [ assumption | glob ]
-  | _ => fail "Not applicable"
-  end.
-
-Lemma plusty : Σi ;;; [] |-x cplus : sNat ==> sNat ==> sNat.
-Proof.
-  unfold cplus, plus, snatrec, sZero, sSucc, sNat, Arrow. simpl.
-  (* ettcheck. *)
-  (* - cbn. repeat ettconvcheck1. all: ettcheck. *)
-Abort.
-
-(*! EXAMPLE 4.? (more ambitious):
-    rev A n m (v : vec A n) (acc : vec A m) : vec A (n + m) :=
-      vec_rect A ???
-*)
+(* Make Definition coq_vrev := *)
+(*   ltac:( *)
+(*     let t := eval lazy in *)
+(*              (match tc_vrev with *)
+(*               | FinalTranslation.Success _ t => t *)
+(*               | _ => tRel 0 *)
+(*               end) *)
+(*       in exact t *)
+(*   ). *)

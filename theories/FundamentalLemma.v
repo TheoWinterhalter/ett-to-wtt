@@ -2,7 +2,7 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils LiftSubst Typing.
 From Translation
-Require Import util SAst SLiftSubst Equality SCommon XTyping Conversion ITyping
+Require Import util Sorts SAst SLiftSubst Equality SCommon XTyping Conversion ITyping
                ITypingInversions ITypingLemmata ITypingAdmissible Optim
                Uniqueness SubjectReduction PackLifts.
 
@@ -11,6 +11,10 @@ Open Scope x_scope.
 Open Scope i_scope.
 
 (*! Relation for translated expressions *)
+
+Section Sim.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Reserved Notation " t1 ∼ t2 " (at level 20).
 
@@ -87,7 +91,14 @@ Inductive trel : sterm -> sterm -> Type :=
 
 where " t1 ∼ t2 " := (trel t1 t2).
 
+End Sim.
+
+Notation " t1 ∼ t2 " := (trel t1 t2) (at level 20).
 Derive Signature for trel.
+
+Section In.
+
+Context `{Sort_notion : Sorts.notion}.
 
 (* We also define a biased relation that only allows transports on one side,
    the idea being that the term on the other side belongs to the source.
@@ -185,6 +196,10 @@ Proof.
   - constructor. assumption.
 Defined.
 
+End In.
+
+Notation " t ⊏ t' " := (inrel t t') (at level 20).
+
 Ltac lift_sort :=
   match goal with
   | |- _ ;;; _ |-i lift ?n ?k ?t : ?S => change S with (lift n k S)
@@ -208,6 +223,10 @@ Ltac lift_sort :=
   | |- _ |-i ?t{ ?n := ?u } = sSort ?s =>
     change (sSort s) with ((sSort s){ n := u })
   end.
+
+Section Fundamental.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Lemma trel_to_heq' :
   forall {Σ t1 t2},
@@ -251,7 +270,8 @@ Proof.
       destruct (istype_type hg h2) as [s2 ?].
       destruct (ismix_nth_sort hg hm x is1' is2') as [ss [? ?]].
       eapply type_conv.
-      * eapply type_Rel. eapply @wf_llift with (Δ := []) ; try eassumption.
+      * eapply type_Rel. 
+        eapply (@wf_llift Sort_notion) with (Δ := []) ; try eassumption.
         eapply typing_wf ; eassumption.
       * instantiate (1 := ss).
         eapply type_Pack.
@@ -446,10 +466,10 @@ Proof.
       * rewrite llift_substProj, rlift_substProj.
         apply hpB.
       * lift_sort.
-        eapply type_llift1 ; eassumption.
+        eapply (@type_llift1 Sort_notion) ; eassumption.
       * lift_sort.
-        eapply type_rlift1 ; eassumption.
-    + instantiate (1 := succ_sort (max_sort s0 s2)).
+        eapply (@type_rlift1 Sort_notion) ; eassumption.
+    + instantiate (1 := Sorts.succ (Sorts.max s0 s2)).
       eapply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
         eapply type_conv ; try eassumption.
@@ -506,10 +526,10 @@ Proof.
       * rewrite llift_substProj, rlift_substProj.
         apply hpB.
       * lift_sort.
-        eapply type_llift1 ; eassumption.
+        eapply (@type_llift1 Sort_notion) ; eassumption.
       * lift_sort.
-        eapply type_rlift1 ; eassumption.
-    + instantiate (1 := succ_sort (max_sort s0 s2)).
+        eapply (@type_rlift1 Sort_notion) ; eassumption.
+    + instantiate (1 := Sorts.succ (Sorts.max s0 s2)).
       eapply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
         eapply type_conv ; try eassumption.
@@ -549,7 +569,7 @@ Proof.
     subst.
     eapply type_conv.
     + eapply type_CongEq' ; eassumption.
-    + instantiate (1 := succ_sort s).
+    + instantiate (1 := Sorts.succ s).
       eapply type_Heq.
       * destruct (istype_type hg h1). lift_sort.
         eapply type_llift0 ; try eassumption.
@@ -575,17 +595,17 @@ Proof.
       * lift_sort. apply rlift_conv. assumption.
 
   (* Sort *)
-  - exists (sHeqRefl (sSort (succ_sort s)) (sSort s)).
+  - exists (sHeqRefl (sSort (Sorts.succ s)) (sSort s)).
     intros Γm U1 U2 hm h1 h2.
     ttinv h1. ttinv h2.
     assert (hwf : wf Σ (Γ ,,, Γm)).
-    { eapply @wf_llift with (Δ := []) ; try eassumption.
+    { eapply (@wf_llift Sort_notion) with (Δ := []) ; try eassumption.
       eapply typing_wf ; eassumption.
     }
     eapply type_conv.
     + eapply type_HeqRefl' ; try assumption.
       apply type_Sort. eassumption.
-    + instantiate (1 := succ_sort (succ_sort s)).
+    + instantiate (1 := Sorts.succ (Sorts.succ s)).
       eapply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
         destruct (istype_type hg h1).
@@ -644,12 +664,12 @@ Proof.
       * rewrite llift_substProj, rlift_substProj. apply hpB.
       * rewrite !llift_substProj, !rlift_substProj. apply hpu.
       * lift_sort.
-        eapply type_llift1 ; eassumption.
+        eapply (@type_llift1 Sort_notion) ; eassumption.
       * lift_sort.
-        eapply type_rlift1 ; eassumption.
-      * eapply type_llift1 ; eassumption.
-      * eapply type_rlift1 ; eassumption.
-    + instantiate (1 := max_sort s0 s2).
+        eapply (@type_rlift1 Sort_notion) ; eassumption.
+      * eapply (@type_llift1 Sort_notion) ; eassumption.
+      * eapply (@type_rlift1 Sort_notion) ; eassumption.
+    + instantiate (1 := Sorts.max s0 s2).
       eapply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
         destruct (istype_type hg h1).
@@ -727,9 +747,9 @@ Proof.
       * apply hpu.
       * apply hpv.
       * lift_sort.
-        eapply type_llift1 ; eassumption.
+        eapply (@type_llift1 Sort_notion) ; eassumption.
       * lift_sort.
-        eapply type_rlift1 ; eassumption.
+        eapply (@type_rlift1 Sort_notion) ; eassumption.
     + instantiate (1 := s2).
       eapply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
@@ -798,8 +818,8 @@ Proof.
       * replace 0 with (0 + 0)%nat in hpv by omega.
         rewrite llift_subst, rlift_subst in hpv.
         apply hpv.
-      * lift_sort. eapply type_llift1 ; eassumption.
-      * lift_sort. eapply type_rlift1 ; eassumption.
+      * lift_sort. eapply (@type_llift1 Sort_notion) ; eassumption.
+      * lift_sort. eapply (@type_rlift1 Sort_notion) ; eassumption.
     + instantiate (1 := max s0 s2).
       apply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
@@ -874,8 +894,8 @@ Proof.
       * rewrite llift_substProj, rlift_substProj.
         apply hpB.
       * apply hpp.
-      * lift_sort. eapply type_llift1 ; eassumption.
-      * lift_sort. eapply type_rlift1 ; eassumption.
+      * lift_sort. eapply (@type_llift1 Sort_notion) ; eassumption.
+      * lift_sort. eapply (@type_rlift1 Sort_notion) ; eassumption.
     + instantiate (1 := s0).
       apply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
@@ -934,8 +954,8 @@ Proof.
       * rewrite llift_substProj, rlift_substProj.
         apply hpB.
       * apply hpp.
-      * lift_sort. eapply type_llift1 ; eassumption.
-      * lift_sort. eapply type_rlift1 ; eassumption.
+      * lift_sort. eapply (@type_llift1 Sort_notion) ; eassumption.
+      * lift_sort. eapply (@type_rlift1 Sort_notion) ; eassumption.
     + instantiate (1 := s2).
       apply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
@@ -1190,8 +1210,8 @@ Proof.
     | now constructor
     ]
   ).
-  - constructor. now apply IHtrel.
-  - apply IHtrel. eapply inversion_trel_transport. eassumption.
+  - constructor. now apply IHX.
+  - apply IHX. eapply inversion_trel_transport. eassumption.
 Defined.
 
 Reserved Notation " Γ ≈ Δ " (at level 19).
@@ -1218,14 +1238,24 @@ Definition trans Σ Γ A t Γ' A' t' :=
   t ⊏ t' *
   (Σ ;;; Γ' |-i t' : A').
 
+End Fundamental.
+
+Notation " Γ ≈ Δ " := (crel Γ Δ) (at level 19).
+
+Notation " Γ ⊂ Γ' " := (increl Γ Γ') (at level 19).
+
 Notation " Σ ;;;; Γ' |--- [ t' ] : A' # ⟦ Γ |--- [ t ] : A ⟧ " :=
   (trans Σ Γ A t Γ' A' t')
     (at level 7) : i_scope.
 
-Definition ctxtrans Σ Γ Γ' :=
+Definition ctxtrans `{Sort_notion : Sorts.notion} Σ Γ Γ' :=
   Γ ⊂ Γ' * (wf Σ Γ').
 
 Notation " Σ |--i Γ' # ⟦ Γ ⟧ " := (ctxtrans Σ Γ Γ') (at level 7) : i_scope.
+
+Section Head.
+
+Context `{Sort_notion : Sorts.notion}.
 
 (* Notion of head *)
 Inductive head_kind :=
@@ -1311,12 +1341,12 @@ Lemma inversion_transportType :
     Σ ;;; Γ' |-i transport_seq_app tseq A' : T ->
     exists s,
       (Σ ;;; Γ' |-i A' : sSort s) /\
-      (Σ ;;; Γ' |-i T : sSort (succ_sort s)).
+      (Σ ;;; Γ' |-i T : sSort (Sorts.succ s)).
 Proof.
   intros Σ tseq. induction tseq ; intros Γ' A' T hg hh ht.
 
   - cbn in *. destruct A' ; try (now inversion hh).
-    + exists (succ_sort s). split.
+    + exists (Sorts.succ s). split.
       * apply type_Sort. apply (typing_wf ht).
       * ttinv ht. destruct (istype_type hg ht).
         eapply type_conv ; try eassumption.
@@ -1324,7 +1354,7 @@ Proof.
         -- apply conv_sym. eapply subj_conv ; try eassumption.
            econstructor. eapply typing_wf. eassumption.
     + ttinv ht.
-      exists (max_sort s1 s2). split.
+      exists (Sorts.max s1 s2). split.
       * now apply type_Prod.
       * destruct (istype_type hg ht).
         eapply type_conv ; try eassumption.
@@ -1332,7 +1362,7 @@ Proof.
         -- apply conv_sym. eapply subj_conv ; try eassumption.
            econstructor. eapply typing_wf. eassumption.
     + ttinv ht.
-      exists (max_sort s1 s2). split.
+      exists (Sorts.max s1 s2). split.
       * now apply type_Sum.
       * destruct (istype_type hg ht).
         eapply type_conv ; try eassumption.
@@ -1468,7 +1498,7 @@ Proof.
     + destruct (istype_type hg ht') as [s2 hA'].
       specialize (hp (sSort s2) (sSort s) hA' hA'').
       destruct (istype_type hg hp) as [s1 hheq].
-      assert (Σ ;;; Γ' |-i sSort s : sSort (succ_sort s)).
+      assert (Σ ;;; Γ' |-i sSort s : sSort (Sorts.succ s)).
       { apply type_Sort. apply (typing_wf hp). }
       ttinv hheq.
       assert (s2 = s).
@@ -1476,3 +1506,5 @@ Proof.
       eapply opt_Transport ; try assumption.
       eapply opt_HeqToEq ; eassumption.
 Defined.
+
+End Head.

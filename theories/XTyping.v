@@ -1,12 +1,16 @@
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
-From Translation Require Import util SAst SLiftSubst SCommon.
+From Translation Require Import util Sorts SAst SLiftSubst SCommon.
 
 Reserved Notation " Σ ;;; Γ '|-x' t : T " (at level 50, Γ, t, T at next level).
 Reserved Notation " Σ ;;; Γ '|-x' t = u : T " (at level 50, Γ, t, u, T at next level).
 
 Open Scope s_scope.
+
+Section XTyping.
+
+Context `{Sort_notion : Sorts.notion}.
 
 Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Type :=
 | type_Rel Γ n :
@@ -16,12 +20,12 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Type :=
 
 | type_Sort Γ s :
     wf Σ Γ ->
-    Σ ;;; Γ |-x (sSort s) : sSort (succ_sort s)
+    Σ ;;; Γ |-x (sSort s) : sSort (succ s)
 
 | type_Prod Γ n t b s1 s2 :
     Σ ;;; Γ |-x t : sSort s1 ->
     Σ ;;; Γ ,, t |-x b : sSort s2 ->
-    Σ ;;; Γ |-x (sProd n t b) : sSort (max_sort s1 s2)
+    Σ ;;; Γ |-x (sProd n t b) : sSort (Sorts.max s1 s2)
 
 | type_Lambda Γ n n' t b s1 s2 bty :
     Σ ;;; Γ |-x t : sSort s1 ->
@@ -39,7 +43,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Type :=
 | type_Sum Γ n t b s1 s2 :
     Σ ;;; Γ |-x t : sSort s1 ->
     Σ ;;; Γ ,, t |-x b : sSort s2 ->
-    Σ ;;; Γ |-x (sSum n t b) : sSort (max_sort s1 s2)
+    Σ ;;; Γ |-x (sSum n t b) : sSort (Sorts.max s1 s2)
 
 | type_Pair Γ n A B u v s1 s2 :
     Σ ;;; Γ |-x A : sSort s1 ->
@@ -124,7 +128,7 @@ with eq_term (Σ : sglobal_context) : scontext -> sterm -> sterm -> sterm -> Typ
     Σ ;;; Γ ,, A1 |-x B1 = B2 : sSort s2 ->
     Σ ;;; Γ ,, A1 |-x B1 : sSort s2 ->
     Σ ;;; Γ ,, A2 |-x B2 : sSort s2 ->
-    Σ ;;; Γ |-x (sProd n1 A1 B1) = (sProd n2 A2 B2) : sSort (max_sort s1 s2)
+    Σ ;;; Γ |-x (sProd n1 A1 B1) = (sProd n2 A2 B2) : sSort (Sorts.max s1 s2)
 
 | cong_Lambda Γ n1 n2 n' A1 A2 B1 B2 t1 t2 s1 s2 :
     Σ ;;; Γ |-x A1 = A2 : sSort s1 ->
@@ -154,7 +158,7 @@ with eq_term (Σ : sglobal_context) : scontext -> sterm -> sterm -> sterm -> Typ
     Σ ;;; Γ ,, A1 |-x B1 = B2 : sSort s2 ->
     Σ ;;; Γ ,, A1 |-x B1 : sSort s2 ->
     Σ ;;; Γ ,, A2 |-x B2 : sSort s2 ->
-    Σ ;;; Γ |-x (sSum n1 A1 B1) = (sSum n2 A2 B2) : sSort (max_sort s1 s2)
+    Σ ;;; Γ |-x (sSum n1 A1 B1) = (sSum n2 A2 B2) : sSort (Sorts.max s1 s2)
 
 | cong_Pair Γ n A1 A2 B1 B2 u1 u2 v1 v2 s1 s2 :
     Σ ;;; Γ |-x A1 = A2 : sSort s1 ->
@@ -217,3 +221,10 @@ Lemma typing_wf :
 Proof.
   intros Σ Γ t T H. induction H ; easy.
 Defined.
+
+End XTyping.
+
+Notation " Σ ;;; Γ '|-x' t : T " :=
+  (@typing _ Σ Γ t T) (at level 50, Γ, t, T at next level) : x_scope.
+Notation " Σ ;;; Γ '|-x' t = u : T " :=
+  (@eq_term _ Σ Γ t u T) (at level 50, Γ, t, u, T at next level) : x_scope.
