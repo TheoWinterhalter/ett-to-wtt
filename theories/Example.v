@@ -165,6 +165,29 @@ Fixpoint Prods (Γ : scontext) (T : sterm) :=
 
 Lemma close_goal_ex :
   forall {Σ Γ t T},
+    Σ ;;; [] |-x t : Prods Γ T ->
+    Σ ;;; Γ |-x T : sSort tt ->
+    ∑ t', Σ ;;; Γ |-x t' : T.
+Proof.
+  intros Σ Γ t T h hT.
+  revert t T h hT. induction Γ as [| A Γ].
+  - intros t T h hT. eexists. eassumption.
+  - intros t T h hT. cbn in h.
+    destruct (IHΓ _ _ h) as [t' ht'].
+    + pose proof (typing_wf hT) as hw.
+      inversion hw. subst.
+      eapply xtype_Prod'.
+      * eassumption.
+      * intros _. eassumption.
+    + eexists. eapply xmeta_conv.
+      * eapply xtype_App'.
+        -- (* Need type_lift *)
+Abort.
+
+
+
+Lemma close_goal_ex :
+  forall {Σ Γ t T},
     Σ ;;; Γ |-x t : T ->
     Σ ;;; Γ |-x T : sSort tt ->
     ∑ t', Σ ;;; [] |-x t' : Prods Γ T.
