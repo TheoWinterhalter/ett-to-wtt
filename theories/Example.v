@@ -163,6 +163,23 @@ Fixpoint Prods (Γ : scontext) (T : sterm) :=
   | [] => T
   end.
 
+(* Lemma close_goal_ex : *)
+(*   forall {Σ Γ Δ t T}, *)
+(*     Σ ;;; Δ |-x t : Prods Γ T -> *)
+(*     Σ ;;; Δ ,,, Γ |-x T : sSort tt -> *)
+(*     ∑ t', Σ ;;; Δ ,,, Γ |-x t' : T. *)
+(* Proof. *)
+(*   intros Σ Γ Δ t T h hT. *)
+(*   revert Δ t T h hT. induction Γ as [| A Γ]. *)
+(*   - intros Δ t T h hT. *)
+(*     rewrite cat_nil. eexists. eassumption. *)
+(*   - intros Δ t T h hT. cbn in h. *)
+(*     destruct (IHΓ _ _ _ h) as [t' ht']. *)
+(*     + admit. *)
+(*     +  *)
+
+
+
 Lemma close_goal_ex :
   forall {Σ Γ t T},
     Σ ;;; [] |-x t : Prods Γ T ->
@@ -182,45 +199,16 @@ Proof.
     + eexists. eapply xmeta_conv.
       * eapply xtype_App'.
         -- (* Need type_lift *)
-Abort.
-
-
-
-Lemma close_goal_ex :
-  forall {Σ Γ t T},
-    Σ ;;; Γ |-x t : T ->
-    Σ ;;; Γ |-x T : sSort tt ->
-    ∑ t', Σ ;;; [] |-x t' : Prods Γ T.
-Proof.
-  intros Σ Γ t T h hT.
-  revert t T h hT. induction Γ as [| A Γ].
-  - intros t T h hT. eexists. lazy. eassumption.
-  - intros t T h hT.
-    assert (h' : Σ ;;; Γ |-x sLambda nAnon A T t : sProd nAnon A T).
-    { pose proof (typing_wf h) as hw.
-      inversion hw. subst.
-      eapply xtype_Lambda'.
-      - eassumption.
-      - intro hw'. eassumption.
-      - intro hw'. assumption.
-    }
-    destruct (IHΓ _ _ h') as [t' ht'].
-    + pose proof (typing_wf h) as hw.
-      inversion hw. subst.
-      eapply xtype_Prod'.
-      * eassumption.
-      * intro hw'. eassumption.
-    + exists t'. assumption.
-Defined.
+Admitted.
 
 Definition closet {Σ Γ t T} h hT :=
   let '(t' ; _) := @close_goal_ex Σ Γ t T h hT in t'.
 
 Definition close_goal :
   forall {Σ Γ t T}
-    (h : Σ ;;; Γ |-x t : T)
+    (h : Σ ;;; [] |-x t : Prods Γ T)
     (hT : Σ ;;; Γ |-x T : sSort tt),
-    Σ ;;; [] |-x closet h hT : Prods Γ T.
+    Σ ;;; Γ |-x closet h hT : T.
 Proof.
   intros Σ Γ t T h hT.
   eapply close_goal_ex.
@@ -234,6 +222,13 @@ Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev.
 Proof.
   unfold tm_vrev, ty_vrev.
   ettcheck.
+  - eapply close_goal.
+    eapply reflection with (e := sAx "vrev_obligation1").
+    (* It would need the exact same type to work,
+       names are going to be a problem otherwise.
+     *)
+    ettcheck.
+
   - instantiate (1 := nNamed "m").
     eapply reflection.
     instantiate (1 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation1") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)).
