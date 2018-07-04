@@ -192,14 +192,94 @@ Proof.
     + ettcheck.
     + ettcheck.
     + ettcheck.
-    (* TODO Maybe prove something about closure like:
-       to have e such that Γ |- e : T,
-       it is enough to have e' such that |- e' : ∀ Γ, T.
-       That way, we can use the obligations directly.
-     *)
-  - Opaque Σi. lazy. eapply reflection. admit.
-  - Opaque Σi. lazy. eapply reflection. admit.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+  - Opaque Σi. lazy. eapply reflection.
+    instantiate (1 := sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation3") _ _ (sRel 10)) _ _ (sRel 9)) _ _ (sRel 8)) _ _ (sRel 7)) _ _ (sRel 6)) _ _ (sRel 5)) _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)).
+    ettcheck.
+    all: lazy.
+    all: try eapply eq_reflexivity.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+  - Opaque Σi. lazy. eapply reflection.
+    instantiate (2 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation2") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)).
+    ettcheck.
+    all: lazy.
+    all: try eapply eq_reflexivity.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck.
+    + ettcheck. lazy. ettcheck.
 Defined.
+(* TODO Maybe prove something about closure like:
+   to have e such that Γ |- e : T,
+   it is enough to have e' such that |- e' : ∀ Γ, T.
+   That way, we can use the obligations directly.
+ *)
 
 (* Definition itt_vrev : sterm := *)
 (*   Eval lazy in *)
