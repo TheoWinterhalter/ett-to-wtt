@@ -166,7 +166,7 @@ Fixpoint Prods (Γ : scontext) (T : sterm) :=
 (* Lemma close_goal_ex : *)
 (*   forall {Σ Γ Δ t T}, *)
 (*     Σ ;;; Δ |-x t : Prods Γ T -> *)
-(*     Σ ;;; Δ ,,, Γ |-x T : sSort tt -> *)
+(*     Σ ;;; Δ ,,, Γ |-x T : Ty -> *)
 (*     ∑ t', Σ ;;; Δ ,,, Γ |-x t' : T. *)
 (* Proof. *)
 (*   intros Σ Γ Δ t T h hT. *)
@@ -183,7 +183,7 @@ Fixpoint Prods (Γ : scontext) (T : sterm) :=
 Lemma close_goal_ex :
   forall {Σ Γ t T},
     Σ ;;; [] |-x t : Prods Γ T ->
-    Σ ;;; Γ |-x T : sSort tt ->
+    Σ ;;; Γ |-x T : Ty ->
     ∑ t', Σ ;;; Γ |-x t' : T.
 Proof.
   intros Σ Γ t T h hT.
@@ -192,7 +192,7 @@ Proof.
   - intros t T h hT. cbn in h.
     destruct (IHΓ _ _ h) as [t' ht'].
     + pose proof (typing_wf hT) as hw.
-      inversion hw. subst.
+      inversion hw. subst. destruct s.
       eapply xtype_Prod'.
       * eassumption.
       * intros _. eassumption.
@@ -207,7 +207,7 @@ Definition closet {Σ Γ t T} h hT :=
 Definition close_goal :
   forall {Σ Γ t T}
     (h : Σ ;;; [] |-x t : Prods Γ T)
-    (hT : Σ ;;; Γ |-x T : sSort tt),
+    (hT : Σ ;;; Γ |-x T : Ty),
     Σ ;;; Γ |-x closet h hT : T.
 Proof.
   intros Σ Γ t T h hT.
@@ -218,137 +218,132 @@ Defined.
 
 
 
-Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev.
-Proof.
-  unfold tm_vrev, ty_vrev.
-  ettcheck.
-  - eapply close_goal.
-    eapply reflection with (e := sAx "vrev_obligation1").
-    (* It would need the exact same type to work,
-       names are going to be a problem otherwise.
-     *)
-    ettcheck.
+(* Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev. *)
+(* Proof. *)
+(*   unfold tm_vrev, ty_vrev. *)
+(*   ettcheck. *)
+(*   - eapply close_goal. *)
+(*     eapply reflection with (e := sAx "vrev_obligation1"). *)
+(*     (* It would need the exact same type to work, *)
+(*        names are going to be a problem otherwise. *)
+(*      *) *)
+(*     ettcheck. *)
 
-  - instantiate (1 := nNamed "m").
-    eapply reflection.
-    instantiate (1 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation1") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)).
-    ettcheck.
-    Opaque Σi.
-    all: lazy.
-    all: try eapply eq_reflexivity.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + lazy. ettcheck.
-    + ettcheck.
-    + lazy. ettcheck.
-    + ettcheck.
-    + lazy. ettcheck.
-    + ettcheck.
-    + lazy. ettcheck.
-    + ettcheck.
-    + lazy. ettcheck.
-    + ettcheck.
-    + lazy. ettcheck.
-    + ettcheck.
-  - Opaque Σi. lazy. eapply reflection.
-    instantiate (2 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation2") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)).
-    ettcheck.
-    all: lazy.
-    all: try eapply eq_reflexivity.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-  - Opaque Σi. lazy. eapply reflection.
-    instantiate (1 := sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation3") _ _ (sRel 10)) _ _ (sRel 9)) _ _ (sRel 8)) _ _ (sRel 7)) _ _ (sRel 6)) _ _ (sRel 5)) _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)).
-    ettcheck.
-    all: lazy.
-    all: try eapply eq_reflexivity.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-  - Opaque Σi. lazy. eapply reflection.
-    instantiate (2 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation2") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)).
-    ettcheck.
-    all: lazy.
-    all: try eapply eq_reflexivity.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck.
-    + ettcheck. lazy. ettcheck.
-Defined.
-(* TODO Maybe prove something about closure like:
-   to have e such that Γ |- e : T,
-   it is enough to have e' such that |- e' : ∀ Γ, T.
-   That way, we can use the obligations directly.
- *)
+(*   - instantiate (1 := nNamed "m"). *)
+(*     eapply reflection. *)
+(*     instantiate (1 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation1") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
+(*     ettcheck. *)
+(*     Opaque Σi. *)
+(*     all: lazy. *)
+(*     all: try eapply eq_reflexivity. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*     + lazy. ettcheck. *)
+(*     + ettcheck. *)
+(*   - Opaque Σi. lazy. eapply reflection. *)
+(*     instantiate (2 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation2") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
+(*     ettcheck. *)
+(*     all: lazy. *)
+(*     all: try eapply eq_reflexivity. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*   - Opaque Σi. lazy. eapply reflection. *)
+(*     instantiate (1 := sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation3") _ _ (sRel 10)) _ _ (sRel 9)) _ _ (sRel 8)) _ _ (sRel 7)) _ _ (sRel 6)) _ _ (sRel 5)) _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
+(*     ettcheck. *)
+(*     all: lazy. *)
+(*     all: try eapply eq_reflexivity. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*   - Opaque Σi. lazy. eapply reflection. *)
+(*     instantiate (2 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation2") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
+(*     ettcheck. *)
+(*     all: lazy. *)
+(*     all: try eapply eq_reflexivity. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. *)
+(*     + ettcheck. lazy. ettcheck. *)
+(* Defined. *)
 
 (* Definition itt_vrev : sterm := *)
 (*   Eval lazy in *)
