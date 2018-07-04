@@ -175,8 +175,9 @@ Proof.
     pose proof (heq_conv_inv IHu2).
     pose proof (heq_conv_inv IHu3).
     split_hyps. subst.
+    pose proof (sort_conv_inv pi1_1). subst.
     eapply conv_trans ; [| exact h13 ].
-    apply cong_Heq ; try assumption.
+    apply cong_Heq ; try apply conv_refl.
     + apply cong_Eq ; assumption.
     + apply cong_Eq ; assumption.
   - specialize (IHu1 _ _ _ h h0).

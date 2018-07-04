@@ -469,7 +469,7 @@ Proof.
         eapply (@type_llift1 Sort_notion) ; eassumption.
       * lift_sort.
         eapply (@type_rlift1 Sort_notion) ; eassumption.
-    + instantiate (1 := Sorts.succ (Sorts.max s0 s2)).
+    + instantiate (1 := Sorts.succ (Sorts.prod_sort s0 s2)).
       eapply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
         eapply type_conv ; try eassumption.
@@ -529,7 +529,7 @@ Proof.
         eapply (@type_llift1 Sort_notion) ; eassumption.
       * lift_sort.
         eapply (@type_rlift1 Sort_notion) ; eassumption.
-    + instantiate (1 := Sorts.succ (Sorts.max s0 s2)).
+    + instantiate (1 := Sorts.succ (Sorts.sum_sort s0 s2)).
       eapply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
         eapply type_conv ; try eassumption.
@@ -569,7 +569,7 @@ Proof.
     subst.
     eapply type_conv.
     + eapply type_CongEq' ; eassumption.
-    + instantiate (1 := Sorts.succ s).
+    + instantiate (1 := Sorts.succ (Sorts.eq_sort s)).
       eapply type_Heq.
       * destruct (istype_type hg h1). lift_sort.
         eapply type_llift0 ; try eassumption.
@@ -669,7 +669,7 @@ Proof.
         eapply (@type_rlift1 Sort_notion) ; eassumption.
       * eapply (@type_llift1 Sort_notion) ; eassumption.
       * eapply (@type_rlift1 Sort_notion) ; eassumption.
-    + instantiate (1 := Sorts.max s0 s2).
+    + instantiate (1 := Sorts.prod_sort s0 s2).
       eapply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
         destruct (istype_type hg h1).
@@ -820,7 +820,7 @@ Proof.
         apply hpv.
       * lift_sort. eapply (@type_llift1 Sort_notion) ; eassumption.
       * lift_sort. eapply (@type_rlift1 Sort_notion) ; eassumption.
-    + instantiate (1 := max s0 s2).
+    + instantiate (1 := sum_sort s0 s2).
       apply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
         destruct (istype_type hg h1).
@@ -1013,7 +1013,7 @@ Proof.
     } subst.
     eapply type_conv.
     + eapply type_CongRefl' ; eassumption.
-    + instantiate (1 := s).
+    + instantiate (1 := eq_sort s).
       eapply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
         destruct (istype_type hg h1).
@@ -1354,7 +1354,7 @@ Proof.
         -- apply conv_sym. eapply subj_conv ; try eassumption.
            econstructor. eapply typing_wf. eassumption.
     + ttinv ht.
-      exists (Sorts.max s1 s2). split.
+      exists (Sorts.prod_sort s1 s2). split.
       * now apply type_Prod.
       * destruct (istype_type hg ht).
         eapply type_conv ; try eassumption.
@@ -1362,7 +1362,7 @@ Proof.
         -- apply conv_sym. eapply subj_conv ; try eassumption.
            econstructor. eapply typing_wf. eassumption.
     + ttinv ht.
-      exists (Sorts.max s1 s2). split.
+      exists (Sorts.sum_sort s1 s2). split.
       * now apply type_Sum.
       * destruct (istype_type hg ht).
         eapply type_conv ; try eassumption.
@@ -1370,7 +1370,7 @@ Proof.
         -- apply conv_sym. eapply subj_conv ; try eassumption.
            econstructor. eapply typing_wf. eassumption.
     + ttinv ht.
-      exists s. split.
+      exists (eq_sort s). split.
       * now apply type_Eq.
       * destruct (istype_type hg ht).
         eapply type_conv ; try eassumption.

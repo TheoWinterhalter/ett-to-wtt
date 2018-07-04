@@ -25,7 +25,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Type :=
 | type_Prod Γ n t b s1 s2 :
     Σ ;;; Γ |-x t : sSort s1 ->
     Σ ;;; Γ ,, t |-x b : sSort s2 ->
-    Σ ;;; Γ |-x (sProd n t b) : sSort (Sorts.max s1 s2)
+    Σ ;;; Γ |-x (sProd n t b) : sSort (Sorts.prod_sort s1 s2)
 
 | type_Lambda Γ n n' t b s1 s2 bty :
     Σ ;;; Γ |-x t : sSort s1 ->
@@ -43,7 +43,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Type :=
 | type_Sum Γ n t b s1 s2 :
     Σ ;;; Γ |-x t : sSort s1 ->
     Σ ;;; Γ ,, t |-x b : sSort s2 ->
-    Σ ;;; Γ |-x (sSum n t b) : sSort (Sorts.max s1 s2)
+    Σ ;;; Γ |-x (sSum n t b) : sSort (Sorts.sum_sort s1 s2)
 
 | type_Pair Γ n A B u v s1 s2 :
     Σ ;;; Γ |-x A : sSort s1 ->
@@ -68,7 +68,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Type :=
     Σ ;;; Γ |-x A : sSort s ->
     Σ ;;; Γ |-x u : A ->
     Σ ;;; Γ |-x v : A ->
-    Σ ;;; Γ |-x sEq A u v : sSort s
+    Σ ;;; Γ |-x sEq A u v : sSort (Sorts.eq_sort s)
 
 | type_Refl Γ s A u :
     Σ ;;; Γ |-x A : sSort s ->
@@ -128,7 +128,8 @@ with eq_term (Σ : sglobal_context) : scontext -> sterm -> sterm -> sterm -> Typ
     Σ ;;; Γ ,, A1 |-x B1 = B2 : sSort s2 ->
     Σ ;;; Γ ,, A1 |-x B1 : sSort s2 ->
     Σ ;;; Γ ,, A2 |-x B2 : sSort s2 ->
-    Σ ;;; Γ |-x (sProd n1 A1 B1) = (sProd n2 A2 B2) : sSort (Sorts.max s1 s2)
+    Σ ;;; Γ |-x (sProd n1 A1 B1) = (sProd n2 A2 B2) : 
+               sSort (Sorts.prod_sort s1 s2)
 
 | cong_Lambda Γ n1 n2 n' A1 A2 B1 B2 t1 t2 s1 s2 :
     Σ ;;; Γ |-x A1 = A2 : sSort s1 ->
@@ -158,7 +159,7 @@ with eq_term (Σ : sglobal_context) : scontext -> sterm -> sterm -> sterm -> Typ
     Σ ;;; Γ ,, A1 |-x B1 = B2 : sSort s2 ->
     Σ ;;; Γ ,, A1 |-x B1 : sSort s2 ->
     Σ ;;; Γ ,, A2 |-x B2 : sSort s2 ->
-    Σ ;;; Γ |-x (sSum n1 A1 B1) = (sSum n2 A2 B2) : sSort (Sorts.max s1 s2)
+    Σ ;;; Γ |-x (sSum n1 A1 B1) = (sSum n2 A2 B2) : sSort (Sorts.sum_sort s1 s2)
 
 | cong_Pair Γ n A1 A2 B1 B2 u1 u2 v1 v2 s1 s2 :
     Σ ;;; Γ |-x A1 = A2 : sSort s1 ->
@@ -197,7 +198,7 @@ with eq_term (Σ : sglobal_context) : scontext -> sterm -> sterm -> sterm -> Typ
     Σ ;;; Γ |-x A1 = A2 : sSort s ->
     Σ ;;; Γ |-x u1 = u2 : A1 ->
     Σ ;;; Γ |-x v1 = v2 : A1 ->
-    Σ ;;; Γ |-x sEq A1 u1 v1 = sEq A2 u2 v2 : sSort s
+    Σ ;;; Γ |-x sEq A1 u1 v1 = sEq A2 u2 v2 : sSort (Sorts.eq_sort s)
 
 | cong_Refl Γ s A1 A2 u1 u2 :
     Σ ;;; Γ |-x A1 = A2 : sSort s ->

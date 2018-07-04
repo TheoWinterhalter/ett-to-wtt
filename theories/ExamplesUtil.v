@@ -147,7 +147,9 @@ Lemma type_Eq' :
 Proof.
   intros Σ Γ A u v hg hu hv.
   destruct (istype_type hg hu) as [[] ?].
-  eapply IT.type_Eq ; eassumption.
+  eapply meta_conv.
+  - eapply IT.type_Eq ; eassumption.
+  - reflexivity.
 Defined.
 
 Lemma type_Refl' :
@@ -516,7 +518,9 @@ Lemma xtype_Eq' :
     Σ ;;; Γ |-x sEq A u v : Ty.
 Proof.
   intros Σ Γ A u v hA hu hv.
-  eapply type_Eq ; eassumption.
+  eapply xmeta_conv.
+  - eapply type_Eq ; eassumption.
+  - reflexivity.
 Defined.
 
 Lemma xtype_Refl' :

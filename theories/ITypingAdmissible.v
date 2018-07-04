@@ -176,8 +176,8 @@ Lemma type_CongProd'' :
     Σ ;;; Γ ,, A1 |-i B1 : sSort z ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z ->
     Σ ;;; Γ |-i sCongProd B1 B2 pA pB :
-    sHeq (sSort (Sorts.max s z)) (sProd nx A1 B1)
-         (sSort (Sorts.max s z)) (sProd ny A2 B2).
+    sHeq (sSort (Sorts.prod_sort s z)) (sProd nx A1 B1)
+         (sSort (Sorts.prod_sort s z)) (sProd ny A2 B2).
 Proof.
   intros Σ Γ s z nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
   destruct (istype_type hg hpA) as [? ipA]. ttinv ipA.
@@ -213,8 +213,8 @@ Lemma type_CongProd' :
     Σ ;;; Γ ,, A1 |-i B1 : sSort z1 ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z2 ->
     Σ ;;; Γ |-i sCongProd B1 B2 pA pB :
-    sHeq (sSort (Sorts.max s1 z1)) (sProd nx A1 B1)
-         (sSort (Sorts.max s2 z2)) (sProd ny A2 B2).
+    sHeq (sSort (Sorts.prod_sort s1 z1)) (sProd nx A1 B1)
+         (sSort (Sorts.prod_sort s2 z2)) (sProd ny A2 B2).
 Proof.
   intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
   destruct (prod_sorts hg hpA hpB) as [e1 e2].
@@ -333,8 +333,8 @@ Lemma type_CongSum'' :
     Σ ;;; Γ ,, A1 |-i B1 : sSort z ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z ->
     Σ ;;; Γ |-i sCongSum B1 B2 pA pB :
-    sHeq (sSort (Sorts.max s z)) (sSum nx A1 B1)
-         (sSort (Sorts.max s z)) (sSum ny A2 B2).
+    sHeq (sSort (Sorts.sum_sort s z)) (sSum nx A1 B1)
+         (sSort (Sorts.sum_sort s z)) (sSum ny A2 B2).
 Proof.
   intros Σ Γ s z nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
   destruct (istype_type hg hpA) as [? ipA]. ttinv ipA.
@@ -353,8 +353,8 @@ Lemma type_CongSum' :
     Σ ;;; Γ ,, A1 |-i B1 : sSort z1 ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z2 ->
     Σ ;;; Γ |-i sCongSum B1 B2 pA pB :
-    sHeq (sSort (Sorts.max s1 z1)) (sSum nx A1 B1)
-         (sSort (Sorts.max s2 z2)) (sSum ny A2 B2).
+    sHeq (sSort (Sorts.sum_sort s1 z1)) (sSum nx A1 B1)
+         (sSort (Sorts.sum_sort s2 z2)) (sSum ny A2 B2).
 Proof.
   intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
   destruct (prod_sorts hg hpA hpB) as [e1 e2].
@@ -507,7 +507,8 @@ Lemma type_CongEq'' :
     Σ ;;; Γ |-i pu : sHeq A1 u1 A2 u2 ->
     Σ ;;; Γ |-i pv : sHeq A1 v1 A2 v2 ->
     Σ ;;; Γ |-i sCongEq pA pu pv :
-               sHeq (sSort s) (sEq A1 u1 v1) (sSort s) (sEq A2 u2 v2).
+               sHeq (sSort (Sorts.eq_sort s)) (sEq A1 u1 v1)
+                    (sSort (Sorts.eq_sort s)) (sEq A2 u2 v2).
 Proof.
   intros Σ Γ s A1 A2 u1 u2 v1 v2 pA pu pv hg hpA hpu hpv.
   destruct (istype_type hg hpA) as [? iA]. ttinv iA.
@@ -524,8 +525,8 @@ Lemma type_CongEq' :
     Σ ;;; Γ |-i pu : sHeq A1 u1 A2 u2 ->
     Σ ;;; Γ |-i pv : sHeq A1 v1 A2 v2 ->
     Σ ;;; Γ |-i sCongEq pA pu pv
-             : sHeq (sSort s1) (sEq A1 u1 v1)
-                    (sSort s2) (sEq A2 u2 v2).
+             : sHeq (sSort (Sorts.eq_sort s1)) (sEq A1 u1 v1)
+                    (sSort (Sorts.eq_sort s2)) (sEq A2 u2 v2).
 Proof.
   intros Σ Γ s1 s2 A1 A2 u1 u2 v1 v2 pA pu pv hg hpA hpu hpv.
   destruct (istype_type hg hpA) as [? iA]. ttinv iA.

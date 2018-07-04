@@ -27,7 +27,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
 | type_Prod Γ n t b s1 s2 :
     Σ ;;; Γ |-i t : sSort s1 ->
     Σ ;;; Γ ,, t |-i b : sSort s2 ->
-    Σ ;;; Γ |-i (sProd n t b) : sSort (Sorts.max s1 s2)
+    Σ ;;; Γ |-i (sProd n t b) : sSort (Sorts.prod_sort s1 s2)
 
 | type_Lambda Γ n n' t b s1 s2 bty :
     Σ ;;; Γ |-i t : sSort s1 ->
@@ -45,7 +45,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
 | type_Sum Γ n t b s1 s2 :
     Σ ;;; Γ |-i t : sSort s1 ->
     Σ ;;; Γ ,, t |-i b : sSort s2 ->
-    Σ ;;; Γ |-i (sSum n t b) : sSort (Sorts.max s1 s2)
+    Σ ;;; Γ |-i (sSum n t b) : sSort (Sorts.sum_sort s1 s2)
 
 | type_Pair Γ n A B u v s1 s2 :
     Σ ;;; Γ |-i A : sSort s1 ->
@@ -70,7 +70,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ |-i A : sSort s ->
     Σ ;;; Γ |-i u : A ->
     Σ ;;; Γ |-i v : A ->
-    Σ ;;; Γ |-i sEq A u v : sSort s
+    Σ ;;; Γ |-i sEq A u v : sSort (Sorts.eq_sort s)
 
 | type_Refl Γ s A u :
     Σ ;;; Γ |-i A : sSort s ->
@@ -148,8 +148,8 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ ,, A1 |-i B1 : sSort z ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z ->
     Σ ;;; Γ |-i sCongProd B1 B2 pA pB :
-    sHeq (sSort (Sorts.max s z)) (sProd nx A1 B1)
-         (sSort (Sorts.max s z)) (sProd ny A2 B2)
+    sHeq (sSort (Sorts.prod_sort s z)) (sProd nx A1 B1)
+         (sSort (Sorts.prod_sort s z)) (sProd ny A2 B2)
 
 | type_CongLambda Γ s z nx ny A1 A2 B1 B2 t1 t2 pA pB pt :
     Σ ;;; Γ |-i pA : sHeq (sSort s) A1 (sSort s) A2 ->
@@ -200,8 +200,8 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ ,, A1 |-i B1 : sSort z ->
     Σ ;;; Γ ,, A2 |-i B2 : sSort z ->
     Σ ;;; Γ |-i sCongSum B1 B2 pA pB :
-    sHeq (sSort (Sorts.max s z)) (sSum nx A1 B1)
-         (sSort (Sorts.max s z)) (sSum ny A2 B2)
+    sHeq (sSort (Sorts.sum_sort s z)) (sSum nx A1 B1)
+         (sSort (Sorts.sum_sort s z)) (sSum ny A2 B2)
 
 | type_CongPair Γ s z nx ny A1 A2 B1 B2 u1 u2 v1 v2 pA pB pu pv :
     Σ ;;; Γ |-i pA : sHeq (sSort s) A1 (sSort s) A2 ->
@@ -264,7 +264,8 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ |-i v1 : A1 ->
     Σ ;;; Γ |-i v2 : A2 ->
     Σ ;;; Γ |-i sCongEq pA pu pv :
-               sHeq (sSort s) (sEq A1 u1 v1) (sSort s) (sEq A2 u2 v2)
+               sHeq (sSort (Sorts.eq_sort s)) (sEq A1 u1 v1)
+                    (sSort (Sorts.eq_sort s)) (sEq A2 u2 v2)
 
 | type_CongRefl Γ s A1 A2 u1 u2 pA pu :
     Σ ;;; Γ |-i pA : sHeq (sSort s) A1 (sSort s) A2 ->
