@@ -73,60 +73,34 @@ Module IL := ITypingLemmata.
 
 (* The context for ITT *)
 
+Notation Ty := (sSort tt).
+
 Definition decl := Build_glob_decl.
-
-Definition nctx := list (name * sterm).
-
-Fixpoint Sums (L : nctx) (T : sterm) :=
-  match L with
-  | (na,A) :: L => sSum na A (Sums L T)
-  | [] => T
-  end.
-
-Fixpoint Prods (L : nctx) (T : sterm) :=
-  match L with
-  | (na,A) :: L => sProd na A (Prods L T)
-  | [] => T
-  end.
-
-Definition subst_nctx u (L : nctx) :=
-  map_i (fun i '(nx, A) => (nx, A{ i := u })) L.
-
-Definition substn_nctx u n (L : nctx) :=
-  map_i_aux (fun i '(nx, A) => (nx, A{ i := u })) n L.
-
-Fixpoint Apps (f : sterm) (L : nctx) (T : sterm) (l : list sterm) : sterm :=
-  match L, l with
-  | (nx,A) :: L, u :: l =>
-    Apps (sApp f A (Prods L T) u) (subst_nctx u L) (T{ #|L| := u }) l
-  | _,_ => f
-  end.
-
-Definition Arrow A B := sProd nAnon A (lift0 1 B).
-Notation "A ==> B" := (Arrow A B) (at level 20, right associativity).
 
 (* Some admissible lemmata to do memoisation in a way. *)
 Lemma type_Prod' :
-  forall {Σ Γ n A B s1 s2},
-    Σ ;;; Γ |-i A : sSort s1 ->
-    (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i B : sSort s2) ->
-    Σ ;;; Γ |-i sProd n A B : sSort (Sorts.max s1 s2).
+  forall {Σ Γ n A B},
+    Σ ;;; Γ |-i A : Ty ->
+    (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i B : Ty) ->
+    Σ ;;; Γ |-i sProd n A B : Ty.
 Proof.
-  intros Σ' Γ n A B s1 s2 hA hB.
-  eapply IT.type_Prod.
-  - assumption.
-  - apply hB. econstructor ; try eassumption.
-    eapply IL.typing_wf. eassumption.
+  intros Σ' Γ n A B hA hB.
+  eapply meta_conv.
+  - eapply IT.type_Prod.
+    + eassumption.
+    + apply hB. econstructor ; try eassumption.
+      eapply IL.typing_wf. eassumption.
+  - reflexivity.
 Defined.
 
 Lemma type_Lambda' :
-  forall {Σ Γ n n' A B t s},
+  forall {Σ Γ n n' A B t},
     type_glob Σ ->
-    Σ ;;; Γ |-i A : sSort s ->
+    Σ ;;; Γ |-i A : Ty ->
     (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i t : B) ->
     Σ ;;; Γ |-i sLambda n A B t : sProd n' A B.
 Proof.
-  intros Σ Γ n n' A B t s hg hA ht.
+  intros Σ Γ n n' A B t hg hA ht.
   assert (hw : IT.wf Σ (Γ ,, A)).
   { econstructor ; try eassumption.
     eapply IL.typing_wf. eassumption.
@@ -150,16 +124,30 @@ Proof.
 Defined.
 
 Lemma type_Sum' :
-  forall {Σ Γ n A B s1 s2},
-    Σ ;;; Γ |-i A : sSort s1 ->
-    (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i B : sSort s2) ->
-    Σ ;;; Γ |-i sSum n A B : sSort (Sorts.max s1 s2).
+  forall {Σ Γ n A B},
+    Σ ;;; Γ |-i A : Ty ->
+    (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i B : Ty) ->
+    Σ ;;; Γ |-i sSum n A B : Ty.
 Proof.
-  intros Σ' Γ n A B s1 s2 hA hB.
-  eapply IT.type_Sum.
-  - assumption.
-  - apply hB. econstructor ; try eassumption.
-    eapply IL.typing_wf. eassumption.
+  intros Σ' Γ n A B hA hB.
+  eapply meta_conv.
+  - eapply IT.type_Sum.
+    + eassumption.
+    + apply hB. econstructor ; try eassumption.
+      eapply IL.typing_wf. eassumption.
+  - reflexivity.
+Defined.
+
+Lemma type_Eq' :
+  forall {Σ Γ A u v},
+    type_glob Σ ->
+    Σ ;;; Γ |-i u : A ->
+    Σ ;;; Γ |-i v : A ->
+    Σ ;;; Γ |-i sEq A u v : Ty.
+Proof.
+  intros Σ Γ A u v hg hu hv.
+  destruct (istype_type hg hu) as [[] ?].
+  eapply IT.type_Eq ; eassumption.
 Defined.
 
 Lemma type_Refl' :
@@ -173,13 +161,24 @@ Proof.
   eapply IT.type_Refl ; eassumption.
 Defined.
 
+Lemma type_Sort' :
+  forall {Σ Γ},
+    IT.wf Σ Γ ->
+    Σ ;;; Γ |-i Ty : Ty.
+Proof.
+  intros Σ Γ h.
+  eapply meta_conv.
+  - eapply IT.type_Sort. assumption.
+  - reflexivity.
+Defined.
+
 (* Maybe move somewhere else *)
 Ltac ittintro :=
   lazymatch goal with
   | |- ?Σ ;;; ?Γ |-i ?t : ?T =>
     lazymatch t with
     | sRel ?n => refine (IT.type_Rel _ _ n _ _)
-    | sSort _ => eapply IT.type_Sort
+    | sSort _ => eapply type_Sort'
     | sProd _ _ _ => eapply type_Prod' ; [| intro ]
     | sLambda _ _ _ _ => eapply type_Lambda' ; [ .. | intro ]
     | sApp _ _ _ _ => eapply type_App'
@@ -187,7 +186,7 @@ Ltac ittintro :=
     | sPair _ _ _ _ => eapply type_Pair'
     | sPi1 _ _ _ => eapply type_Pi1'
     | sPi2 _ _ _ => eapply type_Pi2'
-    | sEq _ _ _ => eapply IT.type_Eq
+    | sEq _ _ _ => eapply type_Eq'
     | sRefl _ _ => eapply type_Refl'
     | sAx _ => eapply IT.type_Ax ; [| lazy ; try reflexivity ]
     | _ => fail "No introduction rule for" t
@@ -447,26 +446,28 @@ Definition type_translation {Γ t A} h {Γ'} hΓ :=
 
 (* Same for ETT *)
 Lemma xtype_Prod' :
-  forall {Σ Γ n A B s1 s2},
-    Σ ;;; Γ |-x A : sSort s1 ->
-    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : sSort s2) ->
-    Σ ;;; Γ |-x sProd n A B : sSort (Sorts.max s1 s2).
+  forall {Σ Γ n A B},
+    Σ ;;; Γ |-x A : Ty ->
+    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : Ty) ->
+    Σ ;;; Γ |-x sProd n A B : Ty.
 Proof.
-  intros Σ Γ n A B s1 s2 hA hB.
-  eapply type_Prod.
-  - assumption.
-  - apply hB. econstructor ; try eassumption.
-    eapply typing_wf. eassumption.
+  intros Σ Γ n A B hA hB.
+  eapply xmeta_conv.
+  - eapply type_Prod.
+    + eassumption.
+    + apply hB. econstructor ; try eassumption.
+      eapply typing_wf. eassumption.
+  - reflexivity.
 Defined.
 
 Lemma xtype_Lambda' :
-  forall {Σ Γ n n' A B t s1 s2},
-    Σ ;;; Γ |-x A : sSort s1 ->
-    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : sSort s2) ->
+  forall {Σ Γ n n' A B t},
+    Σ ;;; Γ |-x A : Ty ->
+    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : Ty) ->
     (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x t : B) ->
     Σ ;;; Γ |-x sLambda n A B t : sProd n' A B.
 Proof.
-  intros Σ Γ n n' A B t s1 s2 hA hB ht.
+  intros Σ Γ n n' A B t hA hB ht.
   assert (hw : wf Σ (Γ ,, A)).
   { econstructor ; try eassumption.
     eapply typing_wf. eassumption.
@@ -476,14 +477,14 @@ Proof.
 Defined.
 
 Lemma xtype_App' :
-  forall {Σ Γ n t A B u s1 s2},
+  forall {Σ Γ n t A B u},
     Σ ;;; Γ |-x t : sProd n A B ->
     Σ ;;; Γ |-x u : A ->
-    Σ ;;; Γ |-x A : sSort s1 ->
-    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : sSort s2) ->
+    Σ ;;; Γ |-x A : Ty ->
+    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : Ty) ->
     Σ ;;; Γ |-x sApp t A B u : (B{0 := u})%s.
 Proof.
-  intros Σ Γ n t A B u s1 s2 ht hu hA hB.
+  intros Σ Γ n t A B u ht hu hA hB.
   assert (hw : wf Σ (Γ ,, A)).
   { econstructor ; try eassumption.
     eapply typing_wf. eassumption.
@@ -493,16 +494,50 @@ Proof.
 Defined.
 
 Lemma xtype_Sum' :
-  forall {Σ Γ n A B s1 s2},
-    Σ ;;; Γ |-x A : sSort s1 ->
-    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : sSort s2) ->
-    Σ ;;; Γ |-x sSum n A B : sSort (Sorts.max s1 s2).
+  forall {Σ Γ n A B},
+    Σ ;;; Γ |-x A : Ty ->
+    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : Ty) ->
+    Σ ;;; Γ |-x sSum n A B : Ty.
 Proof.
-  intros Σ' Γ n A B s1 s2 hA hB.
-  eapply type_Sum.
-  - assumption.
-  - apply hB. econstructor ; try eassumption.
-    eapply typing_wf. eassumption.
+  intros Σ Γ n A B hA hB.
+  eapply xmeta_conv.
+  - eapply type_Sum.
+    + eassumption.
+    + apply hB. econstructor ; try eassumption.
+      eapply typing_wf. eassumption.
+  - reflexivity.
+Defined.
+
+Lemma xtype_Eq' :
+  forall {Σ Γ A u v},
+    Σ ;;; Γ |-x A : Ty ->
+    Σ ;;; Γ |-x u : A ->
+    Σ ;;; Γ |-x v : A ->
+    Σ ;;; Γ |-x sEq A u v : Ty.
+Proof.
+  intros Σ Γ A u v hA hu hv.
+  eapply type_Eq ; eassumption.
+Defined.
+
+Lemma xtype_Refl' :
+  forall {Σ Γ A u},
+    Σ ;;; Γ |-x A : Ty ->
+    Σ ;;; Γ |-x u : A ->
+    Σ ;;; Γ |-x sRefl A u : sEq A u u.
+Proof.
+  intros Σ Γ A u hA hu.
+  eapply type_Refl ; eassumption.
+Defined.
+
+Lemma xtype_Sort' :
+  forall {Σ Γ},
+    wf Σ Γ ->
+    Σ ;;; Γ |-x Ty : Ty.
+Proof.
+  intros Σ Γ h.
+  eapply xmeta_conv.
+  - eapply type_Sort. assumption.
+  - reflexivity.
 Defined.
 
 (* Maybe move somewhere else *)
@@ -511,7 +546,7 @@ Ltac ettintro :=
   | |- ?Σ ;;; ?Γ |-x ?t : ?T =>
     lazymatch t with
     | sRel ?n => refine (type_Rel _ _ n _ _)
-    | sSort _ => eapply type_Sort
+    | sSort _ => eapply xtype_Sort'
     | sProd _ _ _ => eapply xtype_Prod' ; [| intro ]
     | sLambda _ _ _ _ => eapply xtype_Lambda' ; [ .. | intro | intro ]
     | sApp _ _ _ _ => eapply xtype_App' ; [ .. | intro ]
@@ -519,8 +554,8 @@ Ltac ettintro :=
     | sPair _ _ _ _ => eapply type_Pair
     | sPi1 _ _ _ => eapply type_Pi1
     | sPi2 _ _ _ => eapply type_Pi2
-    | sEq _ _ _ => eapply type_Eq
-    | sRefl _ _ => eapply type_Refl
+    | sEq _ _ _ => eapply xtype_Eq'
+    | sRefl _ _ => eapply xtype_Refl'
     | sAx _ => eapply type_Ax ; [| lazy ; try reflexivity ]
     | _ => fail "No introduction rule for" t
     end
