@@ -156,6 +156,57 @@ Definition ty_vrev :=
   | Error _ => sRel 0
   end.
 
+(* TODO Move in ExamplesUtil *)
+Fixpoint Prods (Γ : scontext) (T : sterm) :=
+  match Γ with
+  | A :: Γ => Prods Γ (sProd nAnon A T)
+  | [] => T
+  end.
+
+Lemma close_goal_ex :
+  forall {Σ Γ t T},
+    Σ ;;; Γ |-x t : T ->
+    Σ ;;; Γ |-x T : sSort tt ->
+    ∑ t', Σ ;;; [] |-x t' : Prods Γ T.
+Proof.
+  intros Σ Γ t T h hT.
+  revert t T h hT. induction Γ as [| A Γ].
+  - intros t T h hT. eexists. lazy. eassumption.
+  - intros t T h hT.
+    assert (h' : Σ ;;; Γ |-x sLambda nAnon A T t : sProd nAnon A T).
+    { pose proof (typing_wf h) as hw.
+      inversion hw. subst.
+      eapply xtype_Lambda'.
+      - eassumption.
+      - intro hw'. eassumption.
+      - intro hw'. assumption.
+    }
+    destruct (IHΓ _ _ h') as [t' ht'].
+    + pose proof (typing_wf h) as hw.
+      inversion hw. subst.
+      eapply xtype_Prod'.
+      * eassumption.
+      * intro hw'. eassumption.
+    + exists t'. assumption.
+Defined.
+
+Definition closet {Σ Γ t T} h hT :=
+  let '(t' ; _) := @close_goal_ex Σ Γ t T h hT in t'.
+
+Definition close_goal :
+  forall {Σ Γ t T}
+    (h : Σ ;;; Γ |-x t : T)
+    (hT : Σ ;;; Γ |-x T : sSort tt),
+    Σ ;;; [] |-x closet h hT : Prods Γ T.
+Proof.
+  intros Σ Γ t T h hT.
+  eapply close_goal_ex.
+Defined.
+
+
+
+
+
 Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev.
 Proof.
   unfold tm_vrev, ty_vrev.
