@@ -40,6 +40,9 @@ provides useful lemmata that aren't specific to the formalisation.*
 
 #### Syntax
 
+First, [Sorts](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Sorts.v) introduces a
+notion of sort (as a type-class) stating the basic properties required, and provides different instances
+like the natural number hierarchy, type-in-type, or even HTS/2-level TT.
 In [SAst](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/SAst.v)
 we define the common syntax to both ETT (Extensional type theory) and ITT (our own version of Itensional
 type theory with some sugar) in the form of a simple inductive type `sterm`.
@@ -99,7 +102,7 @@ Record Pack A1 A2 := pack {
 In order to produce terms as small / efficient as possible, we provide
 *optimised* versions of some constructors, for instance, transport
 between two syntactically equal terms is remapped to
-reflexivity. Thanks to this, terms that live in ITT should be
+identity. Thanks to this, terms that live in ITT should be
 translated to themselves syntactically (and not just up to transport).
 This is done in
 [Optim](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Optim.v).
@@ -108,7 +111,7 @@ contains the proof of the fundamental lemma, crucial step for our translation.
 [Translation](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Translation.v)
 contains the translation from ETT to ITT.
 
-#### Translation from ITT to TemplateCoq and Coq
+#### Interaction with (Template)Coq
 
 To realise the sugar of ITT, we define some constants in
 [Quotes](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Quotes.v)
@@ -118,6 +121,8 @@ The translation from ITT to TemplateCoq is done in
 [FullQuote](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/FullQuoten.v)
 is for the opposite: generating an ITT term from a TemplateCoq (and
 thus Coq) term, it is useful to generate examples.
+[ExampleQuotes](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ExampleQuotes.v)
+is about defining terms that will be useful for examples but need quoting.
 The module [ExamplesUtil](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ExamplesUtil.v)
 provides useful lemmata and the proof of well-formedness of a global
 context with `nat` and `vec` as axiomatised constants.
