@@ -557,7 +557,7 @@ Defined.
 
 Lemma xwf_snoc' :
   forall {Σ Γ A},
-    Σ ;;; Γ |-i A : Ty ->
+    Σ ;;; Γ |-x A : Ty ->
     wf Σ (Γ ,, A).
 Proof.
   intros Σ Γ A h.
