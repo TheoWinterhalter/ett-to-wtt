@@ -174,6 +174,17 @@ Proof.
   - reflexivity.
 Defined.
 
+Lemma wf_snoc' :
+  forall {Σ Γ A},
+    Σ ;;; Γ |-i A : Ty ->
+    IT.wf Σ (Γ ,, A).
+Proof.
+  intros Σ Γ A h.
+  econstructor.
+  - eapply IL.typing_wf. eassumption.
+  - eassumption.
+Defined.
+
 (* Maybe move somewhere else *)
 Ltac ittintro :=
   lazymatch goal with
@@ -230,7 +241,7 @@ Ltac ittcheck1 :=
       | cbn ; try reflexivity
       ]
     ]
-  | |- IT.wf ?Σ ?Γ => first [ assumption | econstructor ]
+  | |- IT.wf ?Σ ?Γ => first [ assumption | eapply wf_snoc' | econstructor ]
   | |- sSort _ = sSort _ => first [ lazy ; reflexivity | shelve ]
   | |- type_glob _ => first [ assumption | glob ]
   | _ => fail "Not applicable"
@@ -544,6 +555,17 @@ Proof.
   - reflexivity.
 Defined.
 
+Lemma xwf_snoc' :
+  forall {Σ Γ A},
+    Σ ;;; Γ |-i A : Ty ->
+    wf Σ (Γ ,, A).
+Proof.
+  intros Σ Γ A h.
+  econstructor.
+  - eapply typing_wf. eassumption.
+  - eassumption.
+Defined.
+
 (* Maybe move somewhere else *)
 Ltac ettintro :=
   lazymatch goal with
@@ -577,7 +599,7 @@ Ltac ettcheck1 :=
     (*   | cbn ; try reflexivity *)
     (*   ] *)
     ]
-  | |- wf ?Σ ?Γ => first [ assumption | econstructor ]
+  | |- wf ?Σ ?Γ => first [ assumption | eapply xwf_snoc' | econstructor ]
   | |- sSort _ = sSort _ => first [ lazy ; reflexivity | shelve ]
   | |- type_glob _ => first [ assumption | glob ]
   | _ => fail "Not applicable"
