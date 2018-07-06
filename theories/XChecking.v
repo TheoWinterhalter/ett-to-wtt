@@ -6,7 +6,7 @@ From Template Require Import utils Ast LiftSubst Typing Checker.
 From Translation Require Import util Quotes Sorts SAst SLiftSubst SCommon
      ITyping ITypingInversions ITypingLemmata ITypingAdmissible XTyping
      FundamentalLemma Translation FinalTranslation FullQuote ExampleQuotes
-     XTypingLemmata ExamplesUtil XInversions.
+     ExamplesUtil XTypingLemmata XInversions.
 
 (* For efficiency reasons we use type in type for examples. *)
 Existing Instance Sorts.type_in_type.
@@ -169,7 +169,7 @@ Ltac ettintro :=
     | sSort _ => eapply xtype_Sort'
     | sProd _ _ _ => eapply xtype_Prod' ; [| intro ]
     | sLambda _ _ _ _ => eapply xtype_Lambda' ; [ .. | intro ]
-    | sApp _ _ _ _ => eapply xtype_App' ; [ .. | intro ]
+    | sApp _ _ _ _ => eapply xtype_App'
     | sSum _ _ _ => eapply xtype_Sum' ; [| intro ]
     | sPair _ _ _ _ => eapply type_Pair
     | sPi1 _ _ _ => eapply type_Pi1
@@ -203,3 +203,30 @@ Ltac ettcheck1 :=
 Ltac ettcheck' := ettcheck1 ; try (lazy ; omega).
 
 Ltac ettcheck := repeat ettcheck'.
+
+
+
+(* Checking the context for ETT *)
+Fact xhΣi : xtype_glob Σi.
+Proof.
+  pose proof hΣi.
+   repeat xglob ; lazy.
+  - ettcheck.
+  - ettcheck.
+  - ettcheck.
+  - ettcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.;
+  Unshelve. all: exact nAnon.
+Defined.
+
+(* This is inefficient as we recheck the whole ITT context.
+   Maybe we should prove both at the same time?
+   (One step of itt, then one of ett, using the other as assumption.)
+ *)
