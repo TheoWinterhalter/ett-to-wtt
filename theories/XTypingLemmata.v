@@ -528,13 +528,108 @@ Proof.
   eapply @type_subst with (Δ := []) ; eassumption.
 Defined.
 
+(* TODO Move *)
+Definition isType (Σ : sglobal_context) (Γ : scontext) (t : sterm) :=
+  ∑ s, Σ ;;; Γ |-x t : sSort s.
+
+(* Inductive fresh_glob (id : ident) : sglobal_context -> Prop := *)
+(* | fresh_glob_nil : fresh_glob id [] *)
+(* | fresh_glob_cons Σ d : *)
+(*     fresh_glob id Σ -> *)
+(*     (dname d) <> id -> *)
+(*     fresh_glob id (d :: Σ). *)
+
+Inductive xtype_glob : sglobal_context -> Type :=
+| xtype_glob_nil : xtype_glob []
+| xtype_glob_cons Σ d :
+    xtype_glob Σ ->
+    fresh_glob (dname d) Σ ->
+    isType Σ [] (dtype d) ->
+    xtype_glob (d :: Σ).
+
+Derive Signature for type_glob.
+
+Fixpoint weak_glob_type {Σ Γ t A} (h : Σ ;;; Γ |-x t : A) :
+  forall {d},
+    fresh_glob (dname d) Σ ->
+    (d::Σ) ;;; Γ |-x t : A
+
+with weak_glob_eq_term {Σ Γ u v A} (h : Σ ;;; Γ |-x u = v : A) :
+  forall {d},
+    fresh_glob (dname d) Σ ->
+    (d::Σ) ;;; Γ |-x u = v : A
+
+with weak_glob_wf {Σ Γ} (h : wf Σ Γ) :
+  forall {d},
+    fresh_glob (dname d) Σ ->
+    wf (d::Σ) Γ.
+Proof.
+  (* weak_glob_type *)
+  - { dependent destruction h ; intros d fd.
+      all: try (econstructor ; try apply weak_glob_wf ;
+                try apply weak_glob_type ;
+                try apply weak_glob_eq_term ;
+                eassumption
+               ).
+      eapply type_Ax.
+      - eapply weak_glob_wf ; eassumption.
+      - cbn. erewrite ident_neq_fresh by eassumption.
+        assumption.
+    }
+
+  (* weak_glob_eq_term *)
+  - { dependent destruction h ; intros d fd.
+      all: try (econstructor ; try apply weak_glob_wf ;
+                try apply weak_glob_type ;
+                try apply weak_glob_eq_term ;
+                eassumption
+               ).
+    }
+
+  (* weak_glob_wf *)
+  - { dependent destruction h ; intros fd.
+      - constructor.
+      - econstructor.
+        + apply weak_glob_wf ; assumption.
+        + apply weak_glob_type ; eassumption.
+    }
+Defined.
+
+Corollary weak_glob_isType :
+  forall {Σ Γ A} (h : isType Σ Γ A) {d},
+    fresh_glob (dname d) Σ ->
+    isType (d::Σ) Γ A.
+Proof.
+  intros Σ Γ A h d hf.
+  destruct h as [s h].
+  exists s. eapply weak_glob_type ; eassumption.
+Defined.
+
+Fact typed_ax_type :
+  forall {Σ}, xtype_glob Σ ->
+  forall {id ty},
+    lookup_glob Σ id = Some ty ->
+    isType Σ [] ty.
+Proof.
+  intros Σ hg. dependent induction hg ; intros id ty h.
+  - cbn in h. discriminate h.
+  - cbn in h.
+    case_eq (ident_eq id (dname d)).
+    + intro e. rewrite e in h. inversion h. subst.
+      eapply weak_glob_isType ; eassumption.
+    + intro e. rewrite e in h.
+      specialize (IHhg _ _ h).
+      eapply weak_glob_isType ; eassumption.
+Defined.
+
 Lemma istype_type :
   forall {Σ Γ t T},
     type_glob Σ ->
+    xtype_glob Σ ->
     Σ ;;; Γ |-x t : T ->
     ∑ s, Σ ;;; Γ |-x T : sSort s.
 Proof.
-  intros Σ Γ t T hg h.
+  intros Σ Γ t T hg xhg h.
   induction h.
   - revert n isdecl. induction w ; intros n isdecl.
     + cbn in isdecl. easy.
@@ -567,9 +662,17 @@ Proof.
     econstructor ; eassumption.
   - eexists. econstructor. eapply typing_wf. eassumption.
   - eexists. econstructor ; eassumption.
-  - (* Unfortunately, we need to have some kind of ETT version of type_glob *)
-    admit.
+  - destruct (typed_ax_type xhg e) as [s hh].
+    exists s. change (sSort s) with (lift #|Γ| #|@nil sterm| (sSort s)).
+    replace ty with (lift #|Γ| #|@nil sterm| ty)
+      by (erewrite lift_ax_type by eassumption ; reflexivity).
+    eapply meta_ctx_conv.
+    + eapply @type_lift with (Γ := []) (Ξ := []) (Δ := Γ).
+      * assumption.
+      * assumption.
+      * rewrite nil_cat. assumption.
+    + cbn. apply nil_cat.
   - eexists. eassumption.
-Admitted.
+Defined.
 
 End TypeType.
