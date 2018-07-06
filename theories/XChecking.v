@@ -83,7 +83,7 @@ Lemma xtype_Sum' :
     Σ ;;; Γ |-x sSum n A B : Ty.
 Proof.
   intros Σ Γ n A B hA hB.
-  eapply xmeta_conv.
+  eapply meta_conv.
   - eapply type_Sum.
     + eassumption.
     + apply hB. econstructor ; try eassumption.
@@ -93,24 +93,28 @@ Defined.
 
 Lemma xtype_Eq' :
   forall {Σ Γ A u v},
-    Σ ;;; Γ |-x A : Ty ->
+    type_glob Σ ->
+    xtype_glob Σ ->
     Σ ;;; Γ |-x u : A ->
     Σ ;;; Γ |-x v : A ->
     Σ ;;; Γ |-x sEq A u v : Ty.
 Proof.
-  intros Σ Γ A u v hA hu hv.
-  eapply xmeta_conv.
+  intros Σ Γ A u v hg xhg hu hv.
+  destruct (istype_type hg xhg hu) as [[] hA].
+  eapply meta_conv.
   - eapply type_Eq ; eassumption.
   - reflexivity.
 Defined.
 
 Lemma xtype_Refl' :
   forall {Σ Γ A u},
-    Σ ;;; Γ |-x A : Ty ->
+    type_glob Σ ->
+    xtype_glob Σ ->
     Σ ;;; Γ |-x u : A ->
     Σ ;;; Γ |-x sRefl A u : sEq A u u.
 Proof.
-  intros Σ Γ A u hA hu.
+  intros Σ Γ A u hg xhg hu.
+  destruct (istype_type hg xhg hu) as [[] hA].
   eapply type_Refl ; eassumption.
 Defined.
 
@@ -120,7 +124,7 @@ Lemma xtype_Sort' :
     Σ ;;; Γ |-x Ty : Ty.
 Proof.
   intros Σ Γ h.
-  eapply xmeta_conv.
+  eapply meta_conv.
   - eapply type_Sort. assumption.
   - reflexivity.
 Defined.
@@ -136,7 +140,28 @@ Proof.
   - eassumption.
 Defined.
 
-(* Maybe move somewhere else *)
+Lemma xtype_glob_cons' :
+  forall {Σ d},
+    xtype_glob Σ ->
+    fresh_glob (dname d) Σ ->
+    (xtype_glob Σ -> isType Σ [] (dtype d)) ->
+    xtype_glob (d :: Σ).
+Proof.
+  intros Σ d hg hf hd.
+  specialize (hd hg).
+  econstructor ; eassumption.
+Defined.
+
+Ltac xglob :=
+  first [
+    eapply xtype_glob_nil
+  | eapply xtype_glob_cons' ; [
+      idtac
+    | repeat (lazy ; econstructor) ; lazy ; try discriminate
+    | intro ; eexists
+    ]
+  ].
+
 Ltac ettintro :=
   lazymatch goal with
   | |- ?Σ ;;; ?Γ |-x ?t : ?T =>
@@ -144,7 +169,7 @@ Ltac ettintro :=
     | sRel ?n => refine (type_Rel _ _ n _ _)
     | sSort _ => eapply xtype_Sort'
     | sProd _ _ _ => eapply xtype_Prod' ; [| intro ]
-    | sLambda _ _ _ _ => eapply xtype_Lambda' ; [ .. | intro | intro ]
+    | sLambda _ _ _ _ => eapply xtype_Lambda' ; [ .. | intro ]
     | sApp _ _ _ _ => eapply xtype_App' ; [ .. | intro ]
     | sSum _ _ _ => eapply xtype_Sum' ; [| intro ]
     | sPair _ _ _ _ => eapply type_Pair
@@ -162,7 +187,7 @@ Ltac ettcheck1 :=
   lazymatch goal with
   | |- ?Σ ;;; ?Γ |-x ?t : ?T =>
     first [
-      eapply xmeta_conv ; [ ettintro | lazy ; reflexivity ]
+      eapply meta_conv ; [ ettintro | lazy ; reflexivity ]
     | eapply type_conv ; [ ettintro | .. ]
     (* | eapply meta_ctx_conv ; [ *)
     (*     eapply meta_conv ; [ ettintro | lazy ; try reflexivity ] *)
@@ -172,6 +197,7 @@ Ltac ettcheck1 :=
   | |- wf ?Σ ?Γ => first [ assumption | eapply xwf_snoc' | econstructor ]
   | |- sSort _ = sSort _ => first [ lazy ; reflexivity | shelve ]
   | |- type_glob _ => first [ assumption | glob ]
+  | |- xtype_glob _ => first [ assumption | xglob ]
   | _ => fail "Not applicable"
   end.
 
