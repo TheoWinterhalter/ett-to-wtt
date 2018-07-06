@@ -9,7 +9,7 @@ From Template Require Import Ast LiftSubst Typing Checker.
 From Translation Require Import util Sorts SAst SLiftSubst SCommon ITyping
                                 ITypingLemmata ITypingAdmissible XTyping
                                 Quotes Translation FinalTranslation
-                                FullQuote ExamplesUtil ExampleQuotes.
+                                FullQuote ExamplesUtil ExampleQuotes XChecking.
 
 Open Scope string_scope.
 Open Scope x_scope.

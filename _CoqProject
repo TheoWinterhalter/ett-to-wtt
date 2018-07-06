@@ -26,4 +26,5 @@ theories/FinalTranslation.v
 theories/FullQuote.v
 theories/ExampleQuotes.v
 theories/ExamplesUtil.v
+theories/XChecking.v
 theories/Example.v
