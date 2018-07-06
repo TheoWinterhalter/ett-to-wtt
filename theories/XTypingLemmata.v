@@ -496,3 +496,80 @@ Proof.
 Defined.
 
 End Subst.
+
+Section TypeType.
+
+Context `{Sort_notion : Sorts.notion}.
+
+(* TODO Move *)
+Corollary typing_lift01 :
+  forall {Σ Γ t A B s},
+    type_glob Σ ->
+    Σ ;;; Γ |-x t : A ->
+    Σ ;;; Γ |-x B : sSort s ->
+    Σ ;;; Γ ,, B |-x lift0 1 t : lift0 1 A.
+Proof.
+  intros Σ Γ t A B s hg ht hB.
+  apply (@type_lift _ _ _ [ B ] nil _ _ ht hg).
+  econstructor.
+  - eapply typing_wf. eassumption.
+  - eassumption.
+Defined.
+
+(* TODO Move *)
+Corollary typing_subst :
+  forall {Σ Γ t A B u},
+    type_glob Σ ->
+    Σ ;;; Γ ,, A |-x t : B ->
+    Σ ;;; Γ |-x u : A ->
+    Σ ;;; Γ |-x t{ 0 := u } : B{ 0 := u }.
+Proof.
+  intros Σ Γ t A B u hg ht hu.
+  eapply @type_subst with (Δ := []) ; eassumption.
+Defined.
+
+Lemma istype_type :
+  forall {Σ Γ t T},
+    type_glob Σ ->
+    Σ ;;; Γ |-x t : T ->
+    ∑ s, Σ ;;; Γ |-x T : sSort s.
+Proof.
+  intros Σ Γ t T hg h.
+  induction h.
+  - revert n isdecl. induction w ; intros n isdecl.
+    + cbn in isdecl. easy.
+    + destruct n.
+      * cbn.
+        exists s. change (sSort s) with (lift0 1 (sSort s)).
+        eapply typing_lift01 ; eassumption.
+      * assert (isdecl' : n < #|Γ|).
+        -- auto with arith.
+        -- destruct (IHw n isdecl') as [s' hh].
+           exists s'. change (sSort s') with (lift0 1 (sSort s')).
+           (* Take out as a lemma? *)
+           assert (eq : forall t, lift0 (S (S n)) t = lift0 1 (lift0 (S n) t)).
+           { intro t'. rewrite lift_lift. reflexivity. }
+           rewrite eq. clear eq.
+           eapply typing_lift01.
+           ++ assumption.
+           ++ erewrite eq_safe_nth. eassumption.
+           ++ eassumption.
+  - eexists. eapply type_Sort. assumption.
+  - eexists. apply type_Sort. eapply typing_wf. eassumption.
+  - eexists. eapply type_Prod ; eassumption.
+  - exists s2. change (sSort s2) with ((sSort s2){ 0 := u }).
+    eapply typing_subst ; eassumption.
+  - eexists. econstructor. eapply typing_wf. eassumption.
+  - eexists. econstructor ; eassumption.
+  - eexists. eassumption.
+  - exists s2. change (sSort s2) with ((sSort s2){ 0 := sPi1 A B p }).
+    eapply typing_subst ; try eassumption.
+    econstructor ; eassumption.
+  - eexists. econstructor. eapply typing_wf. eassumption.
+  - eexists. econstructor ; eassumption.
+  - (* Unfortunately, we need to have some kind of ETT version of type_glob *)
+    admit.
+  - eexists. eassumption.
+Admitted.
+
+End TypeType.
