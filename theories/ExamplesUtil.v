@@ -1,4 +1,4 @@
-(*! ITT Derivations and global context *)
+(*! Global context and utility for examples *)
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
@@ -6,10 +6,7 @@ From Template Require Import utils Ast LiftSubst Typing Checker.
 From Translation Require Import util Quotes Sorts SAst SLiftSubst SCommon
      ITyping ITypingInversions ITypingLemmata ITypingAdmissible XTyping
      FundamentalLemma Translation FinalTranslation FullQuote ExampleQuotes
-     XTypingLemmata.
-
-(* For efficiency reasons we use type in type for examples. *)
-Existing Instance Sorts.type_in_type.
+     XTypingLemmata IChecking XChecking.
 
 (* The context for Template Coq *)
 
@@ -66,191 +63,13 @@ Definition Σ : global_context :=
 
 Arguments Σ : simpl never.
 
+Definition decl := Build_glob_decl.
+
 Open Scope string_scope.
 Open Scope s_scope.
 
 Module IT := ITyping.
 Module IL := ITypingLemmata.
-
-(* The context for ITT *)
-
-Notation Ty := (sSort tt).
-
-Definition decl := Build_glob_decl.
-
-(* Some admissible lemmata to do memoisation in a way. *)
-Lemma type_Prod' :
-  forall {Σ Γ n A B},
-    Σ ;;; Γ |-i A : Ty ->
-    (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i B : Ty) ->
-    Σ ;;; Γ |-i sProd n A B : Ty.
-Proof.
-  intros Σ' Γ n A B hA hB.
-  eapply IL.meta_conv.
-  - eapply IT.type_Prod.
-    + eassumption.
-    + apply hB. econstructor ; try eassumption.
-      eapply IL.typing_wf. eassumption.
-  - reflexivity.
-Defined.
-
-Lemma type_Lambda' :
-  forall {Σ Γ n n' A B t},
-    type_glob Σ ->
-    Σ ;;; Γ |-i A : Ty ->
-    (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i t : B) ->
-    Σ ;;; Γ |-i sLambda n A B t : sProd n' A B.
-Proof.
-  intros Σ Γ n n' A B t hg hA ht.
-  assert (hw : IT.wf Σ (Γ ,, A)).
-  { econstructor ; try eassumption.
-    eapply IL.typing_wf. eassumption.
-  }
-  specialize (ht hw). destruct (IL.istype_type hg ht).
-  eapply IT.type_Lambda ; eassumption.
-Defined.
-
-Lemma type_App' :
-  forall {Σ Γ n t A B u},
-    type_glob Σ ->
-    Σ ;;; Γ |-i t : sProd n A B ->
-    Σ ;;; Γ |-i u : A ->
-    Σ ;;; Γ |-i sApp t A B u : (B{0 := u})%s.
-Proof.
-  intros Σ Γ n t A B u hg ht hu.
-  destruct (IL.istype_type hg ht).
-  destruct (IL.istype_type hg hu).
-  ttinv H.
-  eapply IT.type_App ; eassumption.
-Defined.
-
-Lemma type_Sum' :
-  forall {Σ Γ n A B},
-    Σ ;;; Γ |-i A : Ty ->
-    (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i B : Ty) ->
-    Σ ;;; Γ |-i sSum n A B : Ty.
-Proof.
-  intros Σ' Γ n A B hA hB.
-  eapply IL.meta_conv.
-  - eapply IT.type_Sum.
-    + eassumption.
-    + apply hB. econstructor ; try eassumption.
-      eapply IL.typing_wf. eassumption.
-  - reflexivity.
-Defined.
-
-Lemma type_Eq' :
-  forall {Σ Γ A u v},
-    type_glob Σ ->
-    Σ ;;; Γ |-i u : A ->
-    Σ ;;; Γ |-i v : A ->
-    Σ ;;; Γ |-i sEq A u v : Ty.
-Proof.
-  intros Σ Γ A u v hg hu hv.
-  destruct (IL.istype_type hg hu) as [[] ?].
-  eapply IL.meta_conv.
-  - eapply IT.type_Eq ; eassumption.
-  - reflexivity.
-Defined.
-
-Lemma type_Refl' :
-  forall {Σ Γ A u},
-    type_glob Σ ->
-    Σ ;;; Γ |-i u : A ->
-    Σ ;;; Γ |-i sRefl A u : sEq A u u.
-Proof.
-  intros Σ Γ A u hg h.
-  destruct (IL.istype_type hg h).
-  eapply IT.type_Refl ; eassumption.
-Defined.
-
-Lemma type_Sort' :
-  forall {Σ Γ},
-    IT.wf Σ Γ ->
-    Σ ;;; Γ |-i Ty : Ty.
-Proof.
-  intros Σ Γ h.
-  eapply IL.meta_conv.
-  - eapply IT.type_Sort. assumption.
-  - reflexivity.
-Defined.
-
-Lemma wf_snoc' :
-  forall {Σ Γ A},
-    Σ ;;; Γ |-i A : Ty ->
-    IT.wf Σ (Γ ,, A).
-Proof.
-  intros Σ Γ A h.
-  econstructor.
-  - eapply IL.typing_wf. eassumption.
-  - eassumption.
-Defined.
-
-(* Maybe move somewhere else *)
-Ltac ittintro :=
-  lazymatch goal with
-  | |- ?Σ ;;; ?Γ |-i ?t : ?T =>
-    lazymatch t with
-    | sRel ?n => refine (IT.type_Rel _ _ n _ _)
-    | sSort _ => eapply type_Sort'
-    | sProd _ _ _ => eapply type_Prod' ; [| intro ]
-    | sLambda _ _ _ _ => eapply type_Lambda' ; [ .. | intro ]
-    | sApp _ _ _ _ => eapply type_App'
-    | sSum _ _ _ => eapply type_Sum' ; [| intro ]
-    | sPair _ _ _ _ => eapply type_Pair'
-    | sPi1 _ _ _ => eapply type_Pi1'
-    | sPi2 _ _ _ => eapply type_Pi2'
-    | sEq _ _ _ => eapply type_Eq'
-    | sRefl _ _ => eapply type_Refl'
-    | sAx _ => eapply IT.type_Ax ; [| lazy ; try reflexivity ]
-    | _ => fail "No introduction rule for" t
-    end
-  | _ => fail "Not applicable"
-  end.
-
-Lemma type_glob_cons' :
-  forall {Σ d},
-    type_glob Σ ->
-    fresh_glob (dname d) Σ ->
-    (type_glob Σ -> IT.isType Σ [] (dtype d)) ->
-    Xcomp (dtype d) ->
-    type_glob (d :: Σ).
-Proof.
-  intros Σ d hg hf hd hx.
-  specialize (hd hg).
-  econstructor ; eassumption.
-Defined.
-
-Ltac glob :=
-  first [
-    eapply type_glob_nil
-  | eapply type_glob_cons' ; [
-      idtac
-    | repeat (lazy ; econstructor) ; lazy ; try discriminate
-    | intro ; eexists
-    | repeat econstructor
-    ]
-  ].
-
-Ltac ittcheck1 :=
-  lazymatch goal with
-  | |- ?Σ ;;; ?Γ |-i ?t : ?T =>
-    first [
-      eapply IL.meta_conv ; [ ittintro | lazy ; try reflexivity ]
-    | eapply IL.meta_ctx_conv ; [
-        eapply IL.meta_conv ; [ ittintro | lazy ; try reflexivity ]
-      | cbn ; try reflexivity
-      ]
-    ]
-  | |- IT.wf ?Σ ?Γ => first [ assumption | eapply wf_snoc' | econstructor ]
-  | |- sSort _ = sSort _ => first [ lazy ; reflexivity | shelve ]
-  | |- type_glob _ => first [ assumption | glob ]
-  | _ => fail "Not applicable"
-  end.
-
-Ltac ittcheck' := ittcheck1 ; try (lazy ; omega).
-
-Ltac ittcheck := repeat ittcheck'.
 
 (* Preparing the global context (axioms) for examples *)
 
@@ -417,3 +236,28 @@ Defined.
 
 Definition type_translation {Γ t A} h {Γ'} hΓ :=
   pi2_ (pi1_ (@complete_translation _ Σi hΣi)) Γ t A h Γ' hΓ.
+
+(* Checking the context for ETT *)
+Fact xhΣi : xtype_glob Σi.
+Proof.
+  pose proof hΣi.
+   repeat xglob ; lazy.
+  - ettcheck.
+  - ettcheck.
+  - ettcheck.
+  - ettcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.
+  - ettcheck ; lazy ; ittcheck.;
+  Unshelve. all: exact nAnon.
+Defined.
+
+(* This is inefficient as we recheck the whole ITT context.
+   Maybe we should prove both at the same time?
+   (One step of itt, then one of ett, using the other as assumption.)
+ *)

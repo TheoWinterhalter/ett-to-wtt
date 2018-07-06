@@ -6,21 +6,21 @@ From Template Require Import utils Ast LiftSubst Typing Checker.
 From Translation Require Import util Quotes Sorts SAst SLiftSubst SCommon
      ITyping ITypingInversions ITypingLemmata ITypingAdmissible XTyping
      FundamentalLemma Translation FinalTranslation FullQuote ExampleQuotes
-     ExamplesUtil XTypingLemmata XInversions.
+     IChecking XTypingLemmata XInversions.
 
 (* For efficiency reasons we use type in type for examples. *)
 Existing Instance Sorts.type_in_type.
 
-Lemma type_conv'' :
-  forall {Γ t A B s},
-    Σi ;;; Γ |-x t : A ->
-    Σi ;;; Γ |-x A = B : sSort s ->
-    Σi ;;; Γ |-x B : sSort s ->
-    Σi ;;; Γ |-x t : B.
-Proof.
-  intros Γ t A B s H H0 H1.
-  eapply type_conv ; eassumption.
-Defined.
+(* Lemma type_conv'' : *)
+(*   forall {Γ t A B s}, *)
+(*     Σi ;;; Γ |-x t : A -> *)
+(*     Σi ;;; Γ |-x A = B : sSort s -> *)
+(*     Σi ;;; Γ |-x B : sSort s -> *)
+(*     Σi ;;; Γ |-x t : B. *)
+(* Proof. *)
+(*   intros Γ t A B s H H0 H1. *)
+(*   eapply type_conv ; eassumption. *)
+(* Defined. *)
 
 
 Lemma xtype_Prod' :
@@ -203,30 +203,3 @@ Ltac ettcheck1 :=
 Ltac ettcheck' := ettcheck1 ; try (lazy ; omega).
 
 Ltac ettcheck := repeat ettcheck'.
-
-
-
-(* Checking the context for ETT *)
-Fact xhΣi : xtype_glob Σi.
-Proof.
-  pose proof hΣi.
-   repeat xglob ; lazy.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.;
-  Unshelve. all: exact nAnon.
-Defined.
-
-(* This is inefficient as we recheck the whole ITT context.
-   Maybe we should prove both at the same time?
-   (One step of itt, then one of ett, using the other as assumption.)
- *)

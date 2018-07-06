@@ -9,8 +9,6 @@ theories/SLiftSubst.v
 theories/SCommon.v
 theories/Conversion.v
 theories/XTyping.v
-theories/XTypingLemmata.v
-theories/XInversions.v
 theories/ITyping.v
 theories/ITypingInversions.v
 theories/ITypingLemmata.v
@@ -26,6 +24,9 @@ theories/Quotes.v
 theories/FinalTranslation.v
 theories/FullQuote.v
 theories/ExampleQuotes.v
-theories/ExamplesUtil.v
+theories/XTypingLemmata.v
+theories/XInversions.v
+theories/IChecking.v
 theories/XChecking.v
+theories/ExamplesUtil.v
 theories/Example.v
