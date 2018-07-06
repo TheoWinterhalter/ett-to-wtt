@@ -48,6 +48,7 @@ Definition ty_pseudoid :=
 Lemma type_pseudoid : Σi ;;; [] |-x tm_pseudoid : ty_pseudoid.
 Proof.
   unfold tm_pseudoid, ty_pseudoid.
+  pose proof hΣi. pose proof xhΣi.
   ettcheck. cbn.
   eapply reflection with (e := sRel 1).
   ettcheck.
@@ -100,6 +101,7 @@ Definition ty_realid :=
 Lemma type_realid : Σi ;;; [] |-x tm_realid : ty_realid.
 Proof.
   unfold tm_realid, ty_realid.
+  pose proof hΣi. pose proof xhΣi.
   ettcheck.
 Defined.
 
