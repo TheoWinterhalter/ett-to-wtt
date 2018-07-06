@@ -9,6 +9,7 @@ theories/SLiftSubst.v
 theories/SCommon.v
 theories/Conversion.v
 theories/XTyping.v
+theories/XTypingLemmata.v
 theories/ITyping.v
 theories/ITypingInversions.v
 theories/ITypingLemmata.v
