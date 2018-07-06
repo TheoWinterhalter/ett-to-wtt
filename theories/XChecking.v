@@ -6,7 +6,7 @@ From Template Require Import utils Ast LiftSubst Typing Checker.
 From Translation Require Import util Quotes Sorts SAst SLiftSubst SCommon
      ITyping ITypingInversions ITypingLemmata ITypingAdmissible XTyping
      FundamentalLemma Translation FinalTranslation FullQuote ExampleQuotes
-     XTypingLemmata ExamplesUtil.
+     XTypingLemmata ExamplesUtil XInversions.
 
 (* For efficiency reasons we use type in type for examples. *)
 Existing Instance Sorts.type_in_type.
@@ -62,17 +62,16 @@ Lemma xtype_App' :
     xtype_glob Σ ->
     Σ ;;; Γ |-x t : sProd n A B ->
     Σ ;;; Γ |-x u : A ->
-    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : Ty) ->
     Σ ;;; Γ |-x sApp t A B u : (B{0 := u})%s.
 Proof.
-  intros Σ Γ n t A B u hg xhg ht hu hB.
+  intros Σ Γ n t A B u hg xhg ht hu.
   destruct (istype_type hg xhg hu) as [[] hA].
+  destruct (istype_type hg xhg ht) as [[] hPi].
   assert (hw : wf Σ (Γ ,, A)).
   { econstructor ; try eassumption.
     eapply typing_wf. eassumption.
   }
-  specialize (hB hw).
-  (* We need inversion of typing on ETT *)
+  destruct (inversionProd hPi) as [[? ?] ?].
   eapply type_App ; eassumption.
 Defined.
 
