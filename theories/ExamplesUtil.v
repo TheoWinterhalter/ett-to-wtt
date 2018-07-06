@@ -208,22 +208,76 @@ Definition Σi : sglobal_context := [
 
 Arguments Σi : simpl never.
 
+Lemma combined_glob_cons :
+  forall {Σ d},
+    (type_glob Σ * xtype_glob Σ) ->
+    fresh_glob (dname d) Σ ->
+    (type_glob Σ -> IT.isType Σ [] (dtype d)) ->
+    (type_glob Σ -> xtype_glob Σ -> isType Σ [] (dtype d)) ->
+    Xcomp (dtype d) ->
+    (type_glob (d :: Σ) * xtype_glob (d :: Σ)).
+Proof.
+  intros Σ d [hg xhg] hf hd xhd hx.
+  specialize (hd hg).
+  specialize (xhd hg xhg).
+  split ; econstructor ; eassumption.
+Defined.
+
+Lemma combined_glob_nil : type_glob [] * xtype_glob [].
+Proof.
+  split ; constructor.
+Defined.
+
+Ltac cglob :=
+  first [
+    eapply combined_glob_nil
+  | eapply combined_glob_cons ; [
+      idtac
+    | repeat (lazy ; econstructor) ; lazy ; try discriminate
+    | intro ; exists tt
+    | intros ? ? ; exists tt
+    | repeat econstructor
+    ]
+  ].
+
+Fact chΣi : type_glob Σi * xtype_glob Σi.
+Proof.
+  repeat cglob ; lazy.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  - ittcheck.
+  - ettcheck.
+  Unshelve. all: exact nAnon.
+Defined.
+
 Fact hΣi : type_glob Σi.
 Proof.
-  repeat glob ; lazy.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  Unshelve. all: exact nAnon.
+  destruct chΣi. assumption.
+Defined.
+
+Fact xhΣi : xtype_glob Σi.
+Proof.
+  destruct chΣi. assumption.
 Defined.
 
 Fact istrans_nil :
@@ -236,28 +290,3 @@ Defined.
 
 Definition type_translation {Γ t A} h {Γ'} hΓ :=
   pi2_ (pi1_ (@complete_translation _ Σi hΣi)) Γ t A h Γ' hΓ.
-
-(* Checking the context for ETT *)
-Fact xhΣi : xtype_glob Σi.
-Proof.
-  pose proof hΣi.
-   repeat xglob ; lazy.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.
-  - ettcheck ; lazy ; ittcheck.;
-  Unshelve. all: exact nAnon.
-Defined.
-
-(* This is inefficient as we recheck the whole ITT context.
-   Maybe we should prove both at the same time?
-   (One step of itt, then one of ett, using the other as assumption.)
- *)
