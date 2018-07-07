@@ -13,6 +13,19 @@ Section Conv.
 
 Context `{Sort_notion : Sorts.notion}.
 
+Definition isType (Σ : sglobal_context) (Γ : scontext) (t : sterm) :=
+  ∑ s, Σ ;;; Γ |-x t : sSort s.
+
+Inductive xtype_glob : sglobal_context -> Type :=
+| xtype_glob_nil : xtype_glob []
+| xtype_glob_cons Σ d :
+    xtype_glob Σ ->
+    fresh_glob (dname d) Σ ->
+    isType Σ [] (dtype d) ->
+    xtype_glob (d :: Σ).
+
+Derive Signature for type_glob.
+
 Lemma meta_ctx_conv :
   forall {Σ Γ Δ t A},
     Σ ;;; Γ |-x t : A ->
@@ -53,6 +66,126 @@ Proof.
   rewrite <- e. exact h.
 Defined.
 
+Fixpoint weak_glob_type {Σ Γ t A} (h : Σ ;;; Γ |-x t : A) :
+  forall {d},
+    fresh_glob (dname d) Σ ->
+    (d::Σ) ;;; Γ |-x t : A
+
+with weak_glob_eq_term {Σ Γ u v A} (h : Σ ;;; Γ |-x u = v : A) :
+  forall {d},
+    fresh_glob (dname d) Σ ->
+    (d::Σ) ;;; Γ |-x u = v : A
+
+with weak_glob_wf {Σ Γ} (h : wf Σ Γ) :
+  forall {d},
+    fresh_glob (dname d) Σ ->
+    wf (d::Σ) Γ.
+Proof.
+  (* weak_glob_type *)
+  - { dependent destruction h ; intros d fd.
+      all: try (econstructor ; try apply weak_glob_wf ;
+                try apply weak_glob_type ;
+                try apply weak_glob_eq_term ;
+                eassumption
+               ).
+      eapply type_Ax.
+      - eapply weak_glob_wf ; eassumption.
+      - cbn. erewrite ident_neq_fresh by eassumption.
+        assumption.
+    }
+
+  (* weak_glob_eq_term *)
+  - { dependent destruction h ; intros d fd.
+      all: try (econstructor ; try apply weak_glob_wf ;
+                try apply weak_glob_type ;
+                try apply weak_glob_eq_term ;
+                eassumption
+               ).
+    }
+
+  (* weak_glob_wf *)
+  - { dependent destruction h ; intros fd.
+      - constructor.
+      - econstructor.
+        + apply weak_glob_wf ; assumption.
+        + apply weak_glob_type ; eassumption.
+    }
+Defined.
+
+Corollary weak_glob_isType :
+  forall {Σ Γ A} (h : isType Σ Γ A) {d},
+    fresh_glob (dname d) Σ ->
+    isType (d::Σ) Γ A.
+Proof.
+  intros Σ Γ A h d hf.
+  destruct h as [s h].
+  exists s. eapply weak_glob_type ; eassumption.
+Defined.
+
+Fact typed_ax_type :
+  forall {Σ}, xtype_glob Σ ->
+  forall {id ty},
+    lookup_glob Σ id = Some ty ->
+    isType Σ [] ty.
+Proof.
+  intros Σ hg. dependent induction hg ; intros id ty h.
+  - cbn in h. discriminate h.
+  - cbn in h.
+    case_eq (ident_eq id (dname d)).
+    + intro e. rewrite e in h. inversion h. subst.
+      eapply weak_glob_isType ; eassumption.
+    + intro e. rewrite e in h.
+      specialize (IHhg _ _ h).
+      eapply weak_glob_isType ; eassumption.
+Defined.
+
+Fact type_ctx_closed_above :
+  forall {Σ Γ t T},
+    Σ ;;; Γ |-x t : T ->
+    closed_above #|Γ| t = true.
+Proof.
+  intros Σ Γ t T h.
+  dependent induction h.
+  all: try (cbn in * ; repeat (erewrite_assumption by omega) ; reflexivity).
+  unfold closed_above. case_eq (n <? #|Γ|) ; intro e ; bprop e ; try omega.
+  reflexivity.
+Defined.
+
+Fact type_ctxempty_closed :
+  forall {Σ t T},
+    Σ ;;; [] |-x t : T ->
+    closed t.
+Proof.
+  intros Σ t T h.
+  unfold closed. eapply @type_ctx_closed_above with (Γ := []). eassumption.
+Defined.
+
+Fact lift_ax_type :
+  forall {Σ},
+    xtype_glob Σ ->
+    forall {id ty},
+      lookup_glob Σ id = Some ty ->
+      forall n k, lift n k ty = ty.
+Proof.
+  intros Σ hg id ty isd n k.
+  destruct (typed_ax_type hg isd).
+  eapply closed_lift.
+  eapply type_ctxempty_closed. eassumption.
+Defined.
+
+Fact subst_ax_type :
+  forall {Σ},
+    xtype_glob Σ ->
+    forall {id ty},
+      lookup_glob Σ id = Some ty ->
+      forall n u, ty{ n := u } = ty.
+Proof.
+  intros Σ hg id ty isd n k.
+  destruct (typed_ax_type hg isd).
+  eapply closed_subst.
+  eapply type_ctxempty_closed. eassumption.
+Defined.
+
 End Conv.
 
 Section Lift.
@@ -64,14 +197,14 @@ Ltac ih h :=
   | [ type_lift :
         forall (Σ : sglobal_context) (Γ Δ Ξ : scontext) (t A : sterm),
           Σ;;; Γ ,,, Ξ |-x t : A ->
-          type_glob Σ ->
+          xtype_glob Σ ->
           wf Σ (Γ ,,, Δ) ->
           Σ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ
           |-x lift #|Δ| #|Ξ| t : lift #|Δ| #|Ξ| A,
       cong_lift :
         forall (Σ : sglobal_context) (Γ Δ Ξ : scontext) (t1 t2 A : sterm),
           Σ;;; Γ ,,, Ξ |-x t1 = t2 : A ->
-          type_glob Σ ->
+          xtype_glob Σ ->
           wf Σ (Γ ,,, Δ) ->
           Σ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ
           |-x lift #|Δ| #|Ξ| t1 = lift #|Δ| #|Ξ| t2 : lift #|Δ| #|Ξ| A
@@ -150,18 +283,18 @@ Ltac eih :=
   end.
 
 Fixpoint type_lift {Σ Γ Δ Ξ t A} (h : Σ ;;; Γ ,,, Ξ |-x t : A) {struct h} :
-  type_glob Σ ->
+  xtype_glob Σ ->
   wf Σ (Γ ,,, Δ) ->
   Σ ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ |-x lift #|Δ| #|Ξ| t : lift #|Δ| #|Ξ| A
 
 with cong_lift {Σ Γ Δ Ξ t1 t2 A} (h : Σ ;;; Γ ,,, Ξ |-x t1 = t2 : A) {struct h} :
-  type_glob Σ ->
+  xtype_glob Σ ->
   wf Σ (Γ ,,, Δ) ->
   Σ ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ |-x lift #|Δ| #|Ξ| t1
   = lift #|Δ| #|Ξ| t2 : lift #|Δ| #|Ξ| A
 
 with wf_lift {Σ Γ Δ Ξ} (h : wf Σ (Γ ,,, Ξ)) {struct h} :
-  type_glob Σ ->
+  xtype_glob Σ ->
   wf Σ (Γ ,,, Δ) ->
   wf Σ (Γ ,,, Δ ,,, lift_context #|Δ| Ξ)
 .
@@ -274,13 +407,13 @@ Ltac sh h :=
   | [ type_subst :
         forall (Σ : sglobal_context) (Γ Δ : scontext) (t A B u : sterm),
           Σ;;; Γ,, B ,,, Δ |-x t : A ->
-          type_glob Σ ->
+          xtype_glob Σ ->
           Σ;;; Γ |-x u : B -> Σ;;; Γ ,,, subst_context u Δ |-x
           t {#|Δ| := u} : A {#|Δ| := u},
      cong_subst :
        forall (Σ : sglobal_context) (Γ Δ : scontext) (t1 t2 A B u : sterm),
          Σ;;; Γ,, B ,,, Δ |-x t1 = t2 : A ->
-         type_glob Σ ->
+         xtype_glob Σ ->
          Σ;;; Γ |-x u : B -> Σ;;; Γ ,,, subst_context u Δ |-x
          t1 {#|Δ| := u} = t2 {#|Δ| := u} : A {#|Δ| := u}
     |- _ ] =>
@@ -359,20 +492,20 @@ Ltac esh :=
 
 Fixpoint type_subst {Σ Γ Δ t A B u}
   (h : Σ ;;; Γ ,, B ,,, Δ |-x t : A) {struct h} :
-  type_glob Σ ->
+  xtype_glob Σ ->
   Σ ;;; Γ |-x u : B ->
   Σ ;;; Γ ,,, subst_context u Δ |-x t{ #|Δ| := u } : A{ #|Δ| := u }
 
 with cong_subst {Σ Γ Δ t1 t2 A B u}
   (h : Σ ;;; Γ ,, B ,,, Δ |-x t1 = t2 : A) {struct h} :
-  type_glob Σ ->
+  xtype_glob Σ ->
   Σ ;;; Γ |-x u : B ->
   Σ ;;; Γ ,,, subst_context u Δ |-x t1{ #|Δ| := u }
   = t2{ #|Δ| := u } : A{ #|Δ| := u }
 
 with wf_subst {Σ Γ Δ B u}
   (h : wf Σ (Γ ,, B ,,, Δ)) {struct h} :
-  type_glob Σ ->
+  xtype_glob Σ ->
   Σ ;;; Γ |-x u : B ->
   wf Σ (Γ ,,, subst_context u Δ)
 .
@@ -504,7 +637,7 @@ Context `{Sort_notion : Sorts.notion}.
 (* TODO Move *)
 Corollary typing_lift01 :
   forall {Σ Γ t A B s},
-    type_glob Σ ->
+    xtype_glob Σ ->
     Σ ;;; Γ |-x t : A ->
     Σ ;;; Γ |-x B : sSort s ->
     Σ ;;; Γ ,, B |-x lift0 1 t : lift0 1 A.
@@ -519,7 +652,7 @@ Defined.
 (* TODO Move *)
 Corollary typing_subst :
   forall {Σ Γ t A B u},
-    type_glob Σ ->
+    xtype_glob Σ ->
     Σ ;;; Γ ,, A |-x t : B ->
     Σ ;;; Γ |-x u : A ->
     Σ ;;; Γ |-x t{ 0 := u } : B{ 0 := u }.
@@ -528,108 +661,13 @@ Proof.
   eapply @type_subst with (Δ := []) ; eassumption.
 Defined.
 
-(* TODO Move *)
-Definition isType (Σ : sglobal_context) (Γ : scontext) (t : sterm) :=
-  ∑ s, Σ ;;; Γ |-x t : sSort s.
-
-(* Inductive fresh_glob (id : ident) : sglobal_context -> Prop := *)
-(* | fresh_glob_nil : fresh_glob id [] *)
-(* | fresh_glob_cons Σ d : *)
-(*     fresh_glob id Σ -> *)
-(*     (dname d) <> id -> *)
-(*     fresh_glob id (d :: Σ). *)
-
-Inductive xtype_glob : sglobal_context -> Type :=
-| xtype_glob_nil : xtype_glob []
-| xtype_glob_cons Σ d :
-    xtype_glob Σ ->
-    fresh_glob (dname d) Σ ->
-    isType Σ [] (dtype d) ->
-    xtype_glob (d :: Σ).
-
-Derive Signature for type_glob.
-
-Fixpoint weak_glob_type {Σ Γ t A} (h : Σ ;;; Γ |-x t : A) :
-  forall {d},
-    fresh_glob (dname d) Σ ->
-    (d::Σ) ;;; Γ |-x t : A
-
-with weak_glob_eq_term {Σ Γ u v A} (h : Σ ;;; Γ |-x u = v : A) :
-  forall {d},
-    fresh_glob (dname d) Σ ->
-    (d::Σ) ;;; Γ |-x u = v : A
-
-with weak_glob_wf {Σ Γ} (h : wf Σ Γ) :
-  forall {d},
-    fresh_glob (dname d) Σ ->
-    wf (d::Σ) Γ.
-Proof.
-  (* weak_glob_type *)
-  - { dependent destruction h ; intros d fd.
-      all: try (econstructor ; try apply weak_glob_wf ;
-                try apply weak_glob_type ;
-                try apply weak_glob_eq_term ;
-                eassumption
-               ).
-      eapply type_Ax.
-      - eapply weak_glob_wf ; eassumption.
-      - cbn. erewrite ident_neq_fresh by eassumption.
-        assumption.
-    }
-
-  (* weak_glob_eq_term *)
-  - { dependent destruction h ; intros d fd.
-      all: try (econstructor ; try apply weak_glob_wf ;
-                try apply weak_glob_type ;
-                try apply weak_glob_eq_term ;
-                eassumption
-               ).
-    }
-
-  (* weak_glob_wf *)
-  - { dependent destruction h ; intros fd.
-      - constructor.
-      - econstructor.
-        + apply weak_glob_wf ; assumption.
-        + apply weak_glob_type ; eassumption.
-    }
-Defined.
-
-Corollary weak_glob_isType :
-  forall {Σ Γ A} (h : isType Σ Γ A) {d},
-    fresh_glob (dname d) Σ ->
-    isType (d::Σ) Γ A.
-Proof.
-  intros Σ Γ A h d hf.
-  destruct h as [s h].
-  exists s. eapply weak_glob_type ; eassumption.
-Defined.
-
-Fact typed_ax_type :
-  forall {Σ}, xtype_glob Σ ->
-  forall {id ty},
-    lookup_glob Σ id = Some ty ->
-    isType Σ [] ty.
-Proof.
-  intros Σ hg. dependent induction hg ; intros id ty h.
-  - cbn in h. discriminate h.
-  - cbn in h.
-    case_eq (ident_eq id (dname d)).
-    + intro e. rewrite e in h. inversion h. subst.
-      eapply weak_glob_isType ; eassumption.
-    + intro e. rewrite e in h.
-      specialize (IHhg _ _ h).
-      eapply weak_glob_isType ; eassumption.
-Defined.
-
 Lemma istype_type :
   forall {Σ Γ t T},
-    type_glob Σ ->
     xtype_glob Σ ->
     Σ ;;; Γ |-x t : T ->
     ∑ s, Σ ;;; Γ |-x T : sSort s.
 Proof.
-  intros Σ Γ t T hg xhg h.
+  intros Σ Γ t T xhg h.
   induction h.
   - revert n isdecl. induction w ; intros n isdecl.
     + cbn in isdecl. easy.
