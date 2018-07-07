@@ -40,33 +40,31 @@ Defined.
 
 Lemma xtype_Lambda' :
   forall {Σ Γ n n' A B t},
-    type_glob Σ ->
     xtype_glob Σ ->
     Σ ;;; Γ |-x A : Ty ->
     (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x t : B) ->
     Σ ;;; Γ |-x sLambda n A B t : sProd n' A B.
 Proof.
-  intros Σ Γ n n' A B t hg xhg hA ht.
+  intros Σ Γ n n' A B t xhg hA ht.
   assert (hw : wf Σ (Γ ,, A)).
   { econstructor ; try eassumption.
     eapply typing_wf. eassumption.
   }
   specialize (ht hw).
-  destruct (istype_type hg xhg ht) as [[] hB].
+  destruct (istype_type xhg ht) as [[] hB].
   eapply type_Lambda ; eassumption.
 Defined.
 
 Lemma xtype_App' :
   forall {Σ Γ n t A B u},
-    type_glob Σ ->
     xtype_glob Σ ->
     Σ ;;; Γ |-x t : sProd n A B ->
     Σ ;;; Γ |-x u : A ->
     Σ ;;; Γ |-x sApp t A B u : (B{0 := u})%s.
 Proof.
-  intros Σ Γ n t A B u hg xhg ht hu.
-  destruct (istype_type hg xhg hu) as [[] hA].
-  destruct (istype_type hg xhg ht) as [[] hPi].
+  intros Σ Γ n t A B u xhg ht hu.
+  destruct (istype_type xhg hu) as [[] hA].
+  destruct (istype_type xhg ht) as [[] hPi].
   assert (hw : wf Σ (Γ ,, A)).
   { econstructor ; try eassumption.
     eapply typing_wf. eassumption.
@@ -92,14 +90,13 @@ Defined.
 
 Lemma xtype_Eq' :
   forall {Σ Γ A u v},
-    type_glob Σ ->
     xtype_glob Σ ->
     Σ ;;; Γ |-x u : A ->
     Σ ;;; Γ |-x v : A ->
     Σ ;;; Γ |-x sEq A u v : Ty.
 Proof.
-  intros Σ Γ A u v hg xhg hu hv.
-  destruct (istype_type hg xhg hu) as [[] hA].
+  intros Σ Γ A u v xhg hu hv.
+  destruct (istype_type xhg hu) as [[] hA].
   eapply meta_conv.
   - eapply type_Eq ; eassumption.
   - reflexivity.
@@ -107,13 +104,12 @@ Defined.
 
 Lemma xtype_Refl' :
   forall {Σ Γ A u},
-    type_glob Σ ->
     xtype_glob Σ ->
     Σ ;;; Γ |-x u : A ->
     Σ ;;; Γ |-x sRefl A u : sEq A u u.
 Proof.
-  intros Σ Γ A u hg xhg hu.
-  destruct (istype_type hg xhg hu) as [[] hA].
+  intros Σ Γ A u xhg hu.
+  destruct (istype_type xhg hu) as [[] hA].
   eapply type_Refl ; eassumption.
 Defined.
 
@@ -157,7 +153,7 @@ Ltac xglob :=
   | eapply xtype_glob_cons' ; [
       idtac
     | repeat (lazy ; econstructor) ; lazy ; try discriminate
-    | intro ; eexists
+    | intro ; exists tt
     ]
   ].
 

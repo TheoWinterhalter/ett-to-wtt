@@ -161,7 +161,7 @@ Ltac glob :=
   | eapply type_glob_cons' ; [
       idtac
     | repeat (lazy ; econstructor) ; lazy ; try discriminate
-    | intro ; eexists
+    | intro ; exists tt
     | repeat econstructor
     ]
   ].
