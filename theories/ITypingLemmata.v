@@ -210,6 +210,11 @@ Proof.
     cbn. eapply weak_glob_red1. assumption.
 Defined.
 
+Lemma ident_eq_spec x y : reflect (x = y) (ident_eq x y).
+Proof.
+  unfold ident_eq. destruct string_dec; constructor; auto.
+Defined.
+
 Fact ident_neq_fresh :
   forall {Σ id ty d},
     lookup_glob Σ id = Some ty ->
