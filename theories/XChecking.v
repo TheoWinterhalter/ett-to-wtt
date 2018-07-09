@@ -161,7 +161,7 @@ Ltac ettintro :=
   lazymatch goal with
   | |- ?Σ ;;; ?Γ |-x ?t : ?T =>
     lazymatch t with
-    | sRel ?n => refine (type_Rel _ _ n _ _)
+    | sRel ?n => refine (@type_Rel Sorts.type_in_type _ _ n _ _)
     | sSort _ => eapply xtype_Sort'
     | sProd _ _ _ => eapply xtype_Prod' ; [| intro ]
     | sLambda _ _ _ _ => eapply xtype_Lambda' ; [ .. | intro ]
