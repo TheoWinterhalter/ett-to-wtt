@@ -264,28 +264,29 @@ Proof.
   eapply close_goal_ex'.
 Defined.
 
-
-
-
-
 Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev.
 Proof.
   unfold tm_vrev, ty_vrev.
   pose proof xhΣi.
   ettcheck.
   - eapply reflection.
-    unshelve eapply close_goal ; [ exact (sAx "vrev_obligation1") | assumption |].
-    admit.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation1") | assumption |].
+    simpl. ettcheck.
   - eapply reflection.
-    unshelve eapply close_goal ; [ exact (sAx "vrev_obligation2") | assumption |].
-    admit.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation2") | assumption |].
+    simpl. ettcheck.
   - eapply reflection.
-    unshelve eapply close_goal ; [ exact (sAx "vrev_obligation3") | assumption |].
-    admit.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation3") | assumption |].
+    simpl. ettcheck.
   - eapply reflection.
-    unshelve eapply close_goal ; [ exact (sAx "vrev_obligation4") | assumption |].
-    admit.
-Admitted.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation4") | assumption |].
+    simpl. ettcheck.
+  Unshelve. exact nAnon.
+Defined.
 
 (* Definition itt_vrev : sterm := *)
 (*   Eval lazy in *)
