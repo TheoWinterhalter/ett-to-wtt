@@ -9,7 +9,8 @@ From Template Require Import Ast LiftSubst Typing Checker.
 From Translation Require Import util Sorts SAst SLiftSubst SCommon ITyping
                                 ITypingLemmata ITypingAdmissible XTyping
                                 Quotes Translation FinalTranslation
-                                FullQuote ExamplesUtil ExampleQuotes XChecking.
+                                FullQuote ExamplesUtil ExampleQuotes
+                                XTypingLemmata IChecking XChecking.
 
 Open Scope string_scope.
 Open Scope x_scope.
@@ -165,30 +166,50 @@ Fixpoint Prods (Γ : scontext) (T : sterm) :=
   | [] => T
   end.
 
-(* Lemma close_goal_ex : *)
-(*   forall {Σ Γ Δ t T}, *)
-(*     Σ ;;; Δ |-x t : Prods Γ T -> *)
-(*     Σ ;;; Δ ,,, Γ |-x T : Ty -> *)
-(*     ∑ t', Σ ;;; Δ ,,, Γ |-x t' : T. *)
+Lemma lift_rel :
+  forall {t k}, (lift 1 (S k) t) {k := sRel 0} = t.
+Proof.
+  intro t. induction t ; intro k.
+  all: try (cbn ; f_equal ; easy).
+  destruct n.
+  - cbn. case_eq (k ?= 0) ; intro e ; bprop e.
+    + subst. reflexivity.
+    + reflexivity.
+    + reflexivity.
+  - cbn. case_eq (k <=? n) ; intro e ; bprop e.
+    + cbn. case_eq (k ?= S (S n)) ; intro e1 ; bprop e1 ; try omega.
+      reflexivity.
+    + cbn. case_eq (k ?= S n) ; intro e1 ; bprop e1 ; try omega.
+      * subst. f_equal. omega.
+      * reflexivity.
+Defined.
+
+(* Lemma lift_rel : *)
+(*   forall {t k}, (lift 1 k t) {k := sRel 0} = t. *)
 (* Proof. *)
-(*   intros Σ Γ Δ t T h hT. *)
-(*   revert Δ t T h hT. induction Γ as [| A Γ]. *)
-(*   - intros Δ t T h hT. *)
-(*     rewrite cat_nil. eexists. eassumption. *)
-(*   - intros Δ t T h hT. cbn in h. *)
-(*     destruct (IHΓ _ _ _ h) as [t' ht']. *)
-(*     + admit. *)
-(*     +  *)
-
-
+(*   intro t. induction t ; intro k. *)
+(*   all: try (cbn ; f_equal ; easy). *)
+(*   destruct n. *)
+(*   - cbn. case_eq (k <=? 0) ; intro e ; bprop e. *)
+(*     + cbn. case_eq (k ?= 1) ; intro e1 ; bprop e1 ; try omega. *)
+(*       reflexivity. *)
+(*     + cbn. case_eq (k ?= 0) ; intro e1 ; bprop e1 ; try omega. *)
+(*       reflexivity. *)
+(*   - cbn. case_eq (k <=? S n) ; intro e ; bprop e. *)
+(*     + cbn. case_eq (k ?= S (S n)) ; intro e1 ; bprop e1 ; try omega. *)
+(*       reflexivity. *)
+(*     + cbn. case_eq (k ?= S n) ; intro e1 ; bprop e1 ; try omega. *)
+(*       reflexivity. *)
+(* Defined. *)
 
 Lemma close_goal_ex :
   forall {Σ Γ t T},
+    xtype_glob Σ ->
     Σ ;;; [] |-x t : Prods Γ T ->
     Σ ;;; Γ |-x T : Ty ->
     ∑ t', Σ ;;; Γ |-x t' : T.
 Proof.
-  intros Σ Γ t T h hT.
+  intros Σ Γ t T hg h hT.
   revert t T h hT. induction Γ as [| A Γ].
   - intros t T h hT. eexists. eassumption.
   - intros t T h hT. cbn in h.
@@ -198,19 +219,37 @@ Proof.
       eapply xtype_Prod'.
       * eassumption.
       * intros _. eassumption.
-    + eexists. eapply xmeta_conv.
+    + eexists. eapply meta_conv.
       * eapply xtype_App'.
-        -- (* Need type_lift *)
-Admitted.
+        -- assumption.
+        -- instantiate (2 := lift0 1 A).
+           instantiate (1 := lift 1 1 T).
+           instantiate (1 := nAnon).
+           change (sProd nAnon (lift0 1 A) (lift 1 1 T))
+             with (lift0 1 (sProd nAnon A T)).
+           eapply typing_lift01.
+           ++ assumption.
+           ++ exact ht'.
+           ++ instantiate (1 := tt).
+              pose proof (typing_wf hT) as hw.
+              inversion hw. subst. destruct s.
+              assumption.
+        -- instantiate (1 := sRel 0). ettcheck.
+           pose proof (typing_wf hT) as hw.
+           inversion hw. subst. destruct s.
+           assumption.
+      * eapply lift_rel.
+Defined.
 
-Definition closet {Σ Γ t T} h hT :=
-  let '(t' ; _) := @close_goal_ex Σ Γ t T h hT in t'.
+Definition closet {Σ Γ t T} hg h hT :=
+  let '(t' ; _) := @close_goal_ex Σ Γ t T hg h hT in t'.
 
 Definition close_goal :
   forall {Σ Γ t T}
+    (hg : xtype_glob Σ)
     (h : Σ ;;; [] |-x t : Prods Γ T)
     (hT : Σ ;;; Γ |-x T : Ty),
-    Σ ;;; Γ |-x closet h hT : T.
+    Σ ;;; Γ |-x closet hg h hT : T.
 Proof.
   intros Σ Γ t T h hT.
   eapply close_goal_ex.
