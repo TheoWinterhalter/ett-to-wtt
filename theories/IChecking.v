@@ -155,33 +155,33 @@ Proof.
   econstructor ; eassumption.
 Defined.
 
-Ltac glob :=
+Ltac glob Σi :=
   first [
     eapply type_glob_nil
   | eapply type_glob_cons' ; [
       idtac
-    | repeat (lazy ; econstructor) ; lazy ; try discriminate
+    | repeat (lazy ; econstructor) ; lazy - [Σi]  ; try discriminate
     | intro ; exists tt
     | repeat econstructor
     ]
   ].
 
-Ltac ittcheck1 :=
+Ltac ittcheck1 Σi :=
   lazymatch goal with
   | |- ?Σ ;;; ?Γ |-i ?t : ?T =>
     first [
-      eapply meta_conv ; [ ittintro | lazy ; try reflexivity ]
+      eapply meta_conv ; [ ittintro | lazy - [Σi]  ; try reflexivity ]
     | eapply meta_ctx_conv ; [
-        eapply meta_conv ; [ ittintro | lazy ; try reflexivity ]
+        eapply meta_conv ; [ ittintro | lazy - [Σi]  ; try reflexivity ]
       | cbn ; try reflexivity
       ]
     ]
   | |- wf ?Σ ?Γ => first [ assumption | eapply wf_snoc' | econstructor ]
-  | |- sSort _ = sSort _ => first [ lazy ; reflexivity | shelve ]
+  | |- sSort _ = sSort _ => first [ lazy - [Σi]  ; reflexivity | shelve ]
   | |- type_glob _ => first [ assumption | glob ]
   | _ => fail "Not applicable"
   end.
 
-Ltac ittcheck' := ittcheck1 ; try (lazy ; myomega).
+Ltac ittcheck' Σi := ittcheck1 Σi ; try (lazy  - [Σi] ; myomega).
 
-Ltac ittcheck := repeat ittcheck'.
+Ltac ittcheck Σi := repeat (ittcheck' Σi).

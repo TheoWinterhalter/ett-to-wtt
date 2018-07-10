@@ -211,15 +211,15 @@ Arguments Σi : simpl never.
 Fact hΣi : type_glob Σi.
 Proof.
   (* destruct chΣi. assumption. *)
-  repeat glob ; lazy.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
+  repeat (glob Σi); lazy - [ Σi ].
+  - ittcheck Σi.
+  - ittcheck Σi.
+  - ittcheck Σi.
+  - ittcheck Σi.
+  - ittcheck Σi.
+  - ittcheck Σi.
+  - ittcheck Σi.
+  - ittcheck Σi.
   (* - ittcheck. *)
   (* - ittcheck. *)
   (* - ittcheck. *)
@@ -230,19 +230,19 @@ Defined.
 Fact xhΣi : xtype_glob Σi.
 Proof.
   (* destruct chΣi. assumption. *)
-  repeat xglob ; lazy.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  (* - ettcheck. *)
-  (* - ettcheck. *)
-  (* - ettcheck. *)
-  (* - ettcheck. *)
+  repeat (xglob Σi); lazy - [ Σi ].
+  - ettcheck Σi.
+  - ettcheck Σi.
+  - ettcheck Σi.
+  - ettcheck Σi.
+  - ettcheck Σi.
+  - ettcheck Σi.
+  - ettcheck Σi.
+  - ettcheck Σi.
+  (* - ettcheck Σi. *)
+  (* - ettcheck Σi. *)
+  (* - ettcheck Σi. *)
+  (* - ettcheck Σi. *)
   Unshelve. all: exact nAnon.
 Defined.
 
