@@ -192,10 +192,10 @@ Definition ty_add :=
 (* The global context *)
 
 Definition Σi : sglobal_context := [
-  decl "vrev_obligation4" ty_obligation4 ;
-  decl "vrev_obligation3" ty_obligation3 ;
-  decl "vrev_obligation2" ty_obligation2 ;
-  decl "vrev_obligation1" ty_obligation1 ;
+  (* decl "vrev_obligation4" ty_obligation4 ; *)
+  (* decl "vrev_obligation3" ty_obligation3 ; *)
+  (* decl "vrev_obligation2" ty_obligation2 ; *)
+  (* decl "vrev_obligation1" ty_obligation1 ; *)
   decl "add" ty_add ;
   decl "vec_rect" ty_vec_rect ;
   decl "vcons" ty_vcons ;
@@ -220,10 +220,10 @@ Proof.
   - ittcheck.
   - ittcheck.
   - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
+  (* - ittcheck. *)
   Unshelve. all: exact nAnon.
 Defined.
 
@@ -239,10 +239,10 @@ Proof.
   - ettcheck.
   - ettcheck.
   - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
-  - ettcheck.
+  (* - ettcheck. *)
+  (* - ettcheck. *)
+  (* - ettcheck. *)
+  (* - ettcheck. *)
   Unshelve. all: exact nAnon.
 Defined.
 
