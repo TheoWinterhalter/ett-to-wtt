@@ -311,15 +311,15 @@ Proof.
   - eapply reflection.
     unshelve eapply close_goal
     ; [ exact (sAx "vrev_obligation2") | assumption |].
-    simpl. ettcheck Σi. simpl. 
+    simpl. ettcheck Σi.
   - eapply reflection.
     unshelve eapply close_goal
     ; [ exact (sAx "vrev_obligation3") | assumption |].
-    simpl. ettcheck.
+    simpl. ettcheck Σi.
   - eapply reflection.
     unshelve eapply close_goal
     ; [ exact (sAx "vrev_obligation4") | assumption |].
-    simpl. ettcheck.
+    simpl. ettcheck Σi.
   Unshelve. exact nAnon.
 Defined.
 
