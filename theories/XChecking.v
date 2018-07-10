@@ -147,17 +147,17 @@ Proof.
   econstructor ; eassumption.
 Defined.
 
-Ltac xglob :=
+Ltac xglob Σi :=
   first [
     eapply xtype_glob_nil
   | eapply xtype_glob_cons' ; [
       idtac
-    | repeat (lazy ; econstructor) ; lazy ; try discriminate
+    | repeat (lazy - [Σi]; econstructor) ; lazy - [Σi]; try discriminate
     | intro ; exists tt
     ]
   ].
 
-Ltac ettintro :=
+Ltac ettintro Σi :=
   lazymatch goal with
   | |- ?Σ ;;; ?Γ |-x ?t : ?T =>
     lazymatch t with
@@ -172,30 +172,30 @@ Ltac ettintro :=
     | sPi2 _ _ _ => eapply type_Pi2
     | sEq _ _ _ => eapply xtype_Eq'
     | sRefl _ _ => eapply xtype_Refl'
-    | sAx _ => eapply type_Ax ; [| lazy ; try reflexivity ]
+    | sAx _ => eapply type_Ax ; [| lazy - [Σi]; try reflexivity ]
     | _ => fail "No introduction rule for" t
     end
   | _ => fail "Not applicable"
   end.
 
-Ltac ettcheck1 :=
+Ltac ettcheck1 Σi :=
   lazymatch goal with
   | |- ?Σ ;;; ?Γ |-x ?t : ?T =>
     first [
-      eapply meta_conv ; [ ettintro | lazy ; reflexivity ]
-    | eapply type_conv ; [ ettintro | .. ]
+      eapply meta_conv ; [ ettintro Σi |   lazy - [Σi] ; reflexivity ]
+    | eapply type_conv ; [ ettintro Σi | .. ]
     (* | eapply meta_ctx_conv ; [ *)
     (*     eapply meta_conv ; [ ettintro | lazy ; try reflexivity ] *)
     (*   | cbn ; try reflexivity *)
     (*   ] *)
     ]
   | |- wf ?Σ ?Γ => first [ assumption | eapply xwf_snoc' | econstructor ]
-  | |- sSort _ = sSort _ => first [ lazy ; reflexivity | shelve ]
-  | |- type_glob _ => first [ assumption | glob ]
-  | |- xtype_glob _ => first [ assumption | xglob ]
+  | |- sSort _ = sSort _ => first [ lazy - [Σi]  ; reflexivity | shelve ]
+  | |- type_glob _ => first [ assumption | glob Σi]
+  | |- xtype_glob _ => first [ assumption | xglob Σi ]
   | _ => fail "Not applicable"
   end.
 
-Ltac ettcheck' := ettcheck1 ; try (lazy ; myomega).
+Ltac ettcheck' Σi := ettcheck1 Σi; try (lazy - [Σi] ; myomega).
 
-Ltac ettcheck := repeat ettcheck'.
+Ltac ettcheck Σi := repeat (ettcheck' Σi).
