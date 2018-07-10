@@ -6,20 +6,20 @@ to intensional type theory.
 ## Requirements
 
 This project can be compiled with Coq 8.8 and requires
-[Equations](http://mattam82.github.io/Coq-Equations/) to compile.
-
-If you want to compile the examples, you also need 
-[TemplateCoq](https://github.com/Template-Coq/template-coq)
-and
-[TypingFlags](https://github.com/SimonBoulier/TypingFlags).
-For the moment, I need for some changes to be integrated to TemplateCoq, so in
-the mean time you can clone
+[Equations](http://mattam82.github.io/Coq-Equations/) 
+and [TemplateCoq](https://github.com/Template-Coq/template-coq)
+to compile.
+In case the TemplateCoq 8.8 release doesn't work, you can always clone
 [my fork](https://github.com/TheoWinterhalter/template-coq/tree/univ-fix)
 and run
 ```bash
 make && make install
 ```
 to install the required version of TemplateCoq.
+
+
+If you want to compile the examples, you also need
+[TypingFlags](https://github.com/SimonBoulier/TypingFlags).
 
 ## Building
 
