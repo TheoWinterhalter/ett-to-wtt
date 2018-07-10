@@ -138,25 +138,23 @@ Proof.
   ettcheck.
 Defined.
 
-(* Print Assumptions type_realid. *)
+Definition itt_realid : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_realid istrans_nil in t.
 
-(* Definition itt_realid : sterm := *)
-(*   Eval lazy in *)
-(*   let '(_ ; t ; _) := type_translation type_realid istrans_nil in t. *)
+Definition tc_realid : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_realid empty.
 
-(* Definition tc_realid : tsl_result term := *)
-(*   Eval lazy in *)
-(*   tsl_rec (2 ^ 18) Σ [] itt_realid empty. *)
-
-(* Make Definition coq_realid := *)
-(*   ltac:( *)
-(*     let t := eval lazy in *)
-(*              (match tc_realid with *)
-(*               | FinalTranslation.Success _ t => t *)
-(*               | _ => tRel 0 *)
-(*               end) *)
-(*       in exact t *)
-(*   ). *)
+Make Definition coq_realid :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_realid with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
 
 (*! EXAMPLE 3 *)
 
@@ -320,20 +318,22 @@ Proof.
   Unshelve. exact nAnon.
 Defined.
 
-(* Definition itt_vrev : sterm := *)
-(*   Eval lazy in *)
-(*   let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t. *)
+Definition itt_vrev : sterm :=
+  Eval lazy - [ Σi ] in
+  let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t.
 
-(* Definition tc_vrev : tsl_result term := *)
-(*   Eval lazy in *)
-(*   tsl_rec (2 ^ 18) Σ [] itt_vrev empty. *)
+Definition tc_vrev : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_vrev empty.
 
-(* Make Definition coq_vrev := *)
-(*   ltac:( *)
-(*     let t := eval lazy in *)
-(*              (match tc_vrev with *)
-(*               | FinalTranslation.Success _ t => t *)
-(*               | _ => tRel 0 *)
-(*               end) *)
-(*       in exact t *)
-(*   ). *)
+Make Definition coq_vrev :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_vrev with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
+
+Print coq_vrev.
