@@ -50,7 +50,7 @@ Fact type_ctx_closed_above :
 Proof.
   intros Σ Γ t T h.
   dependent induction h.
-  all: try (cbn in * ; repeat (erewrite_assumption by myomega) ; reflexivity).
+  all: try (cbn in * ; repeat erewrite_assumption ; reflexivity).
   unfold closed_above. case_eq (n <? #|Γ|) ; intro e ; bprop e ; try myomega.
   reflexivity.
 Defined.
