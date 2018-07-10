@@ -160,7 +160,7 @@ Ltac glob Σi :=
     eapply type_glob_nil
   | eapply type_glob_cons' ; [
       idtac
-    | repeat (lazy ; econstructor) ; lazy - [Σi]  ; try discriminate
+    | repeat (lazy - [Σi] ; econstructor) ; lazy - [Σi]  ; try discriminate
     | intro ; exists tt
     | repeat econstructor
     ]
