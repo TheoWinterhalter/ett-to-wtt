@@ -182,6 +182,6 @@ Ltac ittcheck1 :=
   | _ => fail "Not applicable"
   end.
 
-Ltac ittcheck' := ittcheck1 ; try (lazy ; omega).
+Ltac ittcheck' := ittcheck1 ; try (lazy ; myomega).
 
 Ltac ittcheck := repeat ittcheck'.

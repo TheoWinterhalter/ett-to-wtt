@@ -457,7 +457,7 @@ Lemma vrev_obligation3 : coq_obligation3.
 Proof.
   unfold coq_obligation3.
   intros A n m v acc a n' v' h m' acc'.
-  f_equal. omega.
+  f_equal. myomega.
 Defined.
 
 Lemma vrev_obligation4 : coq_obligation4.

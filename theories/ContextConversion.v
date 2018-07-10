@@ -107,8 +107,8 @@ Section ctxconv.
         end.
         destruct (IHhc _ is' w1 w2).
         eexists.
-        replace (S (S n)) with (1 + (S n))%nat by omega.
-        rewrite <- liftP3 with (k := 0) by omega.
+        replace (S (S n)) with (1 + (S n))%nat by myomega.
+        rewrite <- liftP3 with (k := 0) by myomega.
         lift_sort. eapply typing_lift01 ; eassumption.
   Defined.
 
@@ -176,12 +176,12 @@ Section ctxconv.
     - econstructor.
       + lift_sort. eapply typing_lift01 ; try eassumption ; ih.
       + eapply typing_lift01 ; try eassumption ; ih.
-      + refine (type_Rel _ _ _ _ _) ; [| cbn ; omega ].
+      + refine (type_Rel _ _ _ _ _) ; [| cbn ; myomega ].
         econstructor ; try eassumption. ih.
     - eexists. econstructor.
       + lift_sort. eapply typing_lift01 ; try eassumption ; ih.
       + eapply typing_lift01 ; try eassumption ; ih.
-      + refine (type_Rel _ _ _ _ _) ; [| cbn ; omega ].
+      + refine (type_Rel _ _ _ _ _) ; [| cbn ; myomega ].
         econstructor ; try eassumption. ih.
     - eapply type_HeqTrans with (B0 := B) ; ih.
     - econstructor ; try ih.
