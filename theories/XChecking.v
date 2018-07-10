@@ -196,6 +196,6 @@ Ltac ettcheck1 Σi :=
   | _ => fail "Not applicable"
   end.
 
-Ltac ettcheck' Σi := ettcheck1 Σi; try (lazy ; myomega).
+Ltac ettcheck' Σi := ettcheck1 Σi; try (lazy - [Σi] ; myomega).
 
 Ltac ettcheck Σi := repeat (ettcheck' Σi).
