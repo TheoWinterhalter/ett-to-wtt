@@ -7,11 +7,18 @@ From Template Require Import utils Typing.
 Set Primitive Projections.
 Open Scope type_scope.
 
+Definition compute_eq {n m : nat} : n = m -> n = m :=
+  fun h =>
+    match Nat.eq_dec n m with
+    | left p => p
+    | right nh => False_rect _ (nh h)
+    end.
+
 Ltac myomega :=
   match goal with
   | |- ?n = _ =>
     match type of n with
-    | nat => zify ; romega
+    | nat => eapply compute_eq ; omega
     | _ => omega
     end
   | _ => omega
