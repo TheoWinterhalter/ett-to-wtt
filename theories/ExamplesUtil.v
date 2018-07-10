@@ -208,39 +208,55 @@ Definition Σi : sglobal_context := [
 
 Arguments Σi : simpl never.
 
+Ltac setenv nΣ :=
+  match goal with
+  | |- ?Σ ;;; _ |-i _ : _ => set (nΣ := Σ)
+  | |- ?Σ ;;; _ |-x _ : _ => set (nΣ := Σ)    
+  end.
+
+Ltac ittcheck_env :=
+  let nΣ := fresh "Σ" in
+  setenv nΣ ;
+  ittcheck nΣ.
+
 Fact hΣi : type_glob Σi.
 Proof.
-  repeat (glob Σi); lazy - [ Σi ].
-  - ittcheck Σi.
-  - ittcheck Σi.
-  - ittcheck Σi.
-  - ittcheck Σi.
-  - ittcheck Σi.
-  - ittcheck Σi.
-  - ittcheck Σi.
-  - ittcheck Σi.
-  (* - ittcheck. *)
-  (* - ittcheck. *)
-  (* - ittcheck. *)
-  (* - ittcheck. *)
+  repeat (glob Σi) ; lazy - [ Σi ].
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
   Unshelve. all: exact nAnon.
 Defined.
 
+Ltac ettcheck_env :=
+  let nΣ := fresh "Σ" in
+  setenv nΣ ;
+  ettcheck nΣ.
+
 Fact xhΣi : xtype_glob Σi.
 Proof.
-  repeat (xglob Σi); lazy - [ Σi ].
-  - ettcheck Σi.
-  - ettcheck Σi.
-  - ettcheck Σi.
-  - ettcheck Σi.
-  - ettcheck Σi.
-  - ettcheck Σi.
-  - ettcheck Σi.
-  - ettcheck Σi.
-  (* - ettcheck Σi. *)
-  (* - ettcheck Σi. *)
-  (* - ettcheck Σi. *)
-  (* - ettcheck Σi. *)
+  repeat (xglob Σi) ; lazy - [ Σi ].
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
   Unshelve. all: exact nAnon.
 Defined.
 

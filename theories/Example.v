@@ -41,8 +41,6 @@ Definition tm_pseudoid :=
 Definition prety_pseudoid :=
   Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_type empty empty nomap.
 
-(* Opaque Σi. *)
-
 Definition ty_pseudoid :=
   Eval lazy in 
   match prety_pseudoid with
@@ -58,8 +56,6 @@ Proof.
   eapply reflection with (e := sRel 1).
   ettcheck Σi.
 Defined.
-
-(* Definition type_pseudoid_ := Eval lazy in type_pseudoid. *)
 
 Definition itt_pseudoid : sterm :=
   Eval lazy in
@@ -79,30 +75,30 @@ Make Definition coq_pseudoid :=
       in exact t
   ).
 
-Definition Translate ident : TemplateMonad () :=
-  entry <- tmQuoteConstant ident false ;;
-  match entry with
-  | DefinitionEntry {| definition_entry_body := tm ; definition_entry_type := ty |} =>
-    pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm empty empty nomap) ;;
-    prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty empty empty nomap) ;;
-    match pretm, prety with
-    | Success tm, Success ty =>
-      name <- tmEval all (ident ++ "_der") ;;
-      name <- tmFreshName name ;;
-      der <- tmLemma name (Σi ;;; [] |-x tm : ty) ;;
-      let '(_ ; itt_tm ; _) := type_translation der istrans_nil in
-      t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm empty) ;;
-      match t with
-      | FinalTranslation.Success _ t =>
-        t' <- tmUnquote t ;;
-        t' <- tmEval Ast.hnf (my_projT2 t') ;;
-        tmPrint t'
-      | _ => tmFail "Cannot translate from ITT to TemplateCoq"
-      end
-    | _,_ => tmFail "Cannot transalte from TemplateCoq to ETT"
-    end
-  | _ => tmFail "Expected a constant definition"
-  end.
+(* Definition Translate ident : TemplateMonad () := *)
+(*   entry <- tmQuoteConstant ident false ;; *)
+(*   match entry with *)
+(*   | DefinitionEntry {| definition_entry_body := tm ; definition_entry_type := ty |} => *)
+(*     pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm empty empty nomap) ;; *)
+(*     prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty empty empty nomap) ;; *)
+(*     match pretm, prety with *)
+(*     | Success tm, Success ty => *)
+(*       name <- tmEval all (ident ++ "_der") ;; *)
+(*       name <- tmFreshName name ;; *)
+(*       der <- tmLemma name (Σi ;;; [] |-x tm : ty) ;; *)
+(*       let '(_ ; itt_tm ; _) := type_translation der istrans_nil in *)
+(*       t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm empty) ;; *)
+(*       match t with *)
+(*       | FinalTranslation.Success _ t => *)
+(*         t' <- tmUnquote t ;; *)
+(*         t' <- tmEval Ast.hnf (my_projT2 t') ;; *)
+(*         tmPrint t' *)
+(*       | _ => tmFail "Cannot translate from ITT to TemplateCoq" *)
+(*       end *)
+(*     | _,_ => tmFail "Cannot transalte from TemplateCoq to ETT" *)
+(*     end *)
+(*   | _ => tmFail "Expected a constant definition" *)
+(*   end. *)
 
 (* Run TemplateProgram (Translate "pseudoid"). *)
 (* Next Obligation. *)
@@ -328,7 +324,7 @@ Proof.
 Defined.
 
 Definition itt_vrev : sterm :=
-  Eval lazy - [ Σi ] in
+  Eval lazy in
   let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t.
 
 Definition tc_vrev : tsl_result term :=
