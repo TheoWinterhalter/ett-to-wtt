@@ -8,19 +8,42 @@ Set Primitive Projections.
 Open Scope type_scope.
 
 Definition compute_eq {n m : nat} : n = m -> n = m :=
-  fun h =>
-    match Nat.eq_dec n m with
-    | left p => p
-    | right nh => False_rect _ (nh h)
-    end.
+  match Nat.eq_dec n m with
+  | left p => fun _ => p
+  | right nh => fun h => False_rect _ (nh h)
+  end.
+
+Definition compute_le {n m} : n <= m -> n <= m :=
+  match le_dec n m with
+  | left p => fun _ => p
+  | right nh => fun h => False_rect _ (nh h)
+  end.
+
+Definition compute_lt {n m} : n < m -> n < m :=
+  match lt_dec n m with
+  | left p => fun _ => p
+  | right nh => fun h => False_rect _ (nh h)
+  end.
+
+Definition compute_ge {n m} : n >= m -> n >= m :=
+  match ge_dec n m with
+  | left p => fun _ => p
+  | right nh => fun h => False_rect _ (nh h)
+  end.
+
+Definition compute_gt {n m} : n > m -> n > m :=
+  match gt_dec n m with
+  | left p => fun _ => p
+  | right nh => fun h => False_rect _ (nh h)
+  end.
 
 Ltac myomega :=
   match goal with
-  | |- ?n = _ =>
-    match type of n with
-    | nat => eapply compute_eq ; omega
-    | _ => omega
-    end
+  | |- @eq nat _ _ => eapply compute_eq ; omega
+  | |- _ <= _ => eapply compute_le ; omega
+  | |- _ < _ => eapply compute_lt ; omega
+  | |- _ >= _ => eapply compute_ge ; omega
+  | |- _ > _ => eapply compute_gt ; omega
   | _ => omega
   end.
 
