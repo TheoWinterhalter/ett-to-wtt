@@ -211,10 +211,10 @@ Proof.
     + reflexivity.
     + reflexivity.
   - cbn. case_eq (k <=? n) ; intro e ; bprop e.
-    + cbn. case_eq (k ?= S (S n)) ; intro e1 ; bprop e1 ; try omega.
+    + cbn. case_eq (k ?= S (S n)) ; intro e1 ; bprop e1 ; try myomega.
       reflexivity.
-    + cbn. case_eq (k ?= S n) ; intro e1 ; bprop e1 ; try omega.
-      * subst. f_equal. omega.
+    + cbn. case_eq (k ?= S n) ; intro e1 ; bprop e1 ; try myomega.
+      * subst. f_equal. myomega.
       * reflexivity.
 Defined.
 

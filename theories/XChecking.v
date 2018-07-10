@@ -196,6 +196,6 @@ Ltac ettcheck1 :=
   | _ => fail "Not applicable"
   end.
 
-Ltac ettcheck' := ettcheck1 ; try (lazy ; omega).
+Ltac ettcheck' := ettcheck1 ; try (lazy ; myomega).
 
 Ltac ettcheck := repeat ettcheck'.
