@@ -92,11 +92,11 @@ Definition Translate ident : TemplateMonad () :=
         t' <- tmUnquote t ;;
         t' <- tmEval Ast.hnf (my_projT2 t') ;;
         tmPrint t'
-      | _ => tmFail "pb de traduction"
+      | _ => tmFail "Cannot translate from ITT to TemplateCoq"
       end
-    | _,_ => tmFail "trans error"
+    | _,_ => tmFail "Cannot transalte from TemplateCoq to ETT"
     end
-  | _ => tmFail "should def"
+  | _ => tmFail "Expected a constant definition"
   end.
 
 Run TemplateProgram (Translate "pseudoid").
