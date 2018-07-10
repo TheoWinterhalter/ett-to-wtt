@@ -1,6 +1,6 @@
 (*! Meta-theory for ETT *)
 
-From Coq Require Import Bool String List BinPos Compare_dec ROmega.
+From Coq Require Import Bool String List BinPos Compare_dec PeanoNat.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
@@ -146,9 +146,9 @@ Fact type_ctx_closed_above :
 Proof.
   intros Σ Γ t T h.
   dependent induction h.
-  all: try (cbn in * ; repeat (erewrite_assumption by romega) ; reflexivity).
+  all: try (cbn in * ; repeat (erewrite_assumption) ; reflexivity).
   unfold closed_above. 
-  case_eq (n <? #|Γ|) ; intro e ; bprop e ; try (zify ; romega).
+  case_eq (n <? #|Γ|) ; intro e ; bprop e ; try myomega.
   reflexivity.
 Defined.
 
@@ -302,16 +302,16 @@ with wf_lift {Σ Γ Δ Ξ} (h : wf Σ (Γ ,,, Ξ)) {struct h} :
 Proof.
   - { dependent destruction h ; intros hΣ hwf.
       - cbn. case_eq (#|Ξ| <=? n) ; intro e ; bprop e.
-        + rewrite liftP3 by (zify ; romega).
-          replace (#|Δ| + S n)%nat with (S (#|Δ| + n)) by (zify ; romega).
+        + rewrite liftP3 by myomega.
+          replace (#|Δ| + S n)%nat with (S (#|Δ| + n)) by myomega.
           eapply meta_conv.
           * eapply type_Rel.
             eapply wf_lift ; assumption.
           * f_equal. f_equal.
             erewrite 3!safe_nth_ge'
-              by (try rewrite lift_context_length ; romega).
+              by (try rewrite lift_context_length ; myomega).
             eapply safe_nth_cong_irr.
-            rewrite lift_context_length. zify ; romega.
+            rewrite lift_context_length. myomega.
         + eapply meta_conv.
           * eapply type_Rel. eapply wf_lift ; assumption.
           * erewrite 2!safe_nth_lt.
@@ -393,7 +393,7 @@ Proof.
 
   Unshelve.
   all: try rewrite !length_cat ; try rewrite length_cat in isdecl ;
-       try rewrite lift_context_length ; zify ; romega.
+       try rewrite lift_context_length ; myomega.
 
 Defined.
 
@@ -515,13 +515,13 @@ Proof.
   - { intros hg hu.
       dependent destruction h.
       - cbn. case_eq (#|Δ| ?= n) ; intro e ; bprop e.
-        + assert (h : n >= #|Δ|) by (zify ; romega).
+        + assert (h : n >= #|Δ|) by myomega.
           rewrite safe_nth_ge' with (h0 := h).
-          assert (n - #|Δ| = 0) by (zify ; romega).
+          assert (n - #|Δ| = 0) by myomega.
           set (ge := ge_sub isdecl h).
           generalize ge.
           rewrite H. intro ge'.
-          cbn. rewrite substP3 by (zify ; romega).
+          cbn. rewrite substP3 by myomega.
           subst.
           replace #|Δ| with #|subst_context u Δ|
             by (now rewrite subst_context_length).
@@ -529,27 +529,27 @@ Proof.
           * cbn. assumption.
           * assumption.
           * eapply wf_subst ; eassumption.
-        + assert (h : n >= #|Δ|) by (zify ; romega).
+        + assert (h : n >= #|Δ|) by myomega.
           rewrite safe_nth_ge' with (h0 := h).
           set (ge := ge_sub isdecl h).
           destruct n ; try easy.
-          rewrite substP3 by (zify ; romega).
+          rewrite substP3 by myomega.
           generalize ge.
-          replace (S n - #|Δ|) with (S (n - #|Δ|)) by (zify ; romega).
+          replace (S n - #|Δ|) with (S (n - #|Δ|)) by myomega.
           cbn. intro ge'.
           eapply meta_conv.
           * eapply type_Rel. eapply wf_subst ; eassumption.
           * erewrite safe_nth_ge'.
             f_equal. eapply safe_nth_cong_irr.
             rewrite subst_context_length. reflexivity.
-        + assert (h : n < #|Δ|) by (zify ; romega).
+        + assert (h : n < #|Δ|) by myomega.
           rewrite @safe_nth_lt with (isdecl' := h).
           match goal with
           | |- _ ;;; _ |-x _ : ?t{?d := ?u} =>
             replace (subst u d t) with (t{((S n) + (#|Δ| - (S n)))%nat := u})
-              by (f_equal ; zify ; romega)
+              by (f_equal ; myomega)
           end.
-          rewrite substP2 by (zify ; romega).
+          rewrite substP2 by myomega.
           eapply meta_conv.
           * eapply type_Rel.
             eapply wf_subst ; eassumption.
@@ -627,7 +627,7 @@ Proof.
 
   Unshelve.
   all: try rewrite !length_cat ; try rewrite !subst_context_length ; 
-       zify ; romega.
+       myomega.
 Defined.
 
 End Subst.

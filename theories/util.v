@@ -1,11 +1,21 @@
 (* Utility *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
+From Coq Require Import Bool String List BinPos Compare_dec Omega ROmega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import utils Typing.
 
 Set Primitive Projections.
 Open Scope type_scope.
+
+Ltac myomega :=
+  match goal with
+  | |- ?n = _ =>
+    match type of n with
+    | nat => zify ; romega
+    | _ => omega
+    end
+  | _ => omega
+  end.
 
 Record pp_sigT {A : Type} (P : A -> Type) : Type :=
   {
@@ -207,7 +217,7 @@ Fact lastn_O :
   forall {A} {l : list A}, lastn 0 l = [].
 Proof.
   intros A l. unfold lastn.
-  replace (#|l| - 0) with #|l| by omega.
+  replace (#|l| - 0) with #|l| by myomega.
   apply skipn_all.
 Defined.
 
@@ -216,7 +226,7 @@ Fact lastn_all :
     lastn #|l| l = l.
 Proof.
   intros A l. unfold lastn.
-  replace (#|l| - #|l|) with 0 by omega.
+  replace (#|l| - #|l|) with 0 by myomega.
   reflexivity.
 Defined.
 
@@ -227,7 +237,7 @@ Fact lastn_all2 :
 Proof.
   intros A n l h.
   unfold lastn.
-  replace (#|l| - n) with 0 by omega.
+  replace (#|l| - n) with 0 by myomega.
   reflexivity.
 Defined.
 
@@ -240,7 +250,7 @@ Proof.
   intros A l n a hn h.
   unfold lastn.
   erewrite skipn_reconstruct.
-  - f_equal. f_equal. omega.
+  - f_equal. f_equal. myomega.
   - assumption.
 Defined.
 
@@ -284,8 +294,8 @@ Proof.
   induction n.
   - intros _. assumption.
   - intro h. apply Ps.
-    + omega.
-    + apply IHn. omega.
+    + myomega.
+    + apply IHn. myomega.
 Defined.
 
 Corollary fin_indT_last :
