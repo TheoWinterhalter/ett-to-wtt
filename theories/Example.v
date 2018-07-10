@@ -5,12 +5,13 @@ Set Type In Type.
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import Ast LiftSubst Typing Checker.
+From Template Require Import All.
 From Translation Require Import util Sorts SAst SLiftSubst SCommon ITyping
                                 ITypingLemmata ITypingAdmissible XTyping
                                 Quotes Translation FinalTranslation
                                 FullQuote ExamplesUtil ExampleQuotes
                                 XTypingLemmata IChecking XChecking.
+Import MonadNotation.
 
 Open Scope string_scope.
 Open Scope x_scope.
@@ -72,6 +73,37 @@ Make Definition coq_pseudoid :=
               end)
       in exact t
   ).
+
+Definition Translate ident : TemplateMonad () :=
+  entry <- tmQuoteConstant ident false ;;
+  match entry with
+  | DefinitionEntry {| definition_entry_body := tm ; definition_entry_type := ty |} =>
+    pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm empty empty nomap) ;;
+    prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty empty empty nomap) ;;
+    match pretm, prety with
+    | Success tm, Success ty =>
+      name <- tmEval all (ident ++ "_der") ;;
+      name <- tmFreshName name ;;
+      der <- tmLemma name (Σi ;;; [] |-x tm : ty) ;;
+      let '(_ ; itt_tm ; _) := type_translation der istrans_nil in
+      t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm empty) ;;
+      match t with
+      | FinalTranslation.Success _ t =>
+        t' <- tmUnquote t ;;
+        t' <- tmEval Ast.hnf (my_projT2 t') ;;
+        tmPrint t'
+      | _ => tmFail "pb de traduction"
+      end
+    | _,_ => tmFail "trans error"
+    end
+  | _ => tmFail "should def"
+  end.
+
+Run TemplateProgram (Translate "pseudoid").
+Next Obligation.
+  pose proof xhΣi.
+  ettcheck. cbn. eapply reflection with (e := sRel 1). ettcheck.
+Defined.
 
 (*! EXAMPLE 2 *)
 
