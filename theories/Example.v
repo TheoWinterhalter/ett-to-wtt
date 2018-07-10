@@ -40,6 +40,9 @@ Definition tm_pseudoid :=
 
 Definition prety_pseudoid :=
   Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_type empty empty nomap.
+
+(* Opaque Σi. *)
+
 Definition ty_pseudoid :=
   Eval lazy in 
   match prety_pseudoid with
@@ -51,10 +54,12 @@ Lemma type_pseudoid : Σi ;;; [] |-x tm_pseudoid : ty_pseudoid.
 Proof.
   unfold tm_pseudoid, ty_pseudoid.
   pose proof xhΣi.
-  ettcheck. cbn.
+  ettcheck Σi. cbn. 
   eapply reflection with (e := sRel 1).
-  ettcheck.
+  ettcheck Σi.
 Defined.
+
+(* Definition type_pseudoid_ := Eval lazy in type_pseudoid. *)
 
 Definition itt_pseudoid : sterm :=
   Eval lazy in
@@ -74,36 +79,36 @@ Make Definition coq_pseudoid :=
       in exact t
   ).
 
-Definition Translate ident : TemplateMonad () :=
-  entry <- tmQuoteConstant ident false ;;
-  match entry with
-  | DefinitionEntry {| definition_entry_body := tm ; definition_entry_type := ty |} =>
-    pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm empty empty nomap) ;;
-    prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty empty empty nomap) ;;
-    match pretm, prety with
-    | Success tm, Success ty =>
-      name <- tmEval all (ident ++ "_der") ;;
-      name <- tmFreshName name ;;
-      der <- tmLemma name (Σi ;;; [] |-x tm : ty) ;;
-      let '(_ ; itt_tm ; _) := type_translation der istrans_nil in
-      t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm empty) ;;
-      match t with
-      | FinalTranslation.Success _ t =>
-        t' <- tmUnquote t ;;
-        t' <- tmEval Ast.hnf (my_projT2 t') ;;
-        tmPrint t'
-      | _ => tmFail "pb de traduction"
-      end
-    | _,_ => tmFail "trans error"
-    end
-  | _ => tmFail "should def"
-  end.
+(* Definition Translate ident : TemplateMonad () := *)
+(*   entry <- tmQuoteConstant ident false ;; *)
+(*   match entry with *)
+(*   | DefinitionEntry {| definition_entry_body := tm ; definition_entry_type := ty |} => *)
+(*     pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm empty empty nomap) ;; *)
+(*     prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty empty empty nomap) ;; *)
+(*     match pretm, prety with *)
+(*     | Success tm, Success ty => *)
+(*       name <- tmEval all (ident ++ "_der") ;; *)
+(*       name <- tmFreshName name ;; *)
+(*       der <- tmLemma name (Σi ;;; [] |-x tm : ty) ;; *)
+(*       let '(_ ; itt_tm ; _) := type_translation der istrans_nil in *)
+(*       t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm empty) ;; *)
+(*       match t with *)
+(*       | FinalTranslation.Success _ t => *)
+(*         t' <- tmUnquote t ;; *)
+(*         t' <- tmEval Ast.hnf (my_projT2 t') ;; *)
+(*         tmPrint t' *)
+(*       | _ => tmFail "pb de traduction" *)
+(*       end *)
+(*     | _,_ => tmFail "trans error" *)
+(*     end *)
+(*   | _ => tmFail "should def" *)
+(*   end. *)
 
-Run TemplateProgram (Translate "pseudoid").
-Next Obligation.
-  pose proof xhΣi.
-  ettcheck. cbn. eapply reflection with (e := sRel 1). ettcheck.
-Defined.
+(* Run TemplateProgram (Translate "pseudoid"). *)
+(* Next Obligation. *)
+(*   pose proof xhΣi. *)
+(*   ettcheck. cbn. eapply reflection with (e := sRel 1). ettcheck. *)
+(* Defined. *)
 
 (*! EXAMPLE 2 *)
 
@@ -135,28 +140,28 @@ Lemma type_realid : Σi ;;; [] |-x tm_realid : ty_realid.
 Proof.
   unfold tm_realid, ty_realid.
   pose proof xhΣi.
-  ettcheck.
+  ettcheck Σi.
 Defined.
 
-(* Print Assumptions type_realid. *)
+Definition type_realid_ := Eval lazy - [Σi] in type_realid.
 
-(* Definition itt_realid : sterm := *)
-(*   Eval lazy in *)
-(*   let '(_ ; t ; _) := type_translation type_realid istrans_nil in t. *)
+Definition itt_realid : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_realid_ istrans_nil in t.
 
-(* Definition tc_realid : tsl_result term := *)
-(*   Eval lazy in *)
-(*   tsl_rec (2 ^ 18) Σ [] itt_realid empty. *)
+Definition tc_realid : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_realid empty.
 
-(* Make Definition coq_realid := *)
-(*   ltac:( *)
-(*     let t := eval lazy in *)
-(*              (match tc_realid with *)
-(*               | FinalTranslation.Success _ t => t *)
-(*               | _ => tRel 0 *)
-(*               end) *)
-(*       in exact t *)
-(*   ). *)
+Make Definition coq_realid :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_realid with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
 
 (*! EXAMPLE 3 *)
 
@@ -176,9 +181,9 @@ Quote Definition vrev_type :=
   ltac:(let T := type of @vrev in exact T).
 
 Definition pretm_vrev :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_term indt constt cot.
+  Eval lazy - [Σi] in fullquote (2 ^ 18) Σ [] vrev_term indt constt cot.
 Definition tm_vrev :=
-  Eval lazy in 
+  Eval lazy - [Σi] in 
   match pretm_vrev with
   | Success t => t
   | Error _ => sRel 0
@@ -250,7 +255,7 @@ Proof.
               pose proof (typing_wf hT) as hw.
               inversion hw. subst. destruct s.
               assumption.
-        -- instantiate (1 := sRel 0). ettcheck.
+        -- instantiate (1 := sRel 0). ettcheck  Σi.
            pose proof (typing_wf hT) as hw.
            inversion hw. subst. destruct s.
            assumption.
@@ -296,19 +301,21 @@ Proof.
   eapply close_goal_ex'.
 Defined.
 
+Transparent Σi.
+
 Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev.
 Proof.
   unfold tm_vrev, ty_vrev.
   pose proof xhΣi.
-  ettcheck.
+  ettcheck Σi.
   - eapply reflection.
     unshelve eapply close_goal
     ; [ exact (sAx "vrev_obligation1") | assumption |].
-    simpl. ettcheck.
+    simpl. ettcheck Σi. 
   - eapply reflection.
     unshelve eapply close_goal
     ; [ exact (sAx "vrev_obligation2") | assumption |].
-    simpl. ettcheck.
+    simpl. ettcheck Σi. simpl. 
   - eapply reflection.
     unshelve eapply close_goal
     ; [ exact (sAx "vrev_obligation3") | assumption |].
@@ -320,20 +327,20 @@ Proof.
   Unshelve. exact nAnon.
 Defined.
 
-(* Definition itt_vrev : sterm := *)
-(*   Eval lazy in *)
-(*   let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t. *)
+Definition itt_vrev : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t.
 
-(* Definition tc_vrev : tsl_result term := *)
-(*   Eval lazy in *)
-(*   tsl_rec (2 ^ 18) Σ [] itt_vrev empty. *)
+Definition tc_vrev : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_vrev empty.
 
-(* Make Definition coq_vrev := *)
-(*   ltac:( *)
-(*     let t := eval lazy in *)
-(*              (match tc_vrev with *)
-(*               | FinalTranslation.Success _ t => t *)
-(*               | _ => tRel 0 *)
-(*               end) *)
-(*       in exact t *)
-(*   ). *)
+Make Definition coq_vrev :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_vrev with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
