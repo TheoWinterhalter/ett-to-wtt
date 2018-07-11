@@ -197,13 +197,9 @@ Definition itt_vv : sterm :=
   Eval lazy in
   let '(_ ; t ; _) := type_translation type_vv istrans_nil in t.
 
-Print itt_vv.
-
 Definition tc_vv : tsl_result term :=
   Eval lazy in
   tsl_rec (2 ^ 18) Σ [] itt_vv axoc.
-
-Print tc_vv.
 
 Make Definition coq_vv :=
   ltac:(
@@ -214,8 +210,6 @@ Make Definition coq_vv :=
               end)
       in exact t
   ).
-
-Print coq_vv.
 
 (*! EXAMPLE 4 *)
 
