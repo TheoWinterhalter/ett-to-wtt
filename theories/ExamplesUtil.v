@@ -379,3 +379,25 @@ Proof.
   intros Σ Γ t T h.
   eapply close_goal_ex'.
 Defined.
+
+(* For interpretation of terms *)
+
+Quote Definition qnat := nat.
+Quote Definition qvec := vec.
+Quote Definition qadd := Nat.add.
+Quote Definition qO := O.
+Quote Definition qS := S.
+Quote Definition qvnil := @vnil.
+Quote Definition qvcons := @vcons.
+Quote Definition qvcons_act_obligation := @vcons_act_obligation.
+
+Definition axoc :=
+  [< "nat" --> qnat ;
+     "vec" --> qvec ;
+     "add" --> qadd ;
+     "O" --> qO ;
+     "S" --> qS ;
+     "vnil" --> qvnil ;
+     "vcons" --> qvcons ;
+     "vcons_act_obligation" --> qvcons_act_obligation
+  >].

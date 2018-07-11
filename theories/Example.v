@@ -161,6 +161,64 @@ Make Definition coq_realid :=
 
 (*! EXAMPLE 3 *)
 
+Definition vv : vec nat 1 := vcons 2 _ vnil.
+
+Quote Definition vv_term :=
+  ltac:(let t := eval unfold vv in @vv in exact t).
+Quote Definition vv_type := 
+  ltac:(let T := type of @vv in exact T).
+
+Definition pretm_vv :=
+  Eval lazy - [Σi] in fullquote (2 ^ 18) Σ [] vv_term indt constt cot.
+Definition tm_vv :=
+  Eval lazy - [Σi] in 
+  match pretm_vv with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Definition prety_vv :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vv_type indt constt cot.
+Definition ty_vv :=
+  Eval lazy in 
+  match prety_vv with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Lemma type_vv : Σi ;;; [] |-x tm_vv : ty_vv.
+Proof.
+  unfold tm_vv, ty_vv.
+  pose proof xhΣi.
+  ettcheck Σi.
+Defined.
+
+Definition itt_vv : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_vv istrans_nil in t.
+
+Print itt_vv.
+
+Definition tc_vv : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_vv axoc.
+
+Print tc_vv.
+
+Make Definition coq_vv :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_vv with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
+
+Print coq_vv.
+
+(*! EXAMPLE 4 *)
+
 Fail Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
   := f (vcons a n v).
 
@@ -207,26 +265,6 @@ Definition itt_vcons_act : sterm :=
 
 Print itt_vcons_act.
 
-Quote Definition qnat := nat.
-Quote Definition qvec := vec.
-Quote Definition qadd := Nat.add.
-Quote Definition qO := O.
-Quote Definition qS := S.
-Quote Definition qvnil := @vnil.
-Quote Definition qvcons := @vcons.
-Quote Definition qvcons_act_obligation := @vcons_act_obligation.
-
-Definition axoc :=
-  [< "nat" --> qnat ;
-     "vec" --> qvec ;
-     "add" --> qadd ;
-     "O" --> qO ;
-     "S" --> qS ;
-     "vnil" --> qvnil ;
-     "vcons" --> qvcons ;
-     "vcons_act_obligation" --> qvcons_act_obligation
-  >].
-
 Definition tc_vcons_act : tsl_result term :=
   Eval lazy in
   tsl_rec (2 ^ 18) Σ [] itt_vcons_act axoc.
@@ -245,7 +283,7 @@ Make Definition coq_vcons_act :=
 
 Print coq_vcons_act.
 
-(*! EXAMPLE 4 *)
+(*! EXAMPLE ?? *)
 
 (* Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) := *)
 (*   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))  *)
