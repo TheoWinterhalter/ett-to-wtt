@@ -39,12 +39,12 @@ Definition compute_gt {n m} : n > m -> n > m :=
 
 Ltac myomega :=
   match goal with
-  | |- @eq nat _ _ => eapply compute_eq ; omega
-  | |- _ <= _ => eapply compute_le ; omega
-  | |- _ < _ => eapply compute_lt ; omega
-  | |- _ >= _ => eapply compute_ge ; omega
-  | |- _ > _ => eapply compute_gt ; omega
-  | _ => omega
+  | |- @eq nat _ _ => eapply compute_eq ; abstract omega
+  | |- _ <= _ => eapply compute_le ; abstract omega
+  | |- _ < _ => eapply compute_lt ; abstract omega
+  | |- _ >= _ => eapply compute_ge ; abstract omega
+  | |- _ > _ => eapply compute_gt ; abstract omega
+  | _ => abstract omega
   end.
 
 Record pp_sigT {A : Type} (P : A -> Type) : Type :=
