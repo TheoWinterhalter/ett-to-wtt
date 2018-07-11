@@ -1,11 +1,57 @@
 (* Utility *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
+From Coq Require Import Bool String List BinPos Compare_dec Omega ROmega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import utils Typing.
 
 Set Primitive Projections.
 Open Scope type_scope.
+
+Definition compute_eq {n m : nat} : n = m -> n = m :=
+  match Nat.eq_dec n m with
+  | left p => fun _ => p
+  | right nh => fun h => False_rect _ (nh h)
+  end.
+
+Definition compute_neq {n m : nat} : n <> m -> n <> m :=
+  match Nat.eq_dec n m with
+  | right p => fun _ => p
+  | left h => fun nh => False_rect _ (nh h)
+  end.
+
+Definition compute_le {n m} : n <= m -> n <= m :=
+  match le_dec n m with
+  | left p => fun _ => p
+  | right nh => fun h => False_rect _ (nh h)
+  end.
+
+Definition compute_lt {n m} : n < m -> n < m :=
+  match lt_dec n m with
+  | left p => fun _ => p
+  | right nh => fun h => False_rect _ (nh h)
+  end.
+
+Definition compute_ge {n m} : n >= m -> n >= m :=
+  match ge_dec n m with
+  | left p => fun _ => p
+  | right nh => fun h => False_rect _ (nh h)
+  end.
+
+Definition compute_gt {n m} : n > m -> n > m :=
+  match gt_dec n m with
+  | left p => fun _ => p
+  | right nh => fun h => False_rect _ (nh h)
+  end.
+
+Ltac myomega :=
+  match goal with
+  | |- @eq nat _ _ => eapply compute_eq ; abstract omega
+  | |- _ <= _ => eapply compute_le ; abstract omega
+  | |- _ < _ => eapply compute_lt ; abstract omega
+  | |- _ >= _ => eapply compute_ge ; abstract omega
+  | |- _ > _ => eapply compute_gt ; abstract omega
+  | _ => abstract omega
+  end.
 
 Record pp_sigT {A : Type} (P : A -> Type) : Type :=
   {
@@ -70,19 +116,17 @@ Ltac splits_one h :=
   | _ => idtac
   end.
 
-
-
 Ltac bprop' H H' :=
   match type of H with
-  | (?n <=? ?m) = true => pose proof (leb_complete _ _ H) as H'
-  | (?n <=? ?m) = false => pose proof (leb_complete_conv _ _ H) as H'
-  | (?n <? ?m) = true => pose proof (proj1 (Nat.ltb_lt n m) H) as H'
-  | (?n <? ?m) = false => pose proof (proj1 (Nat.ltb_ge n m) H) as H'
-  | (?x ?= ?y) = Gt => pose proof (nat_compare_Gt_gt _ _ H) as H'
-  | (?x ?= ?y) = Eq => pose proof (Nat.compare_eq _ _ H) as H'
-  | (?x ?= ?y) = Lt => pose proof (nat_compare_Lt_lt _ _ H) as H'
-  | (?x =? ?y) = true => pose proof (beq_nat_true x y H) as H'
-  | (?x =? ?y) = false => pose proof (beq_nat_false x y H) as H'
+  | (?n <=? ?m) = true => pose proof (compute_le (leb_complete _ _ H)) as H'
+  | (?n <=? ?m) = false => pose proof (compute_lt (leb_complete_conv _ _ H)) as H'
+  | (?n <? ?m) = true => pose proof (compute_lt (proj1 (Nat.ltb_lt n m) H)) as H'
+  | (?n <? ?m) = false => pose proof (compute_le (proj1 (Nat.ltb_ge n m) H)) as H'
+  | (?x ?= ?y) = Gt => pose proof (compute_gt (nat_compare_Gt_gt _ _ H)) as H'
+  | (?x ?= ?y) = Eq => pose proof (compute_eq (Nat.compare_eq _ _ H)) as H'
+  | (?x ?= ?y) = Lt => pose proof (compute_lt (nat_compare_Lt_lt _ _ H)) as H'
+  | (?x =? ?y) = true => pose proof (compute_eq (beq_nat_true x y H)) as H'
+  | (?x =? ?y) = false => pose proof (compute_neq (beq_nat_false x y H)) as H'
   end.
 
 (* Doesn't work. :( *)
@@ -90,18 +134,83 @@ Tactic Notation "brop" constr(H) "as" constr(H') := bprop' H H'.
 
 Tactic Notation "bprop" constr(H) := let H' := fresh H in bprop' H  H'.
 
+Definition compute_leb_true {n m} : n <=? m = true -> n <=? m = true :=
+  match n <=? m with
+  | true => fun _ => eq_refl
+  | false => fun h => h
+  end.
+
+Definition compute_leb_false {n m} : n <=? m = false -> n <=? m = false :=
+  match n <=? m with
+  | false => fun _ => eq_refl
+  | true => fun h => h
+  end.
+
+Definition compute_ltb_true {n m} : n <? m = true -> n <? m = true :=
+  match n <? m with
+  | true => fun _ => eq_refl
+  | false => fun h => h
+  end.
+
+Definition compute_ltb_false {n m} : n <? m = false -> n <? m = false :=
+  match n <? m with
+  | false => fun _ => eq_refl
+  | true => fun h => h
+  end.
+
+Definition compute_eqb_true {n m} : n =? m = true -> n =? m = true :=
+  match n =? m with
+  | true => fun _ => eq_refl
+  | false => fun h => h
+  end.
+
+Definition compute_eqb_false {n m} : n =? m = false -> n =? m = false :=
+  match n =? m with
+  | false => fun _ => eq_refl
+  | true => fun h => h
+  end.
+
+Definition compute_compare_Lt {n m} : n ?= m = Lt -> n ?= m = Lt :=
+  match n ?= m with
+  | Lt => fun _ => eq_refl
+  | Eq => fun h => h
+  | Gt => fun h => h
+  end.
+
+Definition compute_compare_Eq {n m} : n ?= m = Eq -> n ?= m = Eq :=
+  match n ?= m with
+  | Eq => fun _ => eq_refl
+  | Lt => fun h => h
+  | Gt => fun h => h
+  end.
+
+Definition compute_compare_Gt {n m} : n ?= m = Gt -> n ?= m = Gt :=
+  match n ?= m with
+  | Gt => fun _ => eq_refl
+  | Lt => fun h => h
+  | Eq => fun h => h
+  end.
+
 Ltac propb :=
   match goal with
-  | |- (_ <=? _) = true => apply leb_correct
-  | |- (_ <=? _) = false => apply leb_correct_conv
-  | |- (_ <? _) = true => apply Nat.ltb_lt
-  | |- (_ <? _) = false => apply Nat.ltb_ge
-  | |- (_ ?= _) = Lt => apply Nat.compare_lt_iff
-  | |- (_ ?= _) = Eq => apply Nat.compare_eq_iff
-  | |- (_ ?= _) = Gt => apply Nat.compare_gt_iff
-  | |- (_ =? _) = true => apply Nat.eqb_eq
-  | |- (_ =? _) = false => apply beq_nat_false
+  | |- (_ <=? _) = true => apply compute_leb_true ; apply leb_correct
+  | |- (_ <=? _) = false => apply compute_leb_false ; apply leb_correct_conv
+  | |- (_ <? _) = true => apply compute_ltb_true ; apply Nat.ltb_lt
+  | |- (_ <? _) = false => apply compute_ltb_false ; apply Nat.ltb_ge
+  | |- (_ ?= _) = Lt => apply compute_compare_Lt ; apply Nat.compare_lt_iff
+  | |- (_ ?= _) = Eq => apply compute_compare_Eq ; apply Nat.compare_eq_iff
+  | |- (_ ?= _) = Gt => apply compute_compare_Gt ; apply Nat.compare_gt_iff
+  | |- (_ =? _) = true => apply compute_eqb_true ; apply Nat.eqb_eq
+  | |- (_ =? _) = false => apply compute_eqb_false ; apply beq_nat_false
   end.
+
+(* Replace the opaque version *)
+Fact andb_prop : forall a b, a && b = true -> a = true /\ b = true.
+Proof.
+  intros [] [] h.
+  all: simpl in h.
+  all: split ; (reflexivity + assumption).
+Defined.
 
 Ltac destruct_andb :=
   match goal with
@@ -207,7 +316,7 @@ Fact lastn_O :
   forall {A} {l : list A}, lastn 0 l = [].
 Proof.
   intros A l. unfold lastn.
-  replace (#|l| - 0) with #|l| by omega.
+  replace (#|l| - 0) with #|l| by myomega.
   apply skipn_all.
 Defined.
 
@@ -216,7 +325,7 @@ Fact lastn_all :
     lastn #|l| l = l.
 Proof.
   intros A l. unfold lastn.
-  replace (#|l| - #|l|) with 0 by omega.
+  replace (#|l| - #|l|) with 0 by myomega.
   reflexivity.
 Defined.
 
@@ -227,7 +336,7 @@ Fact lastn_all2 :
 Proof.
   intros A n l h.
   unfold lastn.
-  replace (#|l| - n) with 0 by omega.
+  replace (#|l| - n) with 0 by myomega.
   reflexivity.
 Defined.
 
@@ -240,7 +349,7 @@ Proof.
   intros A l n a hn h.
   unfold lastn.
   erewrite skipn_reconstruct.
-  - f_equal. f_equal. omega.
+  - f_equal. f_equal. myomega.
   - assumption.
 Defined.
 
@@ -284,8 +393,8 @@ Proof.
   induction n.
   - intros _. assumption.
   - intro h. apply Ps.
-    + omega.
-    + apply IHn. omega.
+    + myomega.
+    + apply IHn. myomega.
 Defined.
 
 Corollary fin_indT_last :

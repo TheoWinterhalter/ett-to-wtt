@@ -50,8 +50,8 @@ Fact type_ctx_closed_above :
 Proof.
   intros Σ Γ t T h.
   dependent induction h.
-  all: try (cbn in * ; repeat (erewrite_assumption by omega) ; reflexivity).
-  unfold closed_above. case_eq (n <? #|Γ|) ; intro e ; bprop e ; try omega.
+  all: try (cbn in * ; repeat erewrite_assumption ; reflexivity).
+  unfold closed_above. case_eq (n <? #|Γ|) ; intro e ; bprop e ; try myomega.
   reflexivity.
 Defined.
 
@@ -91,9 +91,9 @@ Proof.
   - cbn in *. assumption.
   - rewrite substl_cons. apply IHcl.
     apply closed_above_subst.
-    + omega.
+    + myomega.
     + assumption.
-    + replace (#|l| - 0) with #|l| by omega. assumption.
+    + replace (#|l| - 0) with #|l| by myomega. assumption.
 Defined.
 
 Fact rev_cons :
@@ -147,8 +147,8 @@ Proof.
   end.
   assert (h : forall l acc, #|aux l acc| = (#|acc| + #|l|)%nat).
   { intro l. induction l ; intro acc.
-    - cbn. omega.
-    - cbn. rewrite IHl. cbn. omega.
+    - cbn. myomega.
+    - cbn. rewrite IHl. cbn. myomega.
   }
   intro l. apply h.
 Defined.
@@ -164,8 +164,8 @@ Proof.
   end.
   assert (h : forall l acc, #|aux l acc| = (#|acc| + #|l|)%nat).
   { intro l. induction l ; intro acc.
-    - cbn. omega.
-    - cbn. rewrite IHl. cbn. omega.
+    - cbn. myomega.
+    - cbn. rewrite IHl. cbn. myomega.
   }
   intro l. apply h.
 Defined.
@@ -208,6 +208,11 @@ Proof.
     cbn. eapply weak_glob_red1. assumption.
   - eapply conv_red_r ; try eassumption.
     cbn. eapply weak_glob_red1. assumption.
+Defined.
+
+Lemma ident_eq_spec x y : reflect (x = y) (ident_eq x y).
+Proof.
+  unfold ident_eq. destruct string_dec; constructor; auto.
 Defined.
 
 Fact ident_neq_fresh :
@@ -387,16 +392,16 @@ with wf_lift {Σ Γ Δ Ξ} (h : wf Σ (Γ ,,, Ξ)) {struct h} :
 Proof.
   - { dependent destruction h ; intros hΣ hwf.
       - cbn. case_eq (#|Ξ| <=? n) ; intro e ; bprop e.
-        + rewrite liftP3 by omega.
-          replace (#|Δ| + S n)%nat with (S (#|Δ| + n)) by omega.
+        + rewrite liftP3 by myomega.
+          replace (#|Δ| + S n)%nat with (S (#|Δ| + n)) by myomega.
           eapply meta_conv.
           * eapply type_Rel.
             eapply wf_lift ; assumption.
           * f_equal. f_equal.
             erewrite 3!safe_nth_ge'
-              by (try rewrite lift_context_length ; omega).
+              by (try rewrite lift_context_length ; myomega).
             eapply safe_nth_cong_irr.
-            rewrite lift_context_length. omega.
+            rewrite lift_context_length. myomega.
         + eapply meta_conv.
           * eapply type_Rel. eapply wf_lift ; assumption.
           * erewrite 2!safe_nth_lt.
@@ -422,18 +427,18 @@ Proof.
       - cbn. eapply type_Refl ; eih.
       - change (#|Ξ|) with (0 + #|Ξ|)%nat.
         rewrite substP1.
-        replace (S (0 + #|Ξ|)) with (1 + #|Ξ|)%nat by omega.
+        replace (S (0 + #|Ξ|)) with (1 + #|Ξ|)%nat by myomega.
         rewrite substP1.
         cbn. eapply type_J ; try eih.
         + cbn. unfold ssnoc. cbn.
           f_equal. f_equal.
-          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by omega.
-            apply liftP2. omega.
-          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by omega.
-            apply liftP2. omega.
-        + replace (S (S #|Ξ|)) with (1 + (S (0 + #|Ξ|)))%nat by omega.
+          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
+            apply liftP2. myomega.
+          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
+            apply liftP2. myomega.
+        + replace (S (S #|Ξ|)) with (1 + (S (0 + #|Ξ|)))%nat by myomega.
           rewrite <- substP1.
-          replace (1 + (0 + #|Ξ|))%nat with (S (0 + #|Ξ|))%nat by omega.
+          replace (1 + (0 + #|Ξ|))%nat with (S (0 + #|Ξ|))%nat by myomega.
           change (sRefl (lift #|Δ| #|Ξ| A0) (lift #|Δ| #|Ξ| u))
             with (lift #|Δ| #|Ξ| (sRefl A0 u)).
           rewrite <- substP1. reflexivity.
@@ -446,31 +451,31 @@ Proof.
       - cbn. eapply type_HeqTransport ; eih.
       - cbn. eapply type_CongProd ; try eih.
         cbn. f_equal.
-        + rewrite <- liftP2 by omega.
+        + rewrite <- liftP2 by myomega.
           change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
           rewrite substP1. cbn. reflexivity.
-        + rewrite <- liftP2 by omega.
+        + rewrite <- liftP2 by myomega.
           change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
           rewrite substP1. cbn. reflexivity.
       - cbn. eapply type_CongLambda ; try eih.
         + cbn. f_equal.
-          * rewrite <- liftP2 by omega.
+          * rewrite <- liftP2 by myomega.
             change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
             rewrite substP1. cbn. reflexivity.
-          * rewrite <- liftP2 by omega.
+          * rewrite <- liftP2 by myomega.
             change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
             rewrite substP1. cbn. reflexivity.
         + cbn. f_equal.
-          * rewrite <- liftP2 by omega.
+          * rewrite <- liftP2 by myomega.
             change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
             rewrite substP1. cbn. reflexivity.
-          * rewrite <- liftP2 by omega.
+          * rewrite <- liftP2 by myomega.
             change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
             rewrite substP1. cbn. reflexivity.
-          * rewrite <- liftP2 by omega.
+          * rewrite <- liftP2 by myomega.
             change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
             rewrite substP1. cbn. reflexivity.
-          * rewrite <- liftP2 by omega.
+          * rewrite <- liftP2 by myomega.
             change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
             rewrite substP1. cbn. reflexivity.
       - cbn.
@@ -481,26 +486,26 @@ Proof.
         rewrite 2!substP1.
         eapply type_CongApp ; eih.
         cbn. f_equal.
-        + rewrite <- liftP2 by omega.
+        + rewrite <- liftP2 by myomega.
           change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
           rewrite substP1. cbn. reflexivity.
-        + rewrite <- liftP2 by omega.
+        + rewrite <- liftP2 by myomega.
           change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
           rewrite substP1. cbn. reflexivity.
       - cbn. eapply type_CongSum ; try eih.
         cbn. f_equal.
-        + rewrite <- liftP2 by omega.
+        + rewrite <- liftP2 by myomega.
           change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
           rewrite substP1. cbn. reflexivity.
-        + rewrite <- liftP2 by omega.
+        + rewrite <- liftP2 by myomega.
           change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
           rewrite substP1. cbn. reflexivity.
       - cbn. eapply type_CongPair ; eih.
         + cbn. f_equal.
-          * rewrite <- liftP2 by omega.
+          * rewrite <- liftP2 by myomega.
             change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
             rewrite substP1. cbn. reflexivity.
-          * rewrite <- liftP2 by omega.
+          * rewrite <- liftP2 by myomega.
             change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
             rewrite substP1. cbn. reflexivity.
         + cbn. f_equal.
@@ -514,10 +519,10 @@ Proof.
           rewrite substP1. reflexivity.
       - cbn. eapply type_CongPi1 ; eih.
         cbn. f_equal.
-        + rewrite <- liftP2 by omega.
+        + rewrite <- liftP2 by myomega.
           change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
           rewrite substP1. cbn. reflexivity.
-        + rewrite <- liftP2 by omega.
+        + rewrite <- liftP2 by myomega.
           change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
           rewrite substP1. cbn. reflexivity.
       - cbn.
@@ -525,10 +530,10 @@ Proof.
         rewrite 2!substP1.
         eapply type_CongPi2 ; eih.
         cbn. f_equal.
-        + rewrite <- liftP2 by omega.
+        + rewrite <- liftP2 by myomega.
           change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
           rewrite substP1. cbn. reflexivity.
-        + rewrite <- liftP2 by omega.
+        + rewrite <- liftP2 by myomega.
           change (S #|Ξ|) with (0 + (S #|Ξ|))%nat at 1.
           rewrite substP1. cbn. reflexivity.
       - cbn. eapply type_CongEq ; eih.
@@ -560,7 +565,7 @@ Proof.
 
     Unshelve.
     all: try rewrite !length_cat ; try rewrite length_cat in isdecl ;
-      try rewrite lift_context_length ; omega.
+      try rewrite lift_context_length ; myomega.
 Defined.
 
 Corollary typing_lift01 :
@@ -675,13 +680,13 @@ Proof.
   - { intros hg hu.
       dependent destruction h.
       - cbn. case_eq (#|Δ| ?= n) ; intro e ; bprop e.
-        + assert (h : n >= #|Δ|) by omega.
+        + assert (h : n >= #|Δ|) by myomega.
           rewrite safe_nth_ge' with (h0 := h).
-          assert (n - #|Δ| = 0) by omega.
+          assert (n - #|Δ| = 0) by myomega.
           set (ge := ge_sub isdecl h).
           generalize ge.
           rewrite H0. intro ge'.
-          cbn. rewrite substP3 by omega.
+          cbn. rewrite substP3 by myomega.
           subst.
           replace #|Δ| with #|subst_context u Δ|
             by (now rewrite subst_context_length).
@@ -689,27 +694,27 @@ Proof.
           * cbn. assumption.
           * assumption.
           * eapply wf_subst ; eassumption.
-        + assert (h : n >= #|Δ|) by omega.
+        + assert (h : n >= #|Δ|) by myomega.
           rewrite safe_nth_ge' with (h0 := h).
           set (ge := ge_sub isdecl h).
           destruct n ; try easy.
-          rewrite substP3 by omega.
+          rewrite substP3 by myomega.
           generalize ge.
-          replace (S n - #|Δ|) with (S (n - #|Δ|)) by omega.
+          replace (S n - #|Δ|) with (S (n - #|Δ|)) by myomega.
           cbn. intro ge'.
           eapply meta_conv.
           * eapply type_Rel. eapply wf_subst ; eassumption.
           * erewrite safe_nth_ge'.
             f_equal. eapply safe_nth_cong_irr.
             rewrite subst_context_length. reflexivity.
-        + assert (h : n < #|Δ|) by omega.
+        + assert (h : n < #|Δ|) by myomega.
           rewrite @safe_nth_lt with (isdecl' := h).
           match goal with
           | |- _ ;;; _ |-i _ : ?t{?d := ?u} =>
             replace (subst u d t) with (t{((S n) + (#|Δ| - (S n)))%nat := u})
-              by (f_equal ; omega)
+              by (f_equal ; myomega)
           end.
-          rewrite substP2 by omega.
+          rewrite substP2 by myomega.
           eapply meta_conv.
           * eapply type_Rel.
             eapply wf_subst ; eassumption.
@@ -738,18 +743,18 @@ Proof.
       - cbn.
         change (#|Δ|) with (0 + #|Δ|)%nat.
         rewrite substP4.
-        replace (S (0 + #|Δ|)) with (1 + #|Δ|)%nat by omega.
+        replace (S (0 + #|Δ|)) with (1 + #|Δ|)%nat by myomega.
         rewrite substP4.
         eapply type_J ; esh.
         + cbn. unfold ssnoc. cbn.
           f_equal. f_equal.
-          * replace (S #|Δ|) with (1 + #|Δ|)%nat by omega.
-            apply substP2. omega.
-          * replace (S #|Δ|) with (1 + #|Δ|)%nat by omega.
-            apply substP2. omega.
-        + replace (S (S #|Δ|)) with (1 + (S (0 + #|Δ|)))%nat by omega.
+          * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
+            apply substP2. myomega.
+          * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
+            apply substP2. myomega.
+        + replace (S (S #|Δ|)) with (1 + (S (0 + #|Δ|)))%nat by myomega.
           rewrite <- substP4.
-          replace (1 + (0 + #|Δ|))%nat with (S (0 + #|Δ|))%nat by omega.
+          replace (1 + (0 + #|Δ|))%nat with (S (0 + #|Δ|))%nat by myomega.
           change (sRefl (A0 {0 + #|Δ| := u}) (u0 {0 + #|Δ| := u}))
             with ((sRefl A0 u0){ 0 + #|Δ| := u}).
           rewrite <- substP4. reflexivity.
@@ -764,31 +769,31 @@ Proof.
       - cbn. eapply type_HeqTransport ; esh.
       - cbn. eapply type_CongProd ; esh.
         cbn. f_equal.
-        + rewrite <- substP2 by omega.
+        + rewrite <- substP2 by myomega.
           change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
           rewrite substP4. cbn. reflexivity.
-        + rewrite <- substP2 by omega.
+        + rewrite <- substP2 by myomega.
           change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
           rewrite substP4. cbn. reflexivity.
       - cbn. eapply type_CongLambda ; esh.
         + cbn. f_equal.
-          * rewrite <- substP2 by omega.
+          * rewrite <- substP2 by myomega.
             change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
             rewrite substP4. cbn. reflexivity.
-          * rewrite <- substP2 by omega.
+          * rewrite <- substP2 by myomega.
             change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
             rewrite substP4. cbn. reflexivity.
         + cbn. f_equal.
-          * rewrite <- substP2 by omega.
+          * rewrite <- substP2 by myomega.
             change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
             rewrite substP4. cbn. reflexivity.
-          * rewrite <- substP2 by omega.
+          * rewrite <- substP2 by myomega.
             change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
             rewrite substP4. cbn. reflexivity.
-          * rewrite <- substP2 by omega.
+          * rewrite <- substP2 by myomega.
             change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
             rewrite substP4. cbn. reflexivity.
-          * rewrite <- substP2 by omega.
+          * rewrite <- substP2 by myomega.
             change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
             rewrite substP4. cbn. reflexivity.
       - cbn.
@@ -796,26 +801,26 @@ Proof.
         rewrite 2!substP4. cbn.
         eapply type_CongApp ; esh.
         cbn. f_equal.
-        + rewrite <- substP2 by omega.
+        + rewrite <- substP2 by myomega.
           change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
           rewrite substP4. cbn. reflexivity.
-        + rewrite <- substP2 by omega.
+        + rewrite <- substP2 by myomega.
           change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
           rewrite substP4. cbn. reflexivity.
       - cbn. eapply type_CongSum ; esh.
         cbn. f_equal.
-        + rewrite <- substP2 by omega.
+        + rewrite <- substP2 by myomega.
           change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
           rewrite substP4. cbn. reflexivity.
-        + rewrite <- substP2 by omega.
+        + rewrite <- substP2 by myomega.
           change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
           rewrite substP4. cbn. reflexivity.
       - cbn. eapply type_CongPair ; esh.
         + cbn. f_equal.
-          * rewrite <- substP2 by omega.
+          * rewrite <- substP2 by myomega.
             change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
             rewrite substP4. cbn. reflexivity.
-          * rewrite <- substP2 by omega.
+          * rewrite <- substP2 by myomega.
             change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
             rewrite substP4. cbn. reflexivity.
         + cbn. f_equal.
@@ -829,10 +834,10 @@ Proof.
           rewrite substP4. reflexivity.
       - cbn. eapply type_CongPi1 ; esh.
         cbn. f_equal.
-        + rewrite <- substP2 by omega.
+        + rewrite <- substP2 by myomega.
           change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
           rewrite substP4. cbn. reflexivity.
-        + rewrite <- substP2 by omega.
+        + rewrite <- substP2 by myomega.
           change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
           rewrite substP4. cbn. reflexivity.
       - cbn.
@@ -840,10 +845,10 @@ Proof.
         rewrite 2!substP4. cbn.
         eapply type_CongPi2 ; esh.
         cbn. f_equal.
-        + rewrite <- substP2 by omega.
+        + rewrite <- substP2 by myomega.
           change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
           rewrite substP4. cbn. reflexivity.
-        + rewrite <- substP2 by omega.
+        + rewrite <- substP2 by myomega.
           change (S #|Δ|) with (0 + (S #|Δ|))%nat at 1.
           rewrite substP4. cbn. reflexivity.
       - cbn. eapply type_CongEq ; esh.
@@ -872,7 +877,7 @@ Proof.
     }
 
   Unshelve.
-  all: try rewrite !length_cat ; try rewrite !subst_context_length ; omega.
+  all: try rewrite !length_cat ; try rewrite !subst_context_length ; myomega.
 Defined.
 
 Corollary typing_subst :
@@ -943,13 +948,13 @@ Fact nth_error_error :
     n >= #|l|.
 Proof.
   intros A l. induction l.
-  - intros. cbn. omega.
+  - intros. cbn. myomega.
   - intros n h. cbn.
     destruct n.
     + cbn in h. inversion h.
     + inversion h as [e].
       specialize (IHl n e).
-      omega.
+      myomega.
 Defined.
 
 Fact rev_map_nth_error :
@@ -964,9 +969,9 @@ Proof.
       rewrite rev_map_cons.
       rewrite nth_error_app2.
       * cbn. rewrite rev_map_length.
-        replace (#|l| - 0 - #|l|) with 0 by omega.
+        replace (#|l| - 0 - #|l|) with 0 by myomega.
         cbn. reflexivity.
-      * rewrite rev_map_length. cbn. omega.
+      * rewrite rev_map_length. cbn. myomega.
     + cbn in hn.
       rewrite rev_map_cons.
       rewrite nth_error_app1.
@@ -974,7 +979,7 @@ Proof.
       * rewrite rev_map_length. cbn.
         assert (n < #|l|).
         { apply nth_error_Some. rewrite hn. discriminate. }
-        omega.
+        myomega.
 Defined.
 
 Lemma istype_type :

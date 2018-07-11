@@ -111,6 +111,21 @@ contains the proof of the fundamental lemma, crucial step for our translation.
 [Translation](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Translation.v)
 contains the translation from ETT to ITT.
 
+#### Meta Theory of ETT
+
+In order to write ETT derivations more effectively, we develop some of the meta-theory of ETT.
+[XInversions](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/XInversions.v) provides
+inversion lemmata for ETT while
+[XTypingLemmata](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/XTypingLemmata.v) provides
+lift and substitution lemmata, along with the proof that the type in a judgement is well sorted.
+
+#### Checking
+
+For type checking, we write one tactic for ITT and one for ETT.
+Their respective definitions can be found in
+[IChecking](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/IChecking.v) and
+[XChecking](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/XChecking.v).
+
 #### Interaction with (Template)Coq
 
 To realise the sugar of ITT, we define some constants in

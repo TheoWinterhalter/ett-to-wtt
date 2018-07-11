@@ -1,14 +1,12 @@
-(*! General utilities to build ETT derivations and terms *)
+(*! Global context and utility for examples *)
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import utils Ast LiftSubst Typing Checker.
 From Translation Require Import util Quotes Sorts SAst SLiftSubst SCommon
      ITyping ITypingInversions ITypingLemmata ITypingAdmissible XTyping
-     FundamentalLemma Translation FinalTranslation FullQuote ExampleQuotes.
-
-(* For efficiency reasons we use type in type for examples. *)
-Existing Instance Sorts.type_in_type.
+     FundamentalLemma Translation FinalTranslation FullQuote ExampleQuotes
+     XTypingLemmata IChecking XChecking.
 
 (* The context for Template Coq *)
 
@@ -51,10 +49,11 @@ Definition glob_term :=
   let _ := vec in
   let _ := vec_rect in
   let _ := Nat.add in
-  let _ := vrev_obligation1 in
-  let _ := vrev_obligation2 in
-  let _ := vrev_obligation3 in
-  let _ := vrev_obligation4 in
+  (* let _ := vrev_obligation1 in *)
+  (* let _ := vrev_obligation2 in *)
+  (* let _ := vrev_obligation3 in *)
+  (* let _ := vrev_obligation4 in *)
+  let _ := vcons_act_obligation in
   Type.
 
 Quote Recursively Definition glob_prog := @glob_term.
@@ -65,191 +64,13 @@ Definition Σ : global_context :=
 
 Arguments Σ : simpl never.
 
+Definition decl := Build_glob_decl.
+
 Open Scope string_scope.
 Open Scope s_scope.
 
 Module IT := ITyping.
 Module IL := ITypingLemmata.
-
-(* The context for ITT *)
-
-Notation Ty := (sSort tt).
-
-Definition decl := Build_glob_decl.
-
-(* Some admissible lemmata to do memoisation in a way. *)
-Lemma type_Prod' :
-  forall {Σ Γ n A B},
-    Σ ;;; Γ |-i A : Ty ->
-    (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i B : Ty) ->
-    Σ ;;; Γ |-i sProd n A B : Ty.
-Proof.
-  intros Σ' Γ n A B hA hB.
-  eapply meta_conv.
-  - eapply IT.type_Prod.
-    + eassumption.
-    + apply hB. econstructor ; try eassumption.
-      eapply IL.typing_wf. eassumption.
-  - reflexivity.
-Defined.
-
-Lemma type_Lambda' :
-  forall {Σ Γ n n' A B t},
-    type_glob Σ ->
-    Σ ;;; Γ |-i A : Ty ->
-    (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i t : B) ->
-    Σ ;;; Γ |-i sLambda n A B t : sProd n' A B.
-Proof.
-  intros Σ Γ n n' A B t hg hA ht.
-  assert (hw : IT.wf Σ (Γ ,, A)).
-  { econstructor ; try eassumption.
-    eapply IL.typing_wf. eassumption.
-  }
-  specialize (ht hw). destruct (istype_type hg ht).
-  eapply IT.type_Lambda ; eassumption.
-Defined.
-
-Lemma type_App' :
-  forall {Σ Γ n t A B u},
-    type_glob Σ ->
-    Σ ;;; Γ |-i t : sProd n A B ->
-    Σ ;;; Γ |-i u : A ->
-    Σ ;;; Γ |-i sApp t A B u : (B{0 := u})%s.
-Proof.
-  intros Σ Γ n t A B u hg ht hu.
-  destruct (istype_type hg ht).
-  destruct (istype_type hg hu).
-  ttinv H.
-  eapply IT.type_App ; eassumption.
-Defined.
-
-Lemma type_Sum' :
-  forall {Σ Γ n A B},
-    Σ ;;; Γ |-i A : Ty ->
-    (IT.wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-i B : Ty) ->
-    Σ ;;; Γ |-i sSum n A B : Ty.
-Proof.
-  intros Σ' Γ n A B hA hB.
-  eapply meta_conv.
-  - eapply IT.type_Sum.
-    + eassumption.
-    + apply hB. econstructor ; try eassumption.
-      eapply IL.typing_wf. eassumption.
-  - reflexivity.
-Defined.
-
-Lemma type_Eq' :
-  forall {Σ Γ A u v},
-    type_glob Σ ->
-    Σ ;;; Γ |-i u : A ->
-    Σ ;;; Γ |-i v : A ->
-    Σ ;;; Γ |-i sEq A u v : Ty.
-Proof.
-  intros Σ Γ A u v hg hu hv.
-  destruct (istype_type hg hu) as [[] ?].
-  eapply meta_conv.
-  - eapply IT.type_Eq ; eassumption.
-  - reflexivity.
-Defined.
-
-Lemma type_Refl' :
-  forall {Σ Γ A u},
-    type_glob Σ ->
-    Σ ;;; Γ |-i u : A ->
-    Σ ;;; Γ |-i sRefl A u : sEq A u u.
-Proof.
-  intros Σ Γ A u hg h.
-  destruct (istype_type hg h).
-  eapply IT.type_Refl ; eassumption.
-Defined.
-
-Lemma type_Sort' :
-  forall {Σ Γ},
-    IT.wf Σ Γ ->
-    Σ ;;; Γ |-i Ty : Ty.
-Proof.
-  intros Σ Γ h.
-  eapply meta_conv.
-  - eapply IT.type_Sort. assumption.
-  - reflexivity.
-Defined.
-
-Lemma wf_snoc' :
-  forall {Σ Γ A},
-    Σ ;;; Γ |-i A : Ty ->
-    IT.wf Σ (Γ ,, A).
-Proof.
-  intros Σ Γ A h.
-  econstructor.
-  - eapply IL.typing_wf. eassumption.
-  - eassumption.
-Defined.
-
-(* Maybe move somewhere else *)
-Ltac ittintro :=
-  lazymatch goal with
-  | |- ?Σ ;;; ?Γ |-i ?t : ?T =>
-    lazymatch t with
-    | sRel ?n => refine (IT.type_Rel _ _ n _ _)
-    | sSort _ => eapply type_Sort'
-    | sProd _ _ _ => eapply type_Prod' ; [| intro ]
-    | sLambda _ _ _ _ => eapply type_Lambda' ; [ .. | intro ]
-    | sApp _ _ _ _ => eapply type_App'
-    | sSum _ _ _ => eapply type_Sum' ; [| intro ]
-    | sPair _ _ _ _ => eapply type_Pair'
-    | sPi1 _ _ _ => eapply type_Pi1'
-    | sPi2 _ _ _ => eapply type_Pi2'
-    | sEq _ _ _ => eapply type_Eq'
-    | sRefl _ _ => eapply type_Refl'
-    | sAx _ => eapply IT.type_Ax ; [| lazy ; try reflexivity ]
-    | _ => fail "No introduction rule for" t
-    end
-  | _ => fail "Not applicable"
-  end.
-
-Lemma type_glob_cons' :
-  forall {Σ d},
-    type_glob Σ ->
-    fresh_glob (dname d) Σ ->
-    (type_glob Σ -> isType Σ [] (dtype d)) ->
-    Xcomp (dtype d) ->
-    type_glob (d :: Σ).
-Proof.
-  intros Σ d hg hf hd hx.
-  specialize (hd hg).
-  econstructor ; eassumption.
-Defined.
-
-Ltac glob :=
-  first [
-    eapply type_glob_nil
-  | eapply type_glob_cons' ; [
-      idtac
-    | repeat (lazy ; econstructor) ; lazy ; try discriminate
-    | intro ; eexists
-    | repeat econstructor
-    ]
-  ].
-
-Ltac ittcheck1 :=
-  lazymatch goal with
-  | |- ?Σ ;;; ?Γ |-i ?t : ?T =>
-    first [
-      eapply meta_conv ; [ ittintro | lazy ; try reflexivity ]
-    | eapply meta_ctx_conv ; [
-        eapply meta_conv ; [ ittintro | lazy ; try reflexivity ]
-      | cbn ; try reflexivity
-      ]
-    ]
-  | |- IT.wf ?Σ ?Γ => first [ assumption | eapply wf_snoc' | econstructor ]
-  | |- sSort _ = sSort _ => first [ lazy ; reflexivity | shelve ]
-  | |- type_glob _ => first [ assumption | glob ]
-  | _ => fail "Not applicable"
-  end.
-
-Ltac ittcheck' := ittcheck1 ; try (lazy ; omega).
-
-Ltac ittcheck := repeat ittcheck'.
 
 (* Preparing the global context (axioms) for examples *)
 
@@ -345,16 +166,16 @@ Definition ty_vcons :=
   end.
 
 (* vec_rect *)
-Quote Definition vec_rect_type :=
-  ltac:(let T := type of @vec_rect in exact T).
-Definition prety_vec_rect :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vec_rect_type indt constt cot.
-Definition ty_vec_rect :=
-  Eval lazy in
-  match prety_vec_rect with
-  | Success t => t
-  | Error _ => sRel 0
-  end.
+(* Quote Definition vec_rect_type := *)
+(*   ltac:(let T := type of @vec_rect in exact T). *)
+(* Definition prety_vec_rect := *)
+(*   Eval lazy in fullquote (2 ^ 18) Σ [] vec_rect_type indt constt cot. *)
+(* Definition ty_vec_rect := *)
+(*   Eval lazy in *)
+(*   match prety_vec_rect with *)
+(*   | Success t => t *)
+(*   | Error _ => sRel 0 *)
+(*   end. *)
 
 (* add *)
 Quote Definition add_type :=
@@ -372,12 +193,13 @@ Definition ty_add :=
 (* The global context *)
 
 Definition Σi : sglobal_context := [
-  decl "vrev_obligation4" ty_obligation4 ;
-  decl "vrev_obligation3" ty_obligation3 ;
-  decl "vrev_obligation2" ty_obligation2 ;
-  decl "vrev_obligation1" ty_obligation1 ;
+  (* decl "vrev_obligation4" ty_obligation4 ; *)
+  (* decl "vrev_obligation3" ty_obligation3 ; *)
+  (* decl "vrev_obligation2" ty_obligation2 ; *)
+  (* decl "vrev_obligation1" ty_obligation1 ; *)
+  decl "vcons_act_obligation" ty_vcons_act_obligation ;
   decl "add" ty_add ;
-  decl "vec_rect" ty_vec_rect ;
+  (* decl "vec_rect" ty_vec_rect ; *)
   decl "vcons" ty_vcons ;
   decl "vnil" ty_vnil ;
   decl "vec" ty_vec ;
@@ -388,55 +210,58 @@ Definition Σi : sglobal_context := [
 
 Arguments Σi : simpl never.
 
+Ltac setenv nΣ :=
+  match goal with
+  | |- ?Σ ;;; _ |-i _ : _ => set (nΣ := Σ)
+  | |- ?Σ ;;; _ |-x _ : _ => set (nΣ := Σ)    
+  end.
+
+Ltac ittcheck_env :=
+  let nΣ := fresh "Σ" in
+  setenv nΣ ;
+  ittcheck nΣ.
+
 Fact hΣi : type_glob Σi.
 Proof.
-  repeat glob ; lazy.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
-  - ittcheck.
+  repeat (glob Σi) ; lazy - [ Σi ].
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  (* - ittcheck_env. *)
+  (* - ittcheck_env. *)
+  (* - ittcheck_env. *)
+  (* - ittcheck_env. *)
+  (* - ittcheck_env. *)
+  - ittcheck_env.
   Unshelve. all: exact nAnon.
 Defined.
 
-(* Now some useful lemmata *)
+Ltac ettcheck_env :=
+  let nΣ := fresh "Σ" in
+  setenv nΣ ;
+  ettcheck nΣ.
 
-Lemma xmeta_conv :
-  forall (Σ : sglobal_context) (Γ : scontext) (t A B : sterm),
-    Σ;;; Γ |-x t : A ->
-    A = B ->
-    Σ;;; Γ |-x t : B.
+Fact xhΣi : xtype_glob Σi.
 Proof.
-  intros Σ Γ t A B h e.
-  destruct e. assumption.
-Defined.
-
-Lemma xmeta_eq_conv :
-  forall {Σ Γ u v A B},
-    Σ ;;; Γ |-x u = v : A ->
-    A = B ->
-    Σ ;;; Γ |-x u = v : B.
-Proof.
-  intros Σ Γ u v A B h e.
-  destruct e. exact h.
-Defined.
-
-Lemma type_conv'' :
-  forall {Γ t A B s},
-    Σi ;;; Γ |-x t : A ->
-    Σi ;;; Γ |-x A = B : sSort s ->
-    Σi ;;; Γ |-x B : sSort s ->
-    Σi ;;; Γ |-x t : B.
-Proof.
-  intros Γ t A B s H H0 H1.
-  eapply type_conv ; eassumption.
+  repeat (xglob Σi) ; lazy - [ Σi ].
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  (* - ettcheck_env. *)
+  (* - ettcheck_env. *)
+  (* - ettcheck_env. *)
+  (* - ettcheck_env. *)
+  (* - ettcheck_env. *)
+  - ettcheck_env.
+  Unshelve. all: exact nAnon.
 Defined.
 
 Fact istrans_nil :
@@ -452,159 +277,127 @@ Definition type_translation {Γ t A} h {Γ'} hΓ :=
 
 
 
-
-
-
-
-
-(* Same for ETT *)
-Lemma xtype_Prod' :
-  forall {Σ Γ n A B},
-    Σ ;;; Γ |-x A : Ty ->
-    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : Ty) ->
-    Σ ;;; Γ |-x sProd n A B : Ty.
-Proof.
-  intros Σ Γ n A B hA hB.
-  eapply xmeta_conv.
-  - eapply type_Prod.
-    + eassumption.
-    + apply hB. econstructor ; try eassumption.
-      eapply typing_wf. eassumption.
-  - reflexivity.
-Defined.
-
-Lemma xtype_Lambda' :
-  forall {Σ Γ n n' A B t},
-    Σ ;;; Γ |-x A : Ty ->
-    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : Ty) ->
-    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x t : B) ->
-    Σ ;;; Γ |-x sLambda n A B t : sProd n' A B.
-Proof.
-  intros Σ Γ n n' A B t hA hB ht.
-  assert (hw : wf Σ (Γ ,, A)).
-  { econstructor ; try eassumption.
-    eapply typing_wf. eassumption.
-  }
-  specialize (ht hw). specialize (hB hw).
-  eapply type_Lambda ; eassumption.
-Defined.
-
-Lemma xtype_App' :
-  forall {Σ Γ n t A B u},
-    Σ ;;; Γ |-x t : sProd n A B ->
-    Σ ;;; Γ |-x u : A ->
-    Σ ;;; Γ |-x A : Ty ->
-    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : Ty) ->
-    Σ ;;; Γ |-x sApp t A B u : (B{0 := u})%s.
-Proof.
-  intros Σ Γ n t A B u ht hu hA hB.
-  assert (hw : wf Σ (Γ ,, A)).
-  { econstructor ; try eassumption.
-    eapply typing_wf. eassumption.
-  }
-  specialize (hB hw).
-  eapply type_App ; eassumption.
-Defined.
-
-Lemma xtype_Sum' :
-  forall {Σ Γ n A B},
-    Σ ;;; Γ |-x A : Ty ->
-    (wf Σ (Γ ,, A) -> Σ ;;; Γ ,, A |-x B : Ty) ->
-    Σ ;;; Γ |-x sSum n A B : Ty.
-Proof.
-  intros Σ Γ n A B hA hB.
-  eapply xmeta_conv.
-  - eapply type_Sum.
-    + eassumption.
-    + apply hB. econstructor ; try eassumption.
-      eapply typing_wf. eassumption.
-  - reflexivity.
-Defined.
-
-Lemma xtype_Eq' :
-  forall {Σ Γ A u v},
-    Σ ;;; Γ |-x A : Ty ->
-    Σ ;;; Γ |-x u : A ->
-    Σ ;;; Γ |-x v : A ->
-    Σ ;;; Γ |-x sEq A u v : Ty.
-Proof.
-  intros Σ Γ A u v hA hu hv.
-  eapply xmeta_conv.
-  - eapply type_Eq ; eassumption.
-  - reflexivity.
-Defined.
-
-Lemma xtype_Refl' :
-  forall {Σ Γ A u},
-    Σ ;;; Γ |-x A : Ty ->
-    Σ ;;; Γ |-x u : A ->
-    Σ ;;; Γ |-x sRefl A u : sEq A u u.
-Proof.
-  intros Σ Γ A u hA hu.
-  eapply type_Refl ; eassumption.
-Defined.
-
-Lemma xtype_Sort' :
-  forall {Σ Γ},
-    wf Σ Γ ->
-    Σ ;;; Γ |-x Ty : Ty.
-Proof.
-  intros Σ Γ h.
-  eapply xmeta_conv.
-  - eapply type_Sort. assumption.
-  - reflexivity.
-Defined.
-
-Lemma xwf_snoc' :
-  forall {Σ Γ A},
-    Σ ;;; Γ |-x A : Ty ->
-    wf Σ (Γ ,, A).
-Proof.
-  intros Σ Γ A h.
-  econstructor.
-  - eapply typing_wf. eassumption.
-  - eassumption.
-Defined.
-
-(* Maybe move somewhere else *)
-Ltac ettintro :=
-  lazymatch goal with
-  | |- ?Σ ;;; ?Γ |-x ?t : ?T =>
-    lazymatch t with
-    | sRel ?n => refine (type_Rel _ _ n _ _)
-    | sSort _ => eapply xtype_Sort'
-    | sProd _ _ _ => eapply xtype_Prod' ; [| intro ]
-    | sLambda _ _ _ _ => eapply xtype_Lambda' ; [ .. | intro | intro ]
-    | sApp _ _ _ _ => eapply xtype_App' ; [ .. | intro ]
-    | sSum _ _ _ => eapply xtype_Sum' ; [| intro ]
-    | sPair _ _ _ _ => eapply type_Pair
-    | sPi1 _ _ _ => eapply type_Pi1
-    | sPi2 _ _ _ => eapply type_Pi2
-    | sEq _ _ _ => eapply xtype_Eq'
-    | sRefl _ _ => eapply xtype_Refl'
-    | sAx _ => eapply type_Ax ; [| lazy ; try reflexivity ]
-    | _ => fail "No introduction rule for" t
-    end
-  | _ => fail "Not applicable"
+(* Useful lemmata *)
+Fixpoint Prods (Γ : scontext) (T : sterm) :=
+  match Γ with
+  | A :: Γ => Prods Γ (sProd nAnon A T)
+  | [] => T
   end.
 
-Ltac ettcheck1 :=
-  lazymatch goal with
-  | |- ?Σ ;;; ?Γ |-x ?t : ?T =>
-    first [
-      eapply xmeta_conv ; [ ettintro | lazy ; reflexivity ]
-    | eapply type_conv ; [ ettintro | .. ]
-    (* | eapply meta_ctx_conv ; [ *)
-    (*     eapply meta_conv ; [ ettintro | lazy ; try reflexivity ] *)
-    (*   | cbn ; try reflexivity *)
-    (*   ] *)
-    ]
-  | |- wf ?Σ ?Γ => first [ assumption | eapply xwf_snoc' | econstructor ]
-  | |- sSort _ = sSort _ => first [ lazy ; reflexivity | shelve ]
-  | |- type_glob _ => first [ assumption | glob ]
-  | _ => fail "Not applicable"
-  end.
+Lemma lift_rel :
+  forall {t k}, (lift 1 (S k) t) {k := sRel 0} = t.
+Proof.
+  intro t. induction t ; intro k.
+  all: try (cbn ; f_equal ; easy).
+  destruct n.
+  - cbn. case_eq (k ?= 0) ; intro e ; bprop e.
+    + subst. reflexivity.
+    + reflexivity.
+    + reflexivity.
+  - cbn. case_eq (k <=? n) ; intro e ; bprop e.
+    + cbn. case_eq (k ?= S (S n)) ; intro e1 ; bprop e1 ; try myomega.
+      reflexivity.
+    + cbn. case_eq (k ?= S n) ; intro e1 ; bprop e1 ; try myomega.
+      * subst. f_equal. myomega.
+      * reflexivity.
+Defined.
 
-Ltac ettcheck' := ettcheck1 ; try (lazy ; omega).
+Lemma close_goal_ex :
+  forall {Σ Γ t T},
+    xtype_glob Σ ->
+    Σ ;;; [] |-x t : Prods Γ T ->
+    Σ ;;; Γ |-x T : Ty ->
+    ∑ t', Σ ;;; Γ |-x t' : T.
+Proof.
+  intros Σ Γ t T hg h hT.
+  revert t T h hT. induction Γ as [| A Γ].
+  - intros t T h hT. eexists. eassumption.
+  - intros t T h hT. cbn in h.
+    destruct (IHΓ _ _ h) as [t' ht'].
+    + pose proof (typing_wf hT) as hw.
+      inversion hw. subst. destruct s.
+      eapply xtype_Prod'.
+      * eassumption.
+      * intros _. eassumption.
+    + eexists. eapply meta_conv.
+      * eapply xtype_App'.
+        -- assumption.
+        -- instantiate (2 := lift0 1 A).
+           instantiate (1 := lift 1 1 T).
+           instantiate (1 := nAnon).
+           change (sProd nAnon (lift0 1 A) (lift 1 1 T))
+             with (lift0 1 (sProd nAnon A T)).
+           eapply typing_lift01.
+           ++ assumption.
+           ++ exact ht'.
+           ++ instantiate (1 := tt).
+              pose proof (typing_wf hT) as hw.
+              inversion hw. subst. destruct s.
+              assumption.
+        -- instantiate (1 := sRel 0). ettcheck  Σi.
+           pose proof (typing_wf hT) as hw.
+           inversion hw. subst. destruct s.
+           assumption.
+      * eapply lift_rel.
+Defined.
 
-Ltac ettcheck := repeat ettcheck'.
+Lemma inversionProds :
+  forall {Σ Γ T},
+    Σ ;;; [] |-x Prods Γ T : Ty ->
+    (Σ ;;; Γ |-x T : Ty).
+Proof.
+  intros Σ Γ T h. revert T h.
+  induction Γ as [| A Γ] ; intros T h.
+  - cbn in h. assumption.
+  - cbn in h.
+    specialize (IHΓ _ h).
+    destruct (XInversions.inversionProd IHΓ) as [[? ?] ?].
+    assumption.
+Defined.
+
+Lemma close_goal_ex' :
+  forall {Σ Γ t T},
+    xtype_glob Σ ->
+    Σ ;;; [] |-x t : Prods Γ T ->
+    ∑ t', Σ ;;; Γ |-x t' : T.
+Proof.
+  intros Σ Γ t T hg ht.
+  eapply close_goal_ex ; try eassumption.
+  destruct (istype_type hg ht) as [[] hT].
+  eapply inversionProds. assumption.
+Defined.
+
+Definition closet {Σ Γ t T} hg h :=
+  let '(t' ; _) := @close_goal_ex' Σ Γ t T hg h in t'.
+
+Definition close_goal :
+  forall {Σ Γ t T}
+    (hg : xtype_glob Σ)
+    (h : Σ ;;; [] |-x t : Prods Γ T),
+    Σ ;;; Γ |-x closet hg h : T.
+Proof.
+  intros Σ Γ t T h.
+  eapply close_goal_ex'.
+Defined.
+
+(* For interpretation of terms *)
+
+Quote Definition qnat := nat.
+Quote Definition qvec := vec.
+Quote Definition qadd := Nat.add.
+Quote Definition qO := O.
+Quote Definition qS := S.
+Quote Definition qvnil := @vnil.
+Quote Definition qvcons := @vcons.
+Quote Definition qvcons_act_obligation := @vcons_act_obligation.
+
+Definition axoc :=
+  [< "nat" --> qnat ;
+     "vec" --> qvec ;
+     "add" --> qadd ;
+     "O" --> qO ;
+     "S" --> qS ;
+     "vnil" --> qvnil ;
+     "vcons" --> qvcons ;
+     "vcons_act_obligation" --> qvcons_act_obligation
+  >].

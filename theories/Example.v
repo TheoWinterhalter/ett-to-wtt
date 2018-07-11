@@ -5,11 +5,13 @@ Set Type In Type.
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import Ast LiftSubst Typing Checker.
+From Template Require Import All.
 From Translation Require Import util Sorts SAst SLiftSubst SCommon ITyping
                                 ITypingLemmata ITypingAdmissible XTyping
                                 Quotes Translation FinalTranslation
-                                FullQuote ExamplesUtil ExampleQuotes.
+                                FullQuote ExamplesUtil ExampleQuotes
+                                XTypingLemmata IChecking XChecking.
+Import MonadNotation.
 
 Open Scope string_scope.
 Open Scope x_scope.
@@ -38,6 +40,7 @@ Definition tm_pseudoid :=
 
 Definition prety_pseudoid :=
   Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_type empty empty nomap.
+
 Definition ty_pseudoid :=
   Eval lazy in 
   match prety_pseudoid with
@@ -48,9 +51,10 @@ Definition ty_pseudoid :=
 Lemma type_pseudoid : Σi ;;; [] |-x tm_pseudoid : ty_pseudoid.
 Proof.
   unfold tm_pseudoid, ty_pseudoid.
-  ettcheck. cbn.
+  pose proof xhΣi.
+  ettcheck Σi. cbn. 
   eapply reflection with (e := sRel 1).
-  ettcheck.
+  ettcheck Σi.
 Defined.
 
 Definition itt_pseudoid : sterm :=
@@ -70,6 +74,37 @@ Make Definition coq_pseudoid :=
               end)
       in exact t
   ).
+
+(* Definition Translate ident : TemplateMonad () := *)
+(*   entry <- tmQuoteConstant ident false ;; *)
+(*   match entry with *)
+(*   | DefinitionEntry {| definition_entry_body := tm ; definition_entry_type := ty |} => *)
+(*     pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm empty empty nomap) ;; *)
+(*     prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty empty empty nomap) ;; *)
+(*     match pretm, prety with *)
+(*     | Success tm, Success ty => *)
+(*       name <- tmEval all (ident ++ "_der") ;; *)
+(*       name <- tmFreshName name ;; *)
+(*       der <- tmLemma name (Σi ;;; [] |-x tm : ty) ;; *)
+(*       let '(_ ; itt_tm ; _) := type_translation der istrans_nil in *)
+(*       t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm empty) ;; *)
+(*       match t with *)
+(*       | FinalTranslation.Success _ t => *)
+(*         t' <- tmUnquote t ;; *)
+(*         t' <- tmEval Ast.hnf (my_projT2 t') ;; *)
+(*         tmPrint t' *)
+(*       | _ => tmFail "Cannot translate from ITT to TemplateCoq" *)
+(*       end *)
+(*     | _,_ => tmFail "Cannot transalte from TemplateCoq to ETT" *)
+(*     end *)
+(*   | _ => tmFail "Expected a constant definition" *)
+(*   end. *)
+
+(* Run TemplateProgram (Translate "pseudoid"). *)
+(* Next Obligation. *)
+(*   pose proof xhΣi. *)
+(*   ettcheck. cbn. eapply reflection with (e := sRel 1). ettcheck. *)
+(* Defined. *)
 
 (*! EXAMPLE 2 *)
 
@@ -100,12 +135,15 @@ Definition ty_realid :=
 Lemma type_realid : Σi ;;; [] |-x tm_realid : ty_realid.
 Proof.
   unfold tm_realid, ty_realid.
-  ettcheck.
+  pose proof xhΣi.
+  ettcheck Σi.
 Defined.
+
+Definition type_realid_ := Eval lazy - [Σi] in type_realid.
 
 Definition itt_realid : sterm :=
   Eval lazy in
-  let '(_ ; t ; _) := type_translation type_realid istrans_nil in t.
+  let '(_ ; t ; _) := type_translation type_realid_ istrans_nil in t.
 
 Definition tc_realid : tsl_result term :=
   Eval lazy in
@@ -123,235 +161,192 @@ Make Definition coq_realid :=
 
 (*! EXAMPLE 3 *)
 
-Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
-  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) 
-           (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc))
-           n v m acc.
+Definition vv : vec nat 1 := vcons 2 _ vnil.
 
-Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
-  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) 
-           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
-           n v m acc.
+Quote Definition vv_term :=
+  ltac:(let t := eval unfold vv in @vv in exact t).
+Quote Definition vv_type := 
+  ltac:(let T := type of @vv in exact T).
 
-Quote Definition vrev_term :=
-  ltac:(let t := eval unfold vrev in @vrev in exact t).
-Quote Definition vrev_type := 
-  ltac:(let T := type of @vrev in exact T).
-
-Definition pretm_vrev :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_term indt constt cot.
-Definition tm_vrev :=
-  Eval lazy in 
-  match pretm_vrev with
+Definition pretm_vv :=
+  Eval lazy - [Σi] in fullquote (2 ^ 18) Σ [] vv_term indt constt cot.
+Definition tm_vv :=
+  Eval lazy - [Σi] in 
+  match pretm_vv with
   | Success t => t
   | Error _ => sRel 0
   end.
 
-Definition prety_vrev :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_type indt constt cot.
-Definition ty_vrev :=
+Definition prety_vv :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vv_type indt constt cot.
+Definition ty_vv :=
   Eval lazy in 
-  match prety_vrev with
+  match prety_vv with
   | Success t => t
   | Error _ => sRel 0
   end.
 
-(* TODO Move in ExamplesUtil *)
-Fixpoint Prods (Γ : scontext) (T : sterm) :=
-  match Γ with
-  | A :: Γ => Prods Γ (sProd nAnon A T)
-  | [] => T
-  end.
-
-(* Lemma close_goal_ex : *)
-(*   forall {Σ Γ Δ t T}, *)
-(*     Σ ;;; Δ |-x t : Prods Γ T -> *)
-(*     Σ ;;; Δ ,,, Γ |-x T : Ty -> *)
-(*     ∑ t', Σ ;;; Δ ,,, Γ |-x t' : T. *)
-(* Proof. *)
-(*   intros Σ Γ Δ t T h hT. *)
-(*   revert Δ t T h hT. induction Γ as [| A Γ]. *)
-(*   - intros Δ t T h hT. *)
-(*     rewrite cat_nil. eexists. eassumption. *)
-(*   - intros Δ t T h hT. cbn in h. *)
-(*     destruct (IHΓ _ _ _ h) as [t' ht']. *)
-(*     + admit. *)
-(*     +  *)
-
-
-
-Lemma close_goal_ex :
-  forall {Σ Γ t T},
-    Σ ;;; [] |-x t : Prods Γ T ->
-    Σ ;;; Γ |-x T : Ty ->
-    ∑ t', Σ ;;; Γ |-x t' : T.
+Lemma type_vv : Σi ;;; [] |-x tm_vv : ty_vv.
 Proof.
-  intros Σ Γ t T h hT.
-  revert t T h hT. induction Γ as [| A Γ].
-  - intros t T h hT. eexists. eassumption.
-  - intros t T h hT. cbn in h.
-    destruct (IHΓ _ _ h) as [t' ht'].
-    + pose proof (typing_wf hT) as hw.
-      inversion hw. subst. destruct s.
-      eapply xtype_Prod'.
-      * eassumption.
-      * intros _. eassumption.
-    + eexists. eapply xmeta_conv.
-      * eapply xtype_App'.
-        -- (* Need type_lift *)
-Admitted.
-
-Definition closet {Σ Γ t T} h hT :=
-  let '(t' ; _) := @close_goal_ex Σ Γ t T h hT in t'.
-
-Definition close_goal :
-  forall {Σ Γ t T}
-    (h : Σ ;;; [] |-x t : Prods Γ T)
-    (hT : Σ ;;; Γ |-x T : Ty),
-    Σ ;;; Γ |-x closet h hT : T.
-Proof.
-  intros Σ Γ t T h hT.
-  eapply close_goal_ex.
+  unfold tm_vv, ty_vv.
+  pose proof xhΣi.
+  ettcheck Σi.
 Defined.
 
+Definition itt_vv : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_vv istrans_nil in t.
 
+Definition tc_vv : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_vv axoc.
 
+Make Definition coq_vv :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_vv with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
 
+(*! EXAMPLE 4 *)
+
+Fail Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
+  := f (vcons a n v).
+
+Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
+  := f {! vcons a n v !}.
+
+Quote Definition vcons_act_term :=
+  ltac:(let t := eval unfold vcons_act in @vcons_act in exact t).
+Quote Definition vcons_act_type := 
+  ltac:(let T := type of @vcons_act in exact T).
+
+Definition pretm_vcons_act :=
+  Eval lazy - [Σi] in fullquote (2 ^ 18) Σ [] vcons_act_term indt constt cot.
+Definition tm_vcons_act :=
+  Eval lazy - [Σi] in 
+  match pretm_vcons_act with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Definition prety_vcons_act :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vcons_act_type indt constt cot.
+Definition ty_vcons_act :=
+  Eval lazy in 
+  match prety_vcons_act with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
+
+Lemma type_vcons_act : Σi ;;; [] |-x tm_vcons_act : ty_vcons_act.
+Proof.
+  unfold tm_vcons_act, ty_vcons_act.
+  pose proof xhΣi.
+  ettcheck Σi.
+  eapply reflection.
+  unshelve eapply close_goal
+  ; [ exact (sAx "vcons_act_obligation") | assumption |].
+  simpl. ettcheck Σi.
+Defined.
+
+Definition itt_vcons_act : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_vcons_act istrans_nil in t.
+
+Print itt_vcons_act.
+
+Definition tc_vcons_act : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_vcons_act axoc.
+
+Print tc_vcons_act.
+
+Make Definition coq_vcons_act :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_vcons_act with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
+
+Print coq_vcons_act.
+
+(*! EXAMPLE ?? *)
+
+(* Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) := *)
+(*   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))  *)
+(*            (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc)) *)
+(*            n v m acc. *)
+
+(* Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) := *)
+(*   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))  *)
+(*            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !}) *)
+(*            n v m acc. *)
+
+(* Quote Definition vrev_term := *)
+(*   ltac:(let t := eval unfold vrev in @vrev in exact t). *)
+(* Quote Definition vrev_type :=  *)
+(*   ltac:(let T := type of @vrev in exact T). *)
+
+(* Definition pretm_vrev := *)
+(*   Eval lazy - [Σi] in fullquote (2 ^ 18) Σ [] vrev_term indt constt cot. *)
+(* Definition tm_vrev := *)
+(*   Eval lazy - [Σi] in  *)
+(*   match pretm_vrev with *)
+(*   | Success t => t *)
+(*   | Error _ => sRel 0 *)
+(*   end. *)
+
+(* Definition prety_vrev := *)
+(*   Eval lazy in fullquote (2 ^ 18) Σ [] vrev_type indt constt cot. *)
+(* Definition ty_vrev := *)
+(*   Eval lazy in  *)
+(*   match prety_vrev with *)
+(*   | Success t => t *)
+(*   | Error _ => sRel 0 *)
+(*   end. *)
 
 (* Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev. *)
 (* Proof. *)
 (*   unfold tm_vrev, ty_vrev. *)
-(*   ettcheck. *)
-(*   - eapply close_goal. *)
-(*     eapply reflection with (e := sAx "vrev_obligation1"). *)
-(*     (* It would need the exact same type to work, *)
-(*        names are going to be a problem otherwise. *)
-(*      *) *)
-(*     ettcheck. *)
-
-(*   - instantiate (1 := nNamed "m"). *)
-(*     eapply reflection. *)
-(*     instantiate (1 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation1") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
-(*     ettcheck. *)
-(*     Opaque Σi. *)
-(*     all: lazy. *)
-(*     all: try eapply eq_reflexivity. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + lazy. ettcheck. *)
-(*     + ettcheck. *)
-(*     + lazy. ettcheck. *)
-(*     + ettcheck. *)
-(*     + lazy. ettcheck. *)
-(*     + ettcheck. *)
-(*     + lazy. ettcheck. *)
-(*     + ettcheck. *)
-(*     + lazy. ettcheck. *)
-(*     + ettcheck. *)
-(*     + lazy. ettcheck. *)
-(*     + ettcheck. *)
-(*   - Opaque Σi. lazy. eapply reflection. *)
-(*     instantiate (2 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation2") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
-(*     ettcheck. *)
-(*     all: lazy. *)
-(*     all: try eapply eq_reflexivity. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*   - Opaque Σi. lazy. eapply reflection. *)
-(*     instantiate (1 := sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation3") _ _ (sRel 10)) _ _ (sRel 9)) _ _ (sRel 8)) _ _ (sRel 7)) _ _ (sRel 6)) _ _ (sRel 5)) _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
-(*     ettcheck. *)
-(*     all: lazy. *)
-(*     all: try eapply eq_reflexivity. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*   - Opaque Σi. lazy. eapply reflection. *)
-(*     instantiate (2 := sApp (sApp (sApp (sApp (sApp (sAx "vrev_obligation2") _ _ (sRel 4)) _ _ (sRel 3)) _ _ (sRel 2)) _ _ (sRel 1)) _ _ (sRel 0)). *)
-(*     ettcheck. *)
-(*     all: lazy. *)
-(*     all: try eapply eq_reflexivity. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. *)
-(*     + ettcheck. lazy. ettcheck. *)
+(*   pose proof xhΣi. *)
+(*   ettcheck Σi. *)
+(*   - eapply reflection. *)
+(*     unshelve eapply close_goal *)
+(*     ; [ exact (sAx "vrev_obligation1") | assumption |]. *)
+(*     simpl. ettcheck Σi.  *)
+(*   - eapply reflection. *)
+(*     unshelve eapply close_goal *)
+(*     ; [ exact (sAx "vrev_obligation2") | assumption |]. *)
+(*     simpl. ettcheck Σi. *)
+(*   - eapply reflection. *)
+(*     unshelve eapply close_goal *)
+(*     ; [ exact (sAx "vrev_obligation3") | assumption |]. *)
+(*     simpl. ettcheck Σi. *)
+(*   - eapply reflection. *)
+(*     unshelve eapply close_goal *)
+(*     ; [ exact (sAx "vrev_obligation4") | assumption |]. *)
+(*     simpl. ettcheck Σi. *)
+(*   Unshelve. exact nAnon. *)
 (* Defined. *)
 
 (* Definition itt_vrev : sterm := *)
 (*   Eval lazy in *)
 (*   let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t. *)
 
+(* (* Print itt_vrev. *) *)
+
 (* Definition tc_vrev : tsl_result term := *)
 (*   Eval lazy in *)
 (*   tsl_rec (2 ^ 18) Σ [] itt_vrev empty. *)
+
+(* (* Print tc_vrev. *) *)
 
 (* Make Definition coq_vrev := *)
 (*   ltac:( *)
@@ -362,3 +357,5 @@ Defined.
 (*               end) *)
 (*       in exact t *)
 (*   ). *)
+
+(* (* Print coq_vrev. *) *)

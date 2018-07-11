@@ -130,18 +130,18 @@ Proof.
   intros Γ Δ.
   induction Δ ; intros n isdecl isdecl' h.
   - cbn in *. revert isdecl'.
-    replace (n - 0) with n by omega.
+    replace (n - 0) with n by myomega.
     intros isdecl'. apply safe_nth_irr.
   - destruct n.
     + cbn in *. inversion h.
-    + cbn. apply IHΔ. cbn in *. omega.
+    + cbn. apply IHΔ. cbn in *. myomega.
 Defined.
 
 Definition ge_sub {Γ Δ n} (isdecl : n < #|Γ ,,, Δ|) :
   n >= #|Δ| ->  n - #|Δ| < #|Γ|.
 Proof.
   intro h.
-  rewrite length_cat in isdecl. omega.
+  rewrite length_cat in isdecl. myomega.
 Defined.
 
 Fact safe_nth_ge' :
@@ -215,7 +215,7 @@ Proof.
   intros Γ Δ. induction Δ.
   - cbn. easy.
   - intro n. destruct n ; intros isdecl isdecl'.
-    + cbn. replace (#|Δ| - 0) with #|Δ| by omega. reflexivity.
+    + cbn. replace (#|Δ| - 0) with #|Δ| by myomega. reflexivity.
     + cbn. erewrite IHΔ. reflexivity.
 Defined.
 
@@ -226,7 +226,7 @@ Fact lift_context_ex :
 Proof.
   intros Δ Ξ n isdecl isdecl'.
   erewrite safe_nth_lift_context.
-  rewrite <- liftP2 by omega.
+  rewrite <- liftP2 by myomega.
   cbn.
   replace (S (n + (#|Ξ| - n - 1)))%nat with #|Ξ|.
   - reflexivity.
@@ -234,10 +234,10 @@ Proof.
     + cbn. easy.
     + cbn. f_equal.
       destruct n.
-      * cbn. omega.
+      * cbn. myomega.
       * cbn. apply IHΞ.
-        -- cbn in *. omega.
-        -- cbn in *. omega.
+        -- cbn in *. myomega.
+        -- cbn in *. myomega.
 Defined.
 
 (* Substitution in context *)
@@ -265,7 +265,7 @@ Proof.
   intro Δ. induction Δ.
   - cbn. easy.
   - intro n. destruct n ; intros u isdecl isdecl'.
-    + cbn. replace (#|Δ| - 0) with #|Δ| by omega. reflexivity.
+    + cbn. replace (#|Δ| - 0) with #|Δ| by myomega. reflexivity.
     + cbn. erewrite IHΔ. reflexivity.
 Defined.
 

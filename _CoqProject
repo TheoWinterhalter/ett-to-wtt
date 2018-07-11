@@ -24,5 +24,9 @@ theories/Quotes.v
 theories/FinalTranslation.v
 theories/FullQuote.v
 theories/ExampleQuotes.v
+theories/XTypingLemmata.v
+theories/XInversions.v
+theories/IChecking.v
+theories/XChecking.v
 theories/ExamplesUtil.v
 theories/Example.v

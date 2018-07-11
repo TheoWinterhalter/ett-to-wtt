@@ -211,6 +211,10 @@ with eq_term (Σ : sglobal_context) : scontext -> sterm -> sterm -> sterm -> Typ
 
 where " Σ ;;; Γ '|-x' t = u : T " := (@eq_term Σ Γ t u T) : x_scope.
 
+Derive Signature for typing.
+Derive Signature for wf.
+Derive Signature for eq_term.
+
 Delimit Scope x_scope with x.
 
 Open Scope x_scope.
