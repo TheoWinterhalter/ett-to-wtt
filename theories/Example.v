@@ -323,13 +323,21 @@ Proof.
   Unshelve. exact nAnon.
 Defined.
 
+Definition type_vrev_ := Eval lazy - [Σi] in type_vrev.
+
+Print type_vrev_.
+
 Definition itt_vrev : sterm :=
   Eval lazy in
-  let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t.
+  let '(_ ; t ; _) := type_translation type_vrev_ istrans_nil in t.
+
+Print itt_vrev.
 
 Definition tc_vrev : tsl_result term :=
   Eval lazy in
   tsl_rec (2 ^ 18) Σ [] itt_vrev empty.
+
+Print tc_vrev.
 
 Make Definition coq_vrev :=
   ltac:(
