@@ -135,7 +135,9 @@ Proof.
   - eassumption.
 Defined.
 
-Lemma xtype_glob_cons' :
+Definition xtype_glob_nil : xtype_glob [] := tt.
+
+Lemma xtype_glob_cons :
   forall {Σ d},
     xtype_glob Σ ->
     fresh_glob (dname d) Σ ->
@@ -143,14 +145,13 @@ Lemma xtype_glob_cons' :
     xtype_glob (d :: Σ).
 Proof.
   intros Σ d hg hf hd.
-  specialize (hd hg).
-  econstructor ; eassumption.
+  repeat split ; assumption.
 Defined.
 
 Ltac xglob Σi :=
   first [
     eapply xtype_glob_nil
-  | eapply xtype_glob_cons' ; [
+  | eapply xtype_glob_cons ; [
       idtac
     | repeat (lazy - [Σi]; econstructor) ; lazy - [Σi]; try discriminate
     | intro ; exists tt
