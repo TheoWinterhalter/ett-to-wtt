@@ -1,7 +1,7 @@
 (* Optimisation on syntax *)
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import Ast utils LiftSubst Typing.
+From Template Require Import Ast utils Typing.
 From Translation
 Require Import util Sorts SAst SLiftSubst Equality SCommon XTyping Conversion
                ITyping ITypingInversions ITypingLemmata ITypingAdmissible.

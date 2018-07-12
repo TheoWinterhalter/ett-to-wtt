@@ -5,7 +5,7 @@ Set Type In Type.
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import Ast LiftSubst Typing Checker.
+From Template Require Import Ast Typing Checker.
 From Translation Require Import util Sorts SAst Quotes FinalTranslation.
 
 Inductive vec A : nat -> Type :=
