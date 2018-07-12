@@ -16,24 +16,15 @@ Context `{Sort_notion : Sorts.notion}.
 Definition isType (Σ : sglobal_context) (Γ : scontext) (t : sterm) :=
   ∑ s, Σ ;;; Γ |-x t : sSort s.
 
-Fixpoint xtype_glob (Σ : sglobal_context) : Type :=
-  match Σ with
-  | [] => ()
-  | d :: Σ =>
-    (xtype_glob Σ) *
-    (fresh_glob (dname d) Σ) *
-    (xtype_glob Σ -> isType Σ [] (dtype d))
-  end.
+Inductive xtype_glob : sglobal_context -> Type :=
+| xtype_glob_nil : xtype_glob []
+| xtype_glob_cons Σ d :
+    xtype_glob Σ ->
+    fresh_glob (dname d) Σ ->
+    isType Σ [] (dtype d) ->
+    xtype_glob (d :: Σ).
 
-(* Inductive xtype_glob : sglobal_context -> Type := *)
-(* | xtype_glob_nil : xtype_glob [] *)
-(* | xtype_glob_cons Σ d : *)
-(*     xtype_glob Σ -> *)
-(*     fresh_glob (dname d) Σ -> *)
-(*     isType Σ [] (dtype d) -> *)
-(*     xtype_glob (d :: Σ). *)
-
-(* Derive Signature for type_glob. *)
+Derive Signature for type_glob.
 
 Lemma meta_ctx_conv :
   forall {Σ Γ Δ t A},
@@ -137,14 +128,14 @@ Fact typed_ax_type :
     lookup_glob Σ id = Some ty ->
     isType Σ [] ty.
 Proof.
-  intros Σ. induction Σ as [| d Σ ih] ; intros hg id ty h.
-  - cbn in h. discriminate h.
-  - cbn in h. destruct hg as [[hg hf] hT]. specialize (hT hg).
+  intros Σ hg. induction hg ; intros id ty h.
+  - discriminate h.
+  - cbn in h.
     case_eq (ident_eq id (dname d)).
     + intro e. rewrite e in h. inversion h. subst.
       eapply weak_glob_isType ; eassumption.
     + intro e. rewrite e in h.
-      specialize (ih hg _ _ h).
+      specialize (IHhg _ _ h).
       eapply weak_glob_isType ; eassumption.
 Defined.
 
