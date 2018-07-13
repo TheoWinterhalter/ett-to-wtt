@@ -219,8 +219,21 @@ Make Definition coq_vv :=
 (* Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X *)
 (*   := f {! vcons a n v !}. *)
 
-Definition vcons_act {A n X} (f : vec A (S n) -> X) (a : A) (v : vec A n) : X
-  := f (vcons a n v).
+(* This version is already not working *)
+(* Definition vcons_act {X} (f : vec nat 1 -> X) (a : nat) (v : vec nat 0) : X *)
+(*   := f (vcons a 0 v). *)
+
+(* Working *)
+(* Definition vcons_act (f : vec nat 1 -> nat) (a : nat) (v : vec nat 0) : nat *)
+(*   := f (vcons a 0 v). *)
+
+(* Not working *)
+(* Definition vcons_act {n} (f : vec nat (S n) -> nat) (a : nat) (v : vec nat n) : nat *)
+(*   := f (vcons a n v). *)
+
+(* Working *)
+Definition vcons_act {X : Type} (f : vec nat 1 -> nat) (a : nat) (v : vec nat 0) : nat
+  := f (vcons a 0 v).
 
 Quote Definition vcons_act_term :=
   ltac:(let t := eval unfold vcons_act in @vcons_act in exact t).
