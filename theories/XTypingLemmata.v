@@ -74,41 +74,27 @@ Fixpoint weak_glob_type {Σ Γ t A} (h : Σ ;;; Γ |-x t : A) :
 with weak_glob_eq_term {Σ Γ u v A} (h : Σ ;;; Γ |-x u = v : A) :
   forall {d},
     fresh_glob (dname d) Σ ->
-    (d::Σ) ;;; Γ |-x u = v : A
-
-with weak_glob_wf {Σ Γ} (h : wf Σ Γ) :
-  forall {d},
-    fresh_glob (dname d) Σ ->
-    wf (d::Σ) Γ.
+    (d::Σ) ;;; Γ |-x u = v : A.
 Proof.
   (* weak_glob_type *)
   - { dependent destruction h ; intros d fd.
-      all: try (econstructor ; try apply weak_glob_wf ;
+      all: try (econstructor ;
                 try apply weak_glob_type ;
                 try apply weak_glob_eq_term ;
                 eassumption
                ).
       eapply type_Ax.
-      - eapply weak_glob_wf ; eassumption.
-      - cbn. erewrite ident_neq_fresh by eassumption.
-        assumption.
+      cbn. erewrite ident_neq_fresh by eassumption.
+      assumption.
     }
 
   (* weak_glob_eq_term *)
   - { dependent destruction h ; intros d fd.
-      all: try (econstructor ; try apply weak_glob_wf ;
+      all: try (econstructor ;
                 try apply weak_glob_type ;
                 try apply weak_glob_eq_term ;
                 eassumption
                ).
-    }
-
-  (* weak_glob_wf *)
-  - { dependent destruction h ; intros fd.
-      - constructor.
-      - econstructor.
-        + apply weak_glob_wf ; assumption.
-        + apply weak_glob_type ; eassumption.
     }
 Defined.
 
@@ -199,14 +185,12 @@ Ltac ih h :=
         forall (Σ : sglobal_context) (Γ Δ Ξ : scontext) (t A : sterm),
           Σ;;; Γ ,,, Ξ |-x t : A ->
           xtype_glob Σ ->
-          wf Σ (Γ ,,, Δ) ->
           Σ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ
           |-x lift #|Δ| #|Ξ| t : lift #|Δ| #|Ξ| A,
       cong_lift :
         forall (Σ : sglobal_context) (Γ Δ Ξ : scontext) (t1 t2 A : sterm),
           Σ;;; Γ ,,, Ξ |-x t1 = t2 : A ->
           xtype_glob Σ ->
-          wf Σ (Γ ,,, Δ) ->
           Σ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ
           |-x lift #|Δ| #|Ξ| t1 = lift #|Δ| #|Ξ| t2 : lift #|Δ| #|Ξ| A
     |- _ ] =>
@@ -217,7 +201,6 @@ Ltac ih h :=
           eapply type_lift with (Γ := Γ') (Ξ := Ξ') (A := T') ; [
             exact h
           | assumption
-          | assumption
           ]
         | .. ]
       | .. ]
@@ -226,7 +209,6 @@ Ltac ih h :=
         eapply meta_ctx_conv ; [
           eapply type_lift with (Γ := Γ') (Ξ := Ξ',, d') (A := T') ; [
             exact h
-          | assumption
           | assumption
           ]
         | .. ]
@@ -237,7 +219,6 @@ Ltac ih h :=
           eapply type_lift with (Γ := Γ') (Ξ := (Ξ',, d'),, d'') (A := T') ; [
             exact h
           | assumption
-          | assumption
           ]
         | .. ]
       | .. ]
@@ -246,7 +227,6 @@ Ltac ih h :=
         eapply meta_eqctx_conv ; [
           eapply cong_lift with (Γ := Γ') (Ξ := Ξ') (A := T') ; [
             exact h
-          | assumption
           | assumption
           ]
         | .. ]
@@ -257,7 +237,6 @@ Ltac ih h :=
           eapply cong_lift with (Γ := Γ') (Ξ := Ξ',, d') (A := T') ; [
             exact h
           | assumption
-          | assumption
           ]
         | .. ]
       | .. ]
@@ -266,7 +245,6 @@ Ltac ih h :=
         eapply meta_eqctx_conv ; [
           eapply cong_lift with (Γ := Γ') (Ξ := (Ξ',, d'),, d'') (A := T') ; [
             exact h
-          | assumption
           | assumption
           ]
         | .. ]
@@ -285,38 +263,30 @@ Ltac eih :=
 
 Fixpoint type_lift {Σ Γ Δ Ξ t A} (h : Σ ;;; Γ ,,, Ξ |-x t : A) {struct h} :
   xtype_glob Σ ->
-  wf Σ (Γ ,,, Δ) ->
   Σ ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ |-x lift #|Δ| #|Ξ| t : lift #|Δ| #|Ξ| A
 
 with cong_lift {Σ Γ Δ Ξ t1 t2 A} (h : Σ ;;; Γ ,,, Ξ |-x t1 = t2 : A) {struct h} :
   xtype_glob Σ ->
-  wf Σ (Γ ,,, Δ) ->
   Σ ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ |-x lift #|Δ| #|Ξ| t1
   = lift #|Δ| #|Ξ| t2 : lift #|Δ| #|Ξ| A
-
-with wf_lift {Σ Γ Δ Ξ} (h : wf Σ (Γ ,,, Ξ)) {struct h} :
-  xtype_glob Σ ->
-  wf Σ (Γ ,,, Δ) ->
-  wf Σ (Γ ,,, Δ ,,, lift_context #|Δ| Ξ)
 .
 Proof.
-  - { dependent destruction h ; intros hΣ hwf.
+  - { dependent destruction h ; intros hΣ (* hwf *).
       - cbn. case_eq (#|Ξ| <=? n) ; intro e ; bprop e.
         + rewrite liftP3 by myomega.
           replace (#|Δ| + S n)%nat with (S (#|Δ| + n)) by myomega.
           eapply meta_conv.
           * eapply type_Rel.
-            eapply wf_lift ; assumption.
           * f_equal. f_equal.
             erewrite 3!safe_nth_ge'
               by (try rewrite lift_context_length ; myomega).
             eapply safe_nth_cong_irr.
             rewrite lift_context_length. myomega.
         + eapply meta_conv.
-          * eapply type_Rel. eapply wf_lift ; assumption.
+          * eapply type_Rel.
           * erewrite 2!safe_nth_lt.
             eapply lift_context_ex.
-      - cbn. apply type_Sort. now apply wf_lift.
+      - cbn. apply type_Sort.
       - cbn. eapply type_Prod ; eih.
       - cbn. eapply type_Lambda ; eih.
       - cbn.
@@ -337,12 +307,11 @@ Proof.
       - cbn. apply type_Eq ; eih.
       - cbn. eapply type_Refl ; eih.
       - cbn. eapply type_Ax.
-        + now apply wf_lift.
-        + erewrite lift_ax_type by eassumption. assumption.
+        erewrite lift_ax_type by eassumption. assumption.
       - eapply type_conv ; eih.
     }
 
-  - { intros hg hwf. dependent destruction h.
+  - { intros hg (* hwf *). dependent destruction h.
       - apply eq_reflexivity. apply type_lift ; assumption.
       - apply eq_symmetry. eapply cong_lift ; assumption.
       - eapply eq_transitivity ; eih.
@@ -379,16 +348,6 @@ Proof.
       - cbn. eapply cong_Eq ; eih.
       - cbn. eapply cong_Refl ; eih.
       - eapply reflection with (e0 := lift #|Δ| #|Ξ| e). eih.
-    }
-
-  - { intros hg hwf.
-      destruct Ξ.
-      - cbn. assumption.
-      - dependent destruction h.
-        cbn. econstructor.
-        + apply wf_lift ; assumption.
-        + instantiate (1 := s0). cbn. change (sSort s0) with (lift #|Δ| #|Ξ| (sSort s0)).
-          apply type_lift ; assumption.
     }
 
   Unshelve.
@@ -503,12 +462,6 @@ with cong_subst {Σ Γ Δ t1 t2 A B u}
   Σ ;;; Γ |-x u : B ->
   Σ ;;; Γ ,,, subst_context u Δ |-x t1{ #|Δ| := u }
   = t2{ #|Δ| := u } : A{ #|Δ| := u }
-
-with wf_subst {Σ Γ Δ B u}
-  (h : wf Σ (Γ ,, B ,,, Δ)) {struct h} :
-  xtype_glob Σ ->
-  Σ ;;; Γ |-x u : B ->
-  wf Σ (Γ ,,, subst_context u Δ)
 .
 Proof.
   (* type_subst *)
@@ -528,7 +481,6 @@ Proof.
           eapply @type_lift with (Ξ := []) (Δ := subst_context u Δ).
           * cbn. assumption.
           * assumption.
-          * eapply wf_subst ; eassumption.
         + assert (h : n >= #|Δ|) by myomega.
           rewrite safe_nth_ge' with (h0 := h).
           set (ge := ge_sub isdecl h).
@@ -538,7 +490,7 @@ Proof.
           replace (S n - #|Δ|) with (S (n - #|Δ|)) by myomega.
           cbn. intro ge'.
           eapply meta_conv.
-          * eapply type_Rel. eapply wf_subst ; eassumption.
+          * eapply type_Rel.
           * erewrite safe_nth_ge'.
             f_equal. eapply safe_nth_cong_irr.
             rewrite subst_context_length. reflexivity.
@@ -552,11 +504,10 @@ Proof.
           rewrite substP2 by myomega.
           eapply meta_conv.
           * eapply type_Rel.
-            eapply wf_subst ; eassumption.
           * f_equal.
             erewrite safe_nth_lt.
             eapply safe_nth_subst_context.
-      - cbn. apply type_Sort. eapply wf_subst ; eassumption.
+      - cbn. apply type_Sort.
       - cbn. eapply type_Prod ; esh.
       - cbn. eapply type_Lambda ; esh.
       - cbn.
@@ -577,8 +528,7 @@ Proof.
       - cbn. eapply type_Refl ; esh.
       - cbn. erewrite subst_ax_type by eassumption.
         eapply type_Ax.
-        + now eapply wf_subst.
-        + assumption.
+        assumption.
       - cbn. eapply type_conv ; esh.
     }
 
@@ -616,15 +566,6 @@ Proof.
       - eapply reflection with (e0 := e{#|Δ| := u}). esh.
     }
 
-  (* wf_subst *)
-  - { intros hg hu.
-      destruct Δ.
-      - cbn. dependent destruction h. assumption.
-      - dependent destruction h. cbn. econstructor.
-        + eapply wf_subst ; eassumption.
-        + esh.
-    }
-
   Unshelve.
   all: try rewrite !length_cat ; try rewrite !subst_context_length ; 
        myomega.
@@ -646,9 +587,6 @@ Corollary typing_lift01 :
 Proof.
   intros Σ Γ t A B s hg ht hB.
   apply (@type_lift _ _ _ [ B ] nil _ _ ht hg).
-  econstructor.
-  - eapply typing_wf. eassumption.
-  - eassumption.
 Defined.
 
 (* TODO Move *)
@@ -666,10 +604,11 @@ Defined.
 Lemma istype_type :
   forall {Σ Γ t T},
     xtype_glob Σ ->
+    wf Σ Γ ->
     Σ ;;; Γ |-x t : T ->
     ∑ s, Σ ;;; Γ |-x T : sSort s.
 Proof.
-  intros Σ Γ t T xhg h.
+  intros Σ Γ t T xhg w h.
   induction h.
   - revert n isdecl. induction w ; intros n isdecl.
     + cbn in isdecl. easy.
@@ -689,18 +628,18 @@ Proof.
            ++ assumption.
            ++ erewrite eq_safe_nth. eassumption.
            ++ eassumption.
-  - eexists. eapply type_Sort. assumption.
-  - eexists. apply type_Sort. eapply typing_wf. eassumption.
+  - eexists. eapply type_Sort.
+  - eexists. apply type_Sort.
   - eexists. eapply type_Prod ; eassumption.
   - exists s2. change (sSort s2) with ((sSort s2){ 0 := u }).
     eapply typing_subst ; eassumption.
-  - eexists. econstructor. eapply typing_wf. eassumption.
+  - eexists. econstructor.
   - eexists. econstructor ; eassumption.
   - eexists. eassumption.
   - exists s2. change (sSort s2) with ((sSort s2){ 0 := sPi1 A B p }).
     eapply typing_subst ; try eassumption.
     econstructor ; eassumption.
-  - eexists. econstructor. eapply typing_wf. eassumption.
+  - eexists. econstructor.
   - eexists. econstructor ; eassumption.
   - destruct (typed_ax_type xhg e) as [s hh].
     exists s. change (sSort s) with (lift #|Γ| #|@nil sterm| (sSort s)).
@@ -710,7 +649,6 @@ Proof.
     + eapply @type_lift with (Γ := []) (Ξ := []) (Δ := Γ).
       * assumption.
       * assumption.
-      * rewrite nil_cat. assumption.
     + cbn. apply nil_cat.
   - eexists. eassumption.
 Defined.

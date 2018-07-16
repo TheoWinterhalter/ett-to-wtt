@@ -273,7 +273,7 @@ Proof.
 Defined.
 
 Definition type_translation {Γ t A} h {Γ'} hΓ :=
-  pi2_ (pi1_ (@complete_translation _ Σi hΣi)) Γ t A h Γ' hΓ.
+  fst (@complete_translation _ Σi hΣi) Γ t A h Γ' hΓ.
 
 
 
@@ -305,22 +305,25 @@ Defined.
 Lemma close_goal_ex :
   forall {Σ Γ t T},
     xtype_glob Σ ->
+    wf Σ Γ ->
     Σ ;;; [] |-x t : Prods Γ T ->
     Σ ;;; Γ |-x T : Ty ->
     ∑ t', Σ ;;; Γ |-x t' : T.
 Proof.
-  intros Σ Γ t T hg h hT.
-  revert t T h hT. induction Γ as [| A Γ].
-  - intros t T h hT. eexists. eassumption.
-  - intros t T h hT. cbn in h.
-    destruct (IHΓ _ _ h) as [t' ht'].
-    + pose proof (typing_wf hT) as hw.
-      inversion hw. subst. destruct s.
-      eapply xtype_Prod'.
-      * eassumption.
-      * intros _. eassumption.
+  intros Σ Γ t T hg hw h hT.
+  revert hw t T h hT. induction Γ as [| A Γ].
+  - intros hw t T h hT. eexists. eassumption.
+  - intros hwA t T h hT. cbn in h.
+    inversion hwA. subst. rename X into hw, X0 into hA.
+    destruct s.
+    destruct (IHΓ hw _ _ h) as [t' ht'].
+    + eapply xtype_Prod'.
+      * assumption.
+      * assumption.
+      * intros _. assumption.
     + eexists. eapply meta_conv.
       * eapply xtype_App'.
+        -- assumption.
         -- assumption.
         -- instantiate (2 := lift0 1 A).
            instantiate (1 := lift 1 1 T).
@@ -330,29 +333,27 @@ Proof.
            eapply typing_lift01.
            ++ assumption.
            ++ exact ht'.
-           ++ instantiate (1 := tt).
-              pose proof (typing_wf hT) as hw.
-              inversion hw. subst. destruct s.
-              assumption.
+           ++ instantiate (1 := tt). assumption.
         -- instantiate (1 := sRel 0). ettcheck  Σi.
-           pose proof (typing_wf hT) as hw.
-           inversion hw. subst. destruct s.
-           assumption.
       * eapply lift_rel.
 Defined.
 
 Lemma inversionProds :
   forall {Σ Γ T},
     Σ ;;; [] |-x Prods Γ T : Ty ->
+    (wf Σ Γ) *
     (Σ ;;; Γ |-x T : Ty).
 Proof.
   intros Σ Γ T h. revert T h.
   induction Γ as [| A Γ] ; intros T h.
-  - cbn in h. assumption.
+  - cbn in h. split.
+    + constructor.
+    + assumption.
   - cbn in h.
-    specialize (IHΓ _ h).
-    destruct (XInversions.inversionProd IHΓ) as [[? ?] ?].
-    assumption.
+    destruct (IHΓ _ h) as [hw hPi].
+    destruct (XInversions.inversionProd hPi) as [[? ?] ?].
+    split ; try assumption.
+    econstructor ; eassumption.
 Defined.
 
 Lemma close_goal_ex' :
@@ -362,9 +363,9 @@ Lemma close_goal_ex' :
     ∑ t', Σ ;;; Γ |-x t' : T.
 Proof.
   intros Σ Γ t T hg ht.
-  eapply close_goal_ex ; try eassumption.
-  destruct (istype_type hg ht) as [[] hT].
-  eapply inversionProds. assumption.
+  destruct (istype_type hg (wf_nil _) ht) as [[] hPi].
+  destruct (inversionProds hPi) as [hw hT].
+  eapply close_goal_ex ; eassumption.
 Defined.
 
 Definition closet {Σ Γ t T} hg h :=

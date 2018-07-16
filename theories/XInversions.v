@@ -27,7 +27,6 @@ Proof.
   - destruct s1, s2.
     split ; [ split | ..] ; try assumption.
     apply eq_reflexivity. econstructor.
-    eapply typing_wf. eassumption.
   - destruct IHh1 as [[? ?] ?].
     destruct s.
     split ; [ split | ..] ; try assumption.

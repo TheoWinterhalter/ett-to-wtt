@@ -147,7 +147,6 @@ Proof.
 Defined.
 
 Scheme typing_ind := Induction for XTyping.typing Sort Type
-  with wf_ind := Induction for XTyping.wf Sort Type
   with eq_term_ind := Induction for XTyping.eq_term Sort Type.
 
 (* Set Printing Depth 100. *)
@@ -155,24 +154,19 @@ Scheme typing_ind := Induction for XTyping.typing Sort Type
 (* Combined Scheme typing_all from typing_ind , wf_ind , eq_term_ind. *)
 
 Definition typing_all :=
-  fun Σ P0 P P1 X X0 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12 X13 X14 X15
-    X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 X27 X28 =>
-    (wf_ind Sort_notion Σ P P0 P1 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12 X13
-            X X0 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 X27 X28,
-     typing_ind Sort_notion Σ P P0 P1 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12
-                X13 X X0 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26
-                X27 X28,
-     eq_term_ind Sort_notion Σ P P0 P1 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12
-                 X13 X X0 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26
-                 X27 X28).
+  fun Σ P P0 X X0 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12 X13 X14 X15
+    X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 =>
+    (typing_ind Sort_notion Σ P P0 X X0 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12
+                X13 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26,
+     eq_term_ind Sort_notion Σ P P0 X X0 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12
+                 X13 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26).
 
 Definition complete_translation {Σ} :
   type_glob Σ ->
-  (forall Γ (h : XTyping.wf Σ Γ), ∑ Γ', Σ |--i Γ' # ⟦ Γ ⟧ ) *
-  (forall { Γ t A} (h : Σ ;;; Γ |-x t : A)
+  (forall {Γ t A} (h : Σ ;;; Γ |-x t : A)
      {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
       ∑ A' t', Σ ;;;; Γ' |--- [t'] : A' # ⟦ Γ |--- [t] : A ⟧) *
-  (forall { Γ u v A} (h : Σ ;;; Γ |-x u = v : A)
+  (forall {Γ u v A} (h : Σ ;;; Γ |-x u = v : A)
      {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
       ∑ A' A'' u' v' p',
         eqtrans Σ Γ A u v Γ' A' A'' u' v' p').
@@ -181,30 +175,15 @@ Proof.
   unshelve refine (
     typing_all
       Σ
-      (fun Γ (h : XTyping.wf Σ Γ) =>
-         ∑ Γ', Σ |--i Γ' # ⟦ Γ ⟧ )
-      (fun { Γ t A} (h : Σ ;;; Γ |-x t : A) => forall
+      (fun {Γ t A} (h : Σ ;;; Γ |-x t : A) => forall
            {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
            ∑ A' t', Σ ;;;; Γ' |--- [t'] : A' # ⟦ Γ |--- [t] : A ⟧)
-      (fun { Γ u v A} (h : Σ ;;; Γ |-x u = v : A) => forall
+      (fun {Γ u v A} (h : Σ ;;; Γ |-x u = v : A) => forall
            {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
            ∑ A' A'' u' v' p',
          eqtrans Σ Γ A u v Γ' A' A'' u' v' p')
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
    ) ; intros.
-  (** context_translation **)
-
-    (* wf_nil *)
-    + exists nil. split ; constructor.
-
-    (* wf_snoc *)
-    + destruct X as [Γ' hΓ'].
-      rename t into hA.
-      destruct (X0 _ hΓ') as [T [A' hA']].
-      assert (th : type_head (head (sSort s))) by constructor.
-      destruct (choose_type hg th hA') as [T' [[A'' hA''] hh]].
-      destruct T' ; try (now inversion hh).
-      exists (Γ' ,, A''). now eapply trans_snoc.
 
   (** type_translation **)
 
@@ -2675,6 +2654,24 @@ Proof.
 
 Defined.
 
+Theorem context_translation {Σ} :
+  type_glob Σ ->
+  forall Γ (h : XTyping.wf Σ Γ), ∑ Γ', Σ |--i Γ' # ⟦ Γ ⟧.
+Proof.
+  intros hg Γ h. induction h.
+  (* wf_nil *)
+  + exists nil. split ; constructor.
+
+  (* wf_snoc *)
+  + destruct IHh as [Γ' hΓ'].
+    rename t into hA.
+    destruct (fst (complete_translation hg) _ _ _ hA _ hΓ') as [T [A' hA']].
+    assert (th : type_head (head (sSort s))) by constructor.
+    destruct (choose_type hg th hA') as [T' [[A'' hA''] hh]].
+    destruct T' ; try (now inversion hh).
+    exists (Γ' ,, A''). now eapply trans_snoc.
+Defined. 
+
 End Translation.
 
 Section Consistency.
@@ -2702,7 +2699,7 @@ Proof.
         * repeat econstructor.
         * auto with arith.
   }
-  destruct (complete_translation hg) as [[_ thm] _].
+  destruct (complete_translation hg) as [thm _].
   destruct (thm _ _ _ h [] ltac:(repeat constructor)) as [A' [t'' h'']].
   destruct (change_type hg h'' h') as [t' [_ ht']].
   exists t'. assumption.
