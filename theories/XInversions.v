@@ -13,7 +13,7 @@ Open Scope x_scope.
  *)
 Existing Instance Sorts.type_in_type.
 
-Notation Ty := (sSort tt).
+Notation Ty := (@sSort Sorts.type_in_type tt).
 
 Lemma inversionProd :
   forall {Σ Γ n A B T},

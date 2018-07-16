@@ -10,7 +10,7 @@ From Translation Require Import util Quotes Sorts SAst SLiftSubst SCommon
 (* For efficiency reasons we use type in type for examples. *)
 Existing Instance Sorts.type_in_type.
 
-Notation Ty := (sSort tt).
+Notation Ty := (@sSort Sorts.type_in_type tt).
 
 (* Some admissible lemmata to do memoisation in a way. *)
 Lemma type_Prod' :
