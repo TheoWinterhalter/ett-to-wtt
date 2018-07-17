@@ -244,6 +244,27 @@ Tactic Notation "erewrite_assumption" "by" tactic(tac) :=
   end.
 
 
+
+Ltac ncase exp :=
+  let e := fresh "e" in
+  case_eq exp ; intro e ; bprop e ; try myomega.
+
+Ltac nat_case :=
+  match goal with
+  | |- context [ ?n <=? ?m ] => ncase (n <=? m)
+  | |- context [ ?n <? ?m ] => ncase (n <? m)
+  | |- context [ ?n =? ?m ] => ncase (n =? m)
+  | |- context [ ?n ?= ?m ] => ncase (n ?= m)
+  end.
+
+Tactic Notation "hyp" "rewrite" :=
+  match goal with
+  | H : _ |- _ => rewrite H by myomega
+  end.
+
+
+
+
 Definition rev {A} (l : list A) : list A :=
   let fix aux (l : list A) (acc : list A) : list A :=
     match l with

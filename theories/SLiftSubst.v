@@ -242,25 +242,13 @@ Definition closed t := closed_above 0 t = true.
 
 (* Lemmata regarding lifts and subst *)
 
-Ltac ncase exp :=
-  let e := fresh "e" in
-  case_eq exp ; intro e ; bprop e ; try myomega.
-
-Ltac nat_case :=
-  match goal with
-  | |- context [ ?n <=? ?m ] => ncase (n <=? m)
-  | |- context [ ?n <? ?m ] => ncase (n <? m)
-  | |- context [ ?n =? ?m ] => ncase (n =? m)
-  | |- context [ ?n ?= ?m ] => ncase (n ?= m)
-  end.
-
 Lemma lift_lift :
   forall t n m k,
     lift n k (lift m k t) = lift (n+m) k t.
 Proof.
   intros t.
-  induction t ;
-  intros nn mm kk ; try (cbn ; f_equal ; easy).
+  induction t ; intros nn mm kk.
+  all: try (cbn ; f_equal ; hyp rewrite ; reflexivity).
   cbn. nat_case.
   - cbn. nat_case.
     f_equal. myomega.
@@ -272,11 +260,12 @@ Lemma liftP1 :
 Proof.
   intro t.
   induction t ; intros i j k.
-  all: try (cbn ; f_equal ; easy).
+  all: try (cbn ; f_equal ; hyp rewrite ; reflexivity).
   all: try (cbn ; f_equal ;
             try replace (S (S (S (j+i))))%nat with (j + (S (S (S i))))%nat by myomega ;
             try replace (S (S (j+i)))%nat with (j + (S (S i)))%nat by myomega ;
-            try replace (S (j+i))%nat with (j + (S i))%nat by myomega ; easy).
+            try replace (S (j+i))%nat with (j + (S i))%nat by myomega ;
+            hyp rewrite ; reflexivity).
   cbn. nat_case.
   - cbn. nat_case.
     f_equal. myomega.
@@ -291,11 +280,12 @@ Lemma liftP2 :
 Proof.
   intro t.
   induction t ; intros i j k m H.
-  all: try (cbn ; f_equal ; easy).
+  all: try (cbn ; f_equal ; hyp rewrite ; reflexivity).
   all: try (cbn ; f_equal ;
             try replace (S (S (S (j + m))))%nat with (j + (S (S (S m))))%nat by myomega ;
             try replace (S (S (j + m)))%nat with (j + (S (S m)))%nat by myomega ;
-            try replace (S (j + m))%nat with (j + (S m))%nat by myomega ; easy).
+            try replace (S (j + m))%nat with (j + (S m))%nat by myomega ;
+            hyp rewrite ; reflexivity).
   cbn. nat_case.
   - nat_case.
     + cbn. nat_case. nat_case.
@@ -312,7 +302,7 @@ Lemma lift_subst :
 Proof.
   intro t.
   induction t ; intros m u.
-  all: try (cbn ; f_equal ; easy).
+  all: try (cbn ; f_equal ; hyp rewrite ; reflexivity).
   cbn. nat_case.
   - cbn. nat_case. reflexivity.
   - cbn. nat_case. reflexivity.
@@ -337,9 +327,9 @@ Lemma liftP3 :
     lift j k (lift n i t) = lift (j+n) i t.
 Proof.
   intro t. induction t ; intros i k j m ilk kl.
-  all: try (cbn ; f_equal ; easy).
+  all: try (cbn ; f_equal ; hyp rewrite ; reflexivity).
   cbn. nat_case.
-  - cbn. nat_case. f_equal. omega.
+  - cbn. nat_case. f_equal. myomega.
   - cbn. nat_case. reflexivity.
 Defined.
 
@@ -352,7 +342,7 @@ Proof.
             try replace (S (S (S (j + i)))) with ((S (S (S j))) + i)%nat by myomega ;
             try replace (S (S (j + i))) with ((S (S j)) + i)%nat by myomega ;
             try replace (S (j + i)) with ((S j) + i)%nat by myomega ;
-            easy).
+            hyp rewrite ; reflexivity).
   cbn - [Nat.leb]. nat_case.
   - cbn. nat_case. cbn. nat_case.
     nat_case. f_equal. myomega.
@@ -372,7 +362,8 @@ Proof.
   all: try (cbn ; f_equal ;
             try replace (S (S (S (j + m))))%nat with (j + (S (S (S m))))%nat by myomega ;
             try replace (S (S (j + m)))%nat with (j + (S (S m)))%nat by myomega ;
-            try replace (S (j + m))%nat with (j + (S m))%nat by myomega ; easy).
+            try replace (S (j + m))%nat with (j + (S m))%nat by myomega ;
+            hyp rewrite ; reflexivity).
   cbn. nat_case.
   - cbn. nat_case.
     + nat_case. subst. rewrite liftP3 by myomega. reflexivity.
@@ -391,7 +382,8 @@ Proof.
   all: try (cbn ; f_equal ;
             try replace (S (S (S (j + m))))%nat with (j + (S (S (S m))))%nat by myomega ;
             try replace (S (S (j + m)))%nat with (j + (S (S m)))%nat by myomega ;
-            try replace (S (j + m))%nat with (j + (S m))%nat by myomega ; easy).
+            try replace (S (j + m))%nat with (j + (S m))%nat by myomega ;
+            hyp rewrite ; reflexivity).
   cbn. nat_case.
   - cbn. nat_case. reflexivity.
   - cbn. nat_case. reflexivity.
@@ -406,7 +398,7 @@ Proof.
             try replace (S (S (S (i + j))))%nat with ((S (S (S i))) + j)%nat by myomega ;
             try replace (S (S (i + j)))%nat with ((S (S i)) + j)%nat by myomega ;
             try replace (S (i + j))%nat with ((S i) + j)%nat by myomega ;
-            easy
+            hyp rewrite ; reflexivity
            ).
   cbn - [Nat.compare]. nat_case.
   - subst. nat_case. cbn. nat_case.
@@ -480,7 +472,7 @@ Defined.
 Ltac erewrite_close_above_subst :=
   match goal with
   | H : forall u l n, _ -> _ -> _ -> _ = _ |- _ =>
-    erewrite H by (try myomega ; try easy)
+    erewrite H by (myomega || reflexivity || assumption)
   end.
 
 Lemma closed_above_subst :
@@ -552,7 +544,7 @@ Ltac erewrite_close_above_lift_id :=
 Ltac erewrite_close_above_subst :=
   match goal with
   | H : forall u l n, _ -> _ -> _ -> _ = _ |- _ =>
-    erewrite H by (try myomega ; try easy)
+    erewrite H by (myomega || eassumption)
   end.
 
 Ltac erewrite_close_above_subst_id :=
