@@ -339,11 +339,11 @@ Print itt_vrev.
 
 Definition tc_vrev : tsl_result term :=
   Eval lazy in
-  tsl_rec (2 ^ 18) Σ [] itt_vrev empty.
+  tsl_rec (2 ^ 18) Σ [] itt_vrev axoc.
 
 Print tc_vrev.
 
-Make Definition coq_vrev :=
+Fail Make Definition coq_vrev :=
   ltac:(
     let t := eval lazy in
              (match tc_vrev with
