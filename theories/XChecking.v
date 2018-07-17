@@ -41,7 +41,7 @@ Proof.
   assert (hwA : wf Σ (Γ ,, A)).
   { econstructor ; eassumption. }
   specialize (ht hwA).
-  destruct (istype_type xhg hwA ht) as [[] hB].
+  pose (istype_type xhg hwA ht).
   eapply type_Lambda ; eassumption.
 Defined.
 
@@ -54,8 +54,8 @@ Lemma xtype_App' :
     Σ ;;; Γ |-x sApp t A B u : (B{0 := u})%s.
 Proof.
   intros Σ Γ n t A B u xhg hw ht hu.
-  destruct (istype_type xhg hw hu) as [[] hA].
-  destruct (istype_type xhg hw ht) as [[] hPi].
+  pose proof (istype_type xhg hw hu) as hA.
+  pose proof (istype_type xhg hw ht) as hPi.
   assert (hwA : wf Σ (Γ ,, A)).
   { econstructor ; eassumption. }
   destruct (inversionProd hPi) as [[? ?] ?].
@@ -85,7 +85,7 @@ Lemma xtype_Eq' :
     Σ ;;; Γ |-x sEq A u v : Ty.
 Proof.
   intros Σ Γ A u v xhg hw hu hv.
-  destruct (istype_type xhg hw hu) as [[] hA].
+  pose proof (istype_type xhg hw hu) as hA.
   eapply type_Eq with (s := tt) ; assumption.
 Defined.
 
@@ -97,7 +97,7 @@ Lemma xtype_Refl' :
     Σ ;;; Γ |-x sRefl A u : sEq A u u.
 Proof.
   intros Σ Γ A u xhg hw hu.
-  destruct (istype_type xhg hw hu) as [[] hA].
+  pose proof (istype_type xhg hw hu) as hA.
   eapply type_Refl ; eassumption.
 Defined.
 
@@ -138,7 +138,7 @@ Ltac xglob Σi :=
   | eapply xtype_glob_cons' ; [
       idtac
     | repeat (lazy - [Σi]; econstructor) ; lazy - [Σi]; try discriminate
-    | intro ; exists tt
+    | intro
     ]
   ].
 

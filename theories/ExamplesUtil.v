@@ -363,7 +363,7 @@ Lemma close_goal_ex' :
     ∑ t', Σ ;;; Γ |-x t' : T.
 Proof.
   intros Σ Γ t T hg ht.
-  destruct (istype_type hg (wf_nil _) ht) as [[] hPi].
+  pose proof (istype_type hg (wf_nil _) ht) as hPi.
   destruct (inversionProds hPi) as [hw hT].
   eapply close_goal_ex ; eassumption.
 Defined.

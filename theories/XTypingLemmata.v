@@ -9,12 +9,16 @@ Require Import util Sorts SAst SLiftSubst SCommon ITyping ITypingLemmata
 
 Open Scope x_scope.
 
+(* For efficiency reasons we use type in type for examples. *)
+Existing Instance Sorts.type_in_type.
+
+Notation Ty := (@sSort Sorts.type_in_type tt).
+
 Section Conv.
 
-Context `{Sort_notion : Sorts.notion}.
-
 Definition isType (Σ : sglobal_context) (Γ : scontext) (t : sterm) :=
-  ∑ s, Σ ;;; Γ |-x t : sSort s.
+  (* ∑ s, Σ ;;; Γ |-x t : sSort s. *)
+  Σ ;;; Γ |-x t : Ty.
 
 Inductive xtype_glob : sglobal_context -> Type :=
 | xtype_glob_nil : xtype_glob []
@@ -104,8 +108,7 @@ Corollary weak_glob_isType :
     isType (d::Σ) Γ A.
 Proof.
   intros Σ Γ A h d hf.
-  destruct h as [s h].
-  exists s. eapply weak_glob_type ; eassumption.
+  eapply weak_glob_type ; eassumption.
 Defined.
 
 Fact typed_ax_type :
@@ -155,9 +158,9 @@ Fact lift_ax_type :
       forall n k, lift n k ty = ty.
 Proof.
   intros Σ hg id ty isd n k.
-  destruct (typed_ax_type hg isd).
   eapply closed_lift.
-  eapply type_ctxempty_closed. eassumption.
+  eapply type_ctxempty_closed.
+  eapply typed_ax_type ; eassumption.
 Defined.
 
 Fact subst_ax_type :
@@ -168,16 +171,14 @@ Fact subst_ax_type :
       forall n u, ty{ n := u } = ty.
 Proof.
   intros Σ hg id ty isd n k.
-  destruct (typed_ax_type hg isd).
   eapply closed_subst.
-  eapply type_ctxempty_closed. eassumption.
+  eapply type_ctxempty_closed.
+  eapply typed_ax_type ; eassumption.
 Defined.
 
 End Conv.
 
 Section Lift.
-
-Context `{Sort_notion : Sorts.notion}.
 
 Ltac ih h :=
   lazymatch goal with
@@ -271,7 +272,7 @@ with cong_lift {Σ Γ Δ Ξ t1 t2 A} (h : Σ ;;; Γ ,,, Ξ |-x t1 = t2 : A) {str
   = lift #|Δ| #|Ξ| t2 : lift #|Δ| #|Ξ| A
 .
 Proof.
-  - { dependent destruction h ; intros hΣ (* hwf *).
+  - { dependent destruction h ; intros hΣ.
       - cbn. case_eq (#|Ξ| <=? n) ; intro e ; bprop e.
         + rewrite liftP3 by myomega.
           replace (#|Δ| + S n)%nat with (S (#|Δ| + n)) by myomega.
@@ -286,15 +287,15 @@ Proof.
           * eapply type_Rel.
           * erewrite 2!safe_nth_lt.
             eapply lift_context_ex.
-      - cbn. apply type_Sort.
-      - cbn. eapply type_Prod ; eih.
+      - cbn. apply type_Sort with (s0 := s).
+      - cbn. eapply type_Prod with (s3 := s1) (s4 := s2) ; eih.
       - cbn. eapply type_Lambda ; eih.
       - cbn.
         change (lift #|Δ| #|Ξ| (B {0 := u}))
           with (lift #|Δ| (0 + #|Ξ|) (B { 0 := u })).
         rewrite substP1.
         eapply type_App ; eih.
-      - cbn. eapply type_Sum ; eih.
+      - cbn. eapply type_Sum with (s3 := s1) (s4 := s2) ; eih.
       - cbn. eapply type_Pair ; eih.
         change (lift #|Δ| #|Ξ| (B {0 := u}))
           with (lift #|Δ| (0 + #|Ξ|) (B { 0 := u })).
@@ -304,14 +305,14 @@ Proof.
         change (#|Ξ|) with (0 + #|Ξ|)%nat.
         rewrite substP1. cbn.
         eapply type_Pi2 ; eih.
-      - cbn. apply type_Eq ; eih.
+      - cbn. apply type_Eq with (s0 := s) ; eih.
       - cbn. eapply type_Refl ; eih.
       - cbn. eapply type_Ax.
         erewrite lift_ax_type by eassumption. assumption.
       - eapply type_conv ; eih.
     }
 
-  - { intros hg (* hwf *). dependent destruction h.
+  - { intros hg. dependent destruction h.
       - apply eq_reflexivity. apply type_lift ; assumption.
       - apply eq_symmetry. eapply cong_lift ; assumption.
       - eapply eq_transitivity ; eih.
@@ -322,14 +323,14 @@ Proof.
         rewrite 2!substP1. cbn.
         eapply eq_beta ; eih.
       - eapply eq_conv ; eih.
-      - cbn. eapply cong_Prod ; eih.
+      - cbn. eapply cong_Prod with (s3 := s1) (s4 := s2) ; eih.
       - cbn. eapply cong_Lambda ; eih.
       - cbn.
         change (lift #|Δ| #|Ξ| (B1 {0 := u1}))
           with (lift #|Δ| (0 + #|Ξ|) (B1 { 0 := u1 })).
         rewrite substP1.
         eapply cong_App ; eih.
-      - cbn. eapply cong_Sum ; eih.
+      - cbn. eapply cong_Sum with (s3 := s1) (s4 := s2) ; eih.
       - cbn. eapply cong_Pair ; eih.
         + change (lift #|Δ| #|Ξ| (B1 {0 := u1}))
             with (lift #|Δ| (0 + #|Ξ|) (B1 { 0 := u1 })).
@@ -345,7 +346,7 @@ Proof.
         change (#|Ξ|) with (0 + #|Ξ|)%nat.
         rewrite !substP1. cbn.
         eapply cong_Pi2 ; eih.
-      - cbn. eapply cong_Eq ; eih.
+      - cbn. eapply cong_Eq with (s0 := s) ; eih.
       - cbn. eapply cong_Refl ; eih.
       - eapply reflection with (e0 := lift #|Δ| #|Ξ| e). eih.
     }
@@ -359,8 +360,6 @@ Defined.
 End Lift.
 
 Section Subst.
-
-Context `{Sort_notion : Sorts.notion}.
 
 Ltac sh h :=
   lazymatch goal with
@@ -507,15 +506,15 @@ Proof.
           * f_equal.
             erewrite safe_nth_lt.
             eapply safe_nth_subst_context.
-      - cbn. apply type_Sort.
-      - cbn. eapply type_Prod ; esh.
+      - cbn. apply type_Sort with (s0 := s).
+      - cbn. eapply type_Prod with (s3 := s1) (s4 := s2) ; esh.
       - cbn. eapply type_Lambda ; esh.
       - cbn.
         change ((B0 {0 := u0}) {#|Δ| := u})
           with ((B0 {0 := u0}) {0 + #|Δ| := u}).
         rewrite substP4. cbn.
         eapply type_App ; esh.
-      - cbn. eapply type_Sum ; esh.
+      - cbn. eapply type_Sum with (s3 := s1) (s4 := s2) ; esh.
       - cbn. eapply type_Pair ; esh.
         change (#|Δ|) with (0 + #|Δ|)%nat.
         rewrite substP4. reflexivity.
@@ -524,7 +523,7 @@ Proof.
         change (#|Δ|) with (0 + #|Δ|)%nat.
         rewrite substP4. cbn.
         eapply type_Pi2 ; esh.
-      - cbn. eapply type_Eq ; esh.
+      - cbn. eapply type_Eq with (s0 := s) ; esh.
       - cbn. eapply type_Refl ; esh.
       - cbn. erewrite subst_ax_type by eassumption.
         eapply type_Ax.
@@ -543,12 +542,12 @@ Proof.
         rewrite 2!substP4. cbn.
         eapply eq_beta ; esh.
       - eapply eq_conv ; esh.
-      - cbn. eapply cong_Prod ; esh.
+      - cbn. eapply cong_Prod with (s3 := s1) (s4 := s2) ; esh.
       - cbn. eapply cong_Lambda ; esh.
       - cbn. change #|Δ| with (0 + #|Δ|)%nat.
         rewrite substP4. cbn.
         eapply cong_App ; esh.
-      - cbn. eapply cong_Sum ; esh.
+      - cbn. eapply cong_Sum with (s3 := s1) (s4 := s2) ; esh.
       - cbn. eapply cong_Pair ; esh.
         + change (#|Δ|) with (0 + #|Δ|)%nat.
           rewrite substP4. reflexivity.
@@ -561,7 +560,7 @@ Proof.
         change (#|Δ|) with (0 + #|Δ|)%nat.
         rewrite substP4. cbn.
         eapply cong_Pi2 ; esh.
-      - cbn. eapply cong_Eq ; esh.
+      - cbn. eapply cong_Eq with (s0 := s) ; esh.
       - cbn. eapply cong_Refl ; esh.
       - eapply reflection with (e0 := e{#|Δ| := u}). esh.
     }
@@ -575,8 +574,6 @@ End Subst.
 
 Section TypeType.
 
-Context `{Sort_notion : Sorts.notion}.
-
 (* TODO Move *)
 Corollary typing_lift01 :
   forall {Σ Γ t A B s},
@@ -586,7 +583,7 @@ Corollary typing_lift01 :
     Σ ;;; Γ ,, B |-x lift0 1 t : lift0 1 A.
 Proof.
   intros Σ Γ t A B s hg ht hB.
-  apply (@type_lift _ _ _ [ B ] nil _ _ ht hg).
+  apply (@type_lift _ _ [ B ] nil _ _ ht hg).
 Defined.
 
 (* TODO Move *)
@@ -606,20 +603,20 @@ Lemma istype_type :
     xtype_glob Σ ->
     wf Σ Γ ->
     Σ ;;; Γ |-x t : T ->
-    ∑ s, Σ ;;; Γ |-x T : sSort s.
+    Σ ;;; Γ |-x T : Ty.
 Proof.
   intros Σ Γ t T xhg w h.
   induction h.
   - revert n isdecl. induction w ; intros n isdecl.
     + cbn in isdecl. easy.
     + destruct n.
-      * cbn.
-        exists s. change (sSort s) with (lift0 1 (sSort s)).
+      * cbn. change Ty with (lift0 1 Ty).
+        destruct s.
         eapply typing_lift01 ; eassumption.
       * assert (isdecl' : n < #|Γ|).
-        -- auto with arith.
-        -- destruct (IHw n isdecl') as [s' hh].
-           exists s'. change (sSort s') with (lift0 1 (sSort s')).
+        -- cbn in isdecl. myomega.
+        -- specialize (IHw n isdecl').
+           change Ty with (lift0 1 Ty).
            (* Take out as a lemma? *)
            assert (eq : forall t, lift0 (S (S n)) t = lift0 1 (lift0 (S n) t)).
            { intro t'. rewrite lift_lift. reflexivity. }
@@ -628,29 +625,29 @@ Proof.
            ++ assumption.
            ++ erewrite eq_safe_nth. eassumption.
            ++ eassumption.
-  - eexists. eapply type_Sort.
-  - eexists. apply type_Sort.
-  - eexists. eapply type_Prod ; eassumption.
-  - exists s2. change (sSort s2) with ((sSort s2){ 0 := u }).
+  - destruct s. cbn. eapply type_Sort with (s := tt).
+  - cbn. apply type_Sort with (s := tt).
+  - eapply type_Prod with (s3 := s1) (s4 := s2) ; eassumption.
+  - change Ty with (Ty{ 0 := u }).
+    destruct s2.
     eapply typing_subst ; eassumption.
-  - eexists. econstructor.
-  - eexists. econstructor ; eassumption.
-  - eexists. eassumption.
-  - exists s2. change (sSort s2) with ((sSort s2){ 0 := sPi1 A B p }).
+  - econstructor.
+  - eapply type_Sum with (s3 := s1) (s4 := s2) ; eassumption.
+  - destruct s1. eassumption.
+  - change Ty with (Ty{ 0 := sPi1 A B p }).
+    destruct s2.
     eapply typing_subst ; try eassumption.
     econstructor ; eassumption.
-  - eexists. econstructor.
-  - eexists. econstructor ; eassumption.
-  - destruct (typed_ax_type xhg e) as [s hh].
-    exists s. change (sSort s) with (lift #|Γ| #|@nil sterm| (sSort s)).
+  - econstructor.
+  - eapply type_Eq with (s0 := s) ; eassumption.
+  - pose proof (typed_ax_type xhg e) as hh.
+    change Ty with (lift #|Γ| #|@nil sterm| Ty).
     replace ty with (lift #|Γ| #|@nil sterm| ty)
       by (erewrite lift_ax_type by eassumption ; reflexivity).
     eapply meta_ctx_conv.
-    + eapply @type_lift with (Γ := []) (Ξ := []) (Δ := Γ).
-      * assumption.
-      * assumption.
+    + eapply @type_lift with (Γ := []) (Ξ := []) (Δ := Γ) ; assumption.
     + cbn. apply nil_cat.
-  - eexists. eassumption.
+  - destruct s. eassumption.
 Defined.
 
 End TypeType.
