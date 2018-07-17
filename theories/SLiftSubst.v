@@ -255,7 +255,7 @@ Proof.
   - cbn. set (kklmmn := kk <=? mm + n).
     assert (eq' : (kk <=? mm + n) = kklmmn) by reflexivity.
     destruct kklmmn.
-    + auto with arith.
+    + f_equal. myomega.
     + pose (h1 := leb_complete_conv _ _ eq').
       pose (h2 := leb_complete _ _ eq).
       myomega.
