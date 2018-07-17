@@ -166,16 +166,16 @@ Definition ty_vcons :=
   end.
 
 (* vec_rect *)
-(* Quote Definition vec_rect_type := *)
-(*   ltac:(let T := type of @vec_rect in exact T). *)
-(* Definition prety_vec_rect := *)
-(*   Eval lazy in fullquote (2 ^ 18) Σ [] vec_rect_type indt constt cot. *)
-(* Definition ty_vec_rect := *)
-(*   Eval lazy in *)
-(*   match prety_vec_rect with *)
-(*   | Success t => t *)
-(*   | Error _ => sRel 0 *)
-(*   end. *)
+Quote Definition vec_rect_type :=
+  ltac:(let T := type of @vec_rect in exact T).
+Definition prety_vec_rect :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vec_rect_type indt constt cot.
+Definition ty_vec_rect :=
+  Eval lazy in
+  match prety_vec_rect with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
 
 (* add *)
 Quote Definition add_type :=
@@ -193,13 +193,13 @@ Definition ty_add :=
 (* The global context *)
 
 Definition Σi : sglobal_context := [
-  (* decl "vrev_obligation4" ty_obligation4 ; *)
-  (* decl "vrev_obligation3" ty_obligation3 ; *)
-  (* decl "vrev_obligation2" ty_obligation2 ; *)
-  (* decl "vrev_obligation1" ty_obligation1 ; *)
+  decl "vrev_obligation4" ty_obligation4 ;
+  decl "vrev_obligation3" ty_obligation3 ;
+  decl "vrev_obligation2" ty_obligation2 ;
+  decl "vrev_obligation1" ty_obligation1 ;
   decl "vcons_act_obligation" ty_vcons_act_obligation ;
   decl "add" ty_add ;
-  (* decl "vec_rect" ty_vec_rect ; *)
+  decl "vec_rect" ty_vec_rect ;
   decl "vcons" ty_vcons ;
   decl "vnil" ty_vnil ;
   decl "vec" ty_vec ;
@@ -232,11 +232,11 @@ Proof.
   - ittcheck_env.
   - ittcheck_env.
   - ittcheck_env.
-  (* - ittcheck_env. *)
-  (* - ittcheck_env. *)
-  (* - ittcheck_env. *)
-  (* - ittcheck_env. *)
-  (* - ittcheck_env. *)
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
+  - ittcheck_env.
   Unshelve. all: exact nAnon.
 Defined.
 
@@ -256,15 +256,13 @@ Proof.
   - ettcheck_env.
   - ettcheck_env.
   - ettcheck_env.
-  (* - ettcheck_env. *)
-  (* - ettcheck_env. *)
-  (* - ettcheck_env. *)
-  (* - ettcheck_env. *)
-  (* - ettcheck_env. *)
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
+  - ettcheck_env.
   Unshelve. all: exact nAnon.
 Defined.
-
-(* Eval lazy in xhΣi. *)
 
 Fact istrans_nil :
   ctxtrans Σi nil nil.

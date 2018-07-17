@@ -214,28 +214,11 @@ Make Definition coq_vv :=
 
 (*! EXAMPLE 4 *)
 
-(* Fail Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X *)
-(*   := f (vcons a n v). *)
+Fail Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
+  := f (vcons a n v).
 
 Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
   := f {! vcons a n v !}.
-
-(* This version is already not working *)
-(* It now works *)
-(* Definition vcons_act {X} (f : vec nat 1 -> X) (a : nat) (v : vec nat 0) : X *)
-(*   := f (vcons a 0 v). *)
-
-(* Working *)
-(* Definition vcons_act (f : vec nat 1 -> nat) (a : nat) (v : vec nat 0) : nat *)
-(*   := f (vcons a 0 v). *)
-
-(* Now working *)
-(* Definition vcons_act {n} (f : vec nat (S n) -> nat) (a : nat) (v : vec nat n) : nat *)
-(*   := f (vcons a n v). *)
-
-(* Working *)
-(* Definition vcons_act {X : Type} (f : vec nat 1 -> nat) (a : nat) (v : vec nat 0) : nat *)
-(*   := f (vcons a 0 v). *)
 
 Quote Definition vcons_act_term :=
   ltac:(let t := eval unfold vcons_act in @vcons_act in exact t).
@@ -275,15 +258,11 @@ Definition itt_vcons_act : sterm :=
   Eval lazy in
   let '(_ ; t ; _) := type_translation type_vcons_act istrans_nil in t.
 
-Print itt_vcons_act.
-
 Definition tc_vcons_act : tsl_result term :=
   Eval lazy in
   tsl_rec (2 ^ 18) Σ [] itt_vcons_act axoc.
 
-Print tc_vcons_act.
-
-Make Definition coq_vcons_act :=
+Fail Make Definition coq_vcons_act :=
   ltac:(
     let t := eval lazy in
              (match tc_vcons_act with
@@ -293,87 +272,85 @@ Make Definition coq_vcons_act :=
       in exact t
   ).
 
-Print coq_vcons_act.
+(*! EXAMPLE 5 *)
 
-(*! EXAMPLE ?? *)
+Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
+           (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc))
+           n v m acc.
 
-(* Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) := *)
-(*   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))  *)
-(*            (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc)) *)
-(*            n v m acc. *)
+Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
+           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
+           n v m acc.
 
-(* Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) := *)
-(*   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))  *)
-(*            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !}) *)
-(*            n v m acc. *)
+Quote Definition vrev_term :=
+  ltac:(let t := eval unfold vrev in @vrev in exact t).
+Quote Definition vrev_type :=
+  ltac:(let T := type of @vrev in exact T).
 
-(* Quote Definition vrev_term := *)
-(*   ltac:(let t := eval unfold vrev in @vrev in exact t). *)
-(* Quote Definition vrev_type :=  *)
-(*   ltac:(let T := type of @vrev in exact T). *)
+Definition pretm_vrev :=
+  Eval lazy - [Σi] in fullquote (2 ^ 18) Σ [] vrev_term indt constt cot.
+Definition tm_vrev :=
+  Eval lazy - [Σi] in
+  match pretm_vrev with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
 
-(* Definition pretm_vrev := *)
-(*   Eval lazy - [Σi] in fullquote (2 ^ 18) Σ [] vrev_term indt constt cot. *)
-(* Definition tm_vrev := *)
-(*   Eval lazy - [Σi] in  *)
-(*   match pretm_vrev with *)
-(*   | Success t => t *)
-(*   | Error _ => sRel 0 *)
-(*   end. *)
+Definition prety_vrev :=
+  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_type indt constt cot.
+Definition ty_vrev :=
+  Eval lazy in
+  match prety_vrev with
+  | Success t => t
+  | Error _ => sRel 0
+  end.
 
-(* Definition prety_vrev := *)
-(*   Eval lazy in fullquote (2 ^ 18) Σ [] vrev_type indt constt cot. *)
-(* Definition ty_vrev := *)
-(*   Eval lazy in  *)
-(*   match prety_vrev with *)
-(*   | Success t => t *)
-(*   | Error _ => sRel 0 *)
-(*   end. *)
+Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev.
+Proof.
+  unfold tm_vrev, ty_vrev.
+  pose proof xhΣi.
+  ettcheck Σi.
+  - eapply reflection.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation1") | assumption |].
+    simpl. ettcheck Σi.
+  - eapply reflection.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation2") | assumption |].
+    simpl. ettcheck Σi.
+  - eapply reflection.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation3") | assumption |].
+    simpl. ettcheck Σi.
+  - eapply reflection.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation4") | assumption |].
+    simpl. ettcheck Σi.
+  Unshelve. exact nAnon.
+Defined.
 
-(* Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev. *)
-(* Proof. *)
-(*   unfold tm_vrev, ty_vrev. *)
-(*   pose proof xhΣi. *)
-(*   ettcheck Σi. *)
-(*   - eapply reflection. *)
-(*     unshelve eapply close_goal *)
-(*     ; [ exact (sAx "vrev_obligation1") | assumption |]. *)
-(*     simpl. ettcheck Σi.  *)
-(*   - eapply reflection. *)
-(*     unshelve eapply close_goal *)
-(*     ; [ exact (sAx "vrev_obligation2") | assumption |]. *)
-(*     simpl. ettcheck Σi. *)
-(*   - eapply reflection. *)
-(*     unshelve eapply close_goal *)
-(*     ; [ exact (sAx "vrev_obligation3") | assumption |]. *)
-(*     simpl. ettcheck Σi. *)
-(*   - eapply reflection. *)
-(*     unshelve eapply close_goal *)
-(*     ; [ exact (sAx "vrev_obligation4") | assumption |]. *)
-(*     simpl. ettcheck Σi. *)
-(*   Unshelve. exact nAnon. *)
-(* Defined. *)
+Definition itt_vrev : sterm :=
+  Eval lazy in
+  let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t.
 
-(* Definition itt_vrev : sterm := *)
-(*   Eval lazy in *)
-(*   let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t. *)
+Print itt_vrev.
 
-(* (* Print itt_vrev. *) *)
+Definition tc_vrev : tsl_result term :=
+  Eval lazy in
+  tsl_rec (2 ^ 18) Σ [] itt_vrev empty.
 
-(* Definition tc_vrev : tsl_result term := *)
-(*   Eval lazy in *)
-(*   tsl_rec (2 ^ 18) Σ [] itt_vrev empty. *)
+Print tc_vrev.
 
-(* (* Print tc_vrev. *) *)
+Make Definition coq_vrev :=
+  ltac:(
+    let t := eval lazy in
+             (match tc_vrev with
+              | FinalTranslation.Success _ t => t
+              | _ => tRel 0
+              end)
+      in exact t
+  ).
 
-(* Make Definition coq_vrev := *)
-(*   ltac:( *)
-(*     let t := eval lazy in *)
-(*              (match tc_vrev with *)
-(*               | FinalTranslation.Success _ t => t *)
-(*               | _ => tRel 0 *)
-(*               end) *)
-(*       in exact t *)
-(*   ). *)
-
-(* (* Print coq_vrev. *) *)
+Print coq_vrev.
