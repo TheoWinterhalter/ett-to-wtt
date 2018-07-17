@@ -242,6 +242,18 @@ Definition closed t := closed_above 0 t = true.
 
 (* Lemmata regarding lifts and subst *)
 
+Ltac ncase exp :=
+  let e := fresh "e" in
+  case_eq exp ; intro e ; bprop e ; try myomega.
+
+Ltac nat_case :=
+  match goal with
+  | |- context [ ?n <=? ?m ] => ncase (n <=? m)
+  | |- context [ ?n <? ?m ] => ncase (n <? m)
+  | |- context [ ?n =? ?m ] => ncase (n =? m)
+  | |- context [ ?n ?= ?m ] => ncase (n ?= m)
+  end.
+
 Lemma lift_lift :
   forall t n m k,
     lift n k (lift m k t) = lift (n+m) k t.
@@ -249,17 +261,10 @@ Proof.
   intros t.
   induction t ;
   intros nn mm kk ; try (cbn ; f_equal ; easy).
-  cbn. set (kkln := Nat.leb kk n).
-  assert (eq : Nat.leb kk n = kkln) by reflexivity.
-  destruct kkln.
-  - cbn. set (kklmmn := kk <=? mm + n).
-    assert (eq' : (kk <=? mm + n) = kklmmn) by reflexivity.
-    destruct kklmmn.
-    + f_equal. myomega.
-    + pose (h1 := leb_complete_conv _ _ eq').
-      pose (h2 := leb_complete _ _ eq).
-      myomega.
-  - cbn. rewrite eq. reflexivity.
+  cbn. nat_case.
+  - cbn. nat_case.
+    f_equal. myomega.
+  - cbn. rewrite e. reflexivity.
 Defined.
 
 Lemma liftP1 :
@@ -272,22 +277,11 @@ Proof.
             try replace (S (S (S (j+i))))%nat with (j + (S (S (S i))))%nat by myomega ;
             try replace (S (S (j+i)))%nat with (j + (S (S i)))%nat by myomega ;
             try replace (S (j+i))%nat with (j + (S i))%nat by myomega ; easy).
-  cbn. set (iln := i <=? n). assert (eq : (i <=? n) = iln) by reflexivity.
-  destruct iln.
-  + cbn. set (iln := j + i <=? j + n).
-    assert (eq' : (j + i <=? j + n) = iln) by reflexivity.
-    destruct iln.
-    * f_equal. myomega.
-    * pose (h1 := leb_complete_conv _ _ eq').
-      pose (h2 := leb_complete _ _ eq).
-      myomega.
-  + cbn.
-    assert (eq' : j + i <=? n = false).
-    { apply leb_correct_conv.
-      pose (h1 := leb_complete_conv _ _ eq).
-      myomega.
-    }
-    rewrite eq'. reflexivity.
+  cbn. nat_case.
+  - cbn. nat_case.
+    f_equal. myomega.
+  - cbn. nat_case.
+    reflexivity.
 Defined.
 
 Lemma liftP2 :
@@ -302,52 +296,14 @@ Proof.
             try replace (S (S (S (j + m))))%nat with (j + (S (S (S m))))%nat by myomega ;
             try replace (S (S (j + m)))%nat with (j + (S (S m)))%nat by myomega ;
             try replace (S (j + m))%nat with (j + (S m))%nat by myomega ; easy).
-  cbn. set (iln := i <=? n). assert (eq : (i <=? n) = iln) by reflexivity.
-  set (mln := m <=? n). assert (eq' : (m <=? n) = mln) by reflexivity.
-  destruct iln.
-  + pose proof (leb_complete _ _ eq).
-    destruct mln.
-    * pose proof (leb_complete _ _ eq').
-      cbn.
-      assert (eq1 : j + m <=? j + n = true).
-      { apply leb_correct.
-        myomega.
-      }
-      assert (eq2 : i <=? k + n = true).
-      { apply leb_correct.
-        myomega.
-      }
-      rewrite eq1, eq2. f_equal. myomega.
-    * pose proof (leb_complete_conv _ _ eq').
-      cbn.
-      assert (eq1 : j + m <=? j + n = false).
-      { apply leb_correct_conv.
-        myomega.
-      }
-      rewrite eq1, eq. reflexivity.
-  + pose proof (leb_complete_conv _ _ eq).
-    destruct mln.
-    * pose proof (leb_complete _ _ eq').
-      cbn.
-      set (jmln := (j + m <=? n)).
-      assert (eq0 : (j + m <=? n) = jmln) by reflexivity.
-      set (ilkn := (i <=? k + n)).
-      assert (eq1 : (i <=? k + n) = ilkn) by reflexivity.
-      destruct jmln.
-      -- pose proof (leb_complete _ _ eq0).
-         destruct ilkn.
-         ++ pose proof (leb_complete _ _ eq1).
-            myomega.
-         ++ reflexivity.
-      -- pose proof (leb_complete_conv _ _ eq0).
-         myomega.
-    * cbn. rewrite eq.
-      set (jmln := (j + m <=? n)).
-      assert (eq0 : (j + m <=? n) = jmln) by reflexivity.
-      destruct jmln.
-      -- pose proof (leb_complete _ _ eq0).
-         myomega.
-      -- reflexivity.
+  cbn. nat_case.
+  - nat_case.
+    + cbn. nat_case. nat_case.
+      f_equal. myomega.
+    + cbn. nat_case. nat_case.
+      reflexivity.
+  - cbn. nat_case. nat_case.
+    cbn. nat_case. reflexivity.
 Defined.
 
 Lemma lift_subst :
@@ -357,23 +313,9 @@ Proof.
   intro t.
   induction t ; intros m u.
   all: try (cbn ; f_equal ; easy).
-  cbn. set (mln := m <=? n).
-  assert (eq : (m <=? n) = mln) by reflexivity.
-  destruct mln.
-  + cbn.
-    assert (eq' : (m ?= S n) = Lt).
-    { apply Nat.compare_lt_iff.
-      pose (h := leb_complete _ _ eq).
-      myomega.
-    }
-    rewrite eq'. reflexivity.
-  + cbn.
-    assert (eq' : (m ?= n) = Gt).
-    { apply Nat.compare_gt_iff.
-      pose (h := leb_complete_conv _ _ eq).
-      myomega.
-    }
-    rewrite eq'. reflexivity.
+  cbn. nat_case.
+  - cbn. nat_case. reflexivity.
+  - cbn. nat_case. reflexivity.
 Defined.
 
 Lemma lift00 :
@@ -396,13 +338,9 @@ Lemma liftP3 :
 Proof.
   intro t. induction t ; intros i k j m ilk kl.
   all: try (cbn ; f_equal ; easy).
-  cbn. case_eq (i <=? n).
-  + intro iln. cbn. bprop iln.
-    assert (eq : (k <=? m + n) = true) by (propb ; myomega).
-    rewrite eq. f_equal. myomega.
-  + intro nli. bprop nli. cbn.
-    assert (eq : (k <=? n) = false) by (propb ; myomega).
-    rewrite eq. reflexivity.
+  cbn. nat_case.
+  - cbn. nat_case. f_equal. omega.
+  - cbn. nat_case. reflexivity.
 Defined.
 
 Lemma substP1 :
@@ -415,29 +353,13 @@ Proof.
             try replace (S (S (j + i))) with ((S (S j)) + i)%nat by myomega ;
             try replace (S (j + i)) with ((S j) + i)%nat by myomega ;
             easy).
-  cbn. case_eq (j ?= n) ; intro e ; bprop e.
-  - subst. destruct n.
-    + cbn. rewrite !lift00. reflexivity.
-    + assert (e' : (S n + i) <=? n = false) by (propb ; myomega).
-      rewrite e'. cbn.
-      assert (e2 : (n ?= n) = Eq) by (propb ; myomega).
-      rewrite e2. replace (S (n + i)) with ((S n) + i)%nat by myomega.
-      rewrite liftP2 by myomega. reflexivity.
-  - destruct n.
-    + myomega.
-    + case_eq (j + i <=? n) ; intro e1 ; bprop e1.
-      * cbn. rewrite e1.
-        assert (e3 : j ?= k + S n = Lt) by (propb ; myomega).
-        rewrite e3. replace (k + S n)%nat with (S (k + n)) by myomega.
-        reflexivity.
-      * cbn. rewrite e1. rewrite e. reflexivity.
-  - destruct n.
-    + cbn. assert (e1 : j + i <=? 0 = false) by (propb ; myomega).
-      rewrite e1. rewrite e. reflexivity.
-    + assert (e1 : j + i <=? n = false) by (propb ; myomega).
-      rewrite e1. cbn.
-      assert (e2 : j + i <=? S n = false) by (propb ; myomega).
-      rewrite e2. rewrite e. reflexivity.
+  cbn - [Nat.leb]. nat_case.
+  - cbn. nat_case. cbn. nat_case.
+    nat_case. f_equal. myomega.
+  - cbn. nat_case.
+    + subst. apply liftP2. myomega.
+    + cbn. nat_case. reflexivity.
+    + cbn. nat_case. reflexivity.
 Defined.
 
 Lemma substP2 :
@@ -451,53 +373,12 @@ Proof.
             try replace (S (S (S (j + m))))%nat with (j + (S (S (S m))))%nat by myomega ;
             try replace (S (S (j + m)))%nat with (j + (S (S m)))%nat by myomega ;
             try replace (S (j + m))%nat with (j + (S m))%nat by myomega ; easy).
-  cbn.
-  set (iln := i <=? n). assert (eq0 : (i <=? n) = iln) by reflexivity.
-  set (men := m ?= n). assert (eq1 : (m ?= n) = men) by reflexivity.
-  destruct iln.
-  + pose proof (leb_complete _ _ eq0).
-    destruct men.
-    * pose proof (Nat.compare_eq _ _ eq1).
-      subst. cbn.
-      rewrite Nat.compare_refl.
-      now rewrite liftP3 by myomega.
-    * pose proof (nat_compare_Lt_lt _ _ eq1).
-      cbn.
-      assert (eq2 : i <=? Init.Nat.pred n = true).
-      { apply leb_correct. myomega. }
-      rewrite eq2.
-      assert (eq3 : (j + m ?= j + n) = Lt).
-      { apply nat_compare_lt. myomega. }
-      rewrite eq3.
-      f_equal. myomega.
-    * pose proof (nat_compare_Gt_gt _ _ eq1).
-      cbn. rewrite eq0.
-      assert (eq3 : (j + m ?= j + n) = Gt).
-      { apply nat_compare_gt. myomega. }
-      now rewrite eq3.
-  + pose proof (leb_complete_conv _ _ eq0).
-    destruct men.
-    * pose proof (Nat.compare_eq _ _ eq1).
-      subst. cbn.
-      set (jnen := (j + n ?= n)).
-      assert (eq2 : (j + n ?= n) = jnen) by reflexivity.
-      destruct jnen.
-      -- pose proof (Nat.compare_eq _ _ eq2).
-         now rewrite liftP3.
-      -- pose proof (nat_compare_Lt_lt _ _ eq2).
-         myomega.
-      -- pose proof (nat_compare_Gt_gt _ _ eq2).
-         myomega.
-    * pose proof (nat_compare_Lt_lt _ _ eq1).
-      myomega.
-    * pose proof (nat_compare_Gt_gt _ _ eq1).
-      cbn. set (jmen := (j + m ?= n)).
-      assert (eq2 : (j + m ?= n) = jmen) by reflexivity.
-      destruct jmen.
-      -- pose proof (Nat.compare_eq _ _ eq2). myomega.
-      -- pose proof (nat_compare_Lt_lt _ _ eq2). myomega.
-      -- pose proof (nat_compare_Gt_gt _ _ eq2).
-         rewrite eq0. reflexivity.
+  cbn. nat_case.
+  - cbn. nat_case.
+    + nat_case. subst. rewrite liftP3 by myomega. reflexivity.
+    + nat_case. cbn. nat_case. f_equal. myomega.
+    + nat_case. cbn. nat_case. reflexivity.
+  - cbn. nat_case. nat_case. cbn. nat_case. reflexivity.
 Defined.
 
 Lemma substP3 :
@@ -511,13 +392,9 @@ Proof.
             try replace (S (S (S (j + m))))%nat with (j + (S (S (S m))))%nat by myomega ;
             try replace (S (S (j + m)))%nat with (j + (S (S m)))%nat by myomega ;
             try replace (S (j + m))%nat with (j + (S m))%nat by myomega ; easy).
-  cbn. case_eq (i <=? n) ; intro e0 ; bprop e0.
-  - cbn. case_eq (k ?= S (m+n)) ; intro e2 ; bprop e2.
-    + myomega.
-    + reflexivity.
-    + myomega.
-  - cbn. assert (e2 : k ?= n = Gt) by (propb ; myomega).
-    rewrite e2. reflexivity.
+  cbn. nat_case.
+  - cbn. nat_case. reflexivity.
+  - cbn. nat_case. reflexivity.
 Defined.
 
 Lemma substP4 :
@@ -531,28 +408,15 @@ Proof.
             try replace (S (i + j))%nat with ((S i) + j)%nat by myomega ;
             easy
            ).
-  cbn. case_eq (i ?= n) ; intro e0 ; bprop e0.
-  - subst. destruct n.
-    + cbn. rewrite 2!lift00. reflexivity.
-    + assert (e1 : (S n + j ?= n) = Gt) by (propb ; myomega).
-      rewrite e1. cbn.
-      assert (e2 : (n ?= n) = Eq) by (propb ; myomega).
-      rewrite e2. rewrite <- substP2 by myomega. reflexivity.
-  - destruct n.
-    + myomega.
-    + case_eq (i + j ?= n) ; intro e2 ; bprop e2.
-      * cbn. rewrite e2. rewrite substP3 by myomega. reflexivity.
-      * cbn. rewrite e2.
-        assert (e4 : (i ?= n) = Lt) by (propb ; myomega).
-        rewrite e4. reflexivity.
-      * cbn. rewrite e2. rewrite e0. reflexivity.
-  - destruct n.
-    + cbn. assert (e2 : (i + j ?= 0) = Gt) by (propb ; myomega).
-      rewrite e2. rewrite e0. reflexivity.
-    + assert (e2 : (i + j ?= n) = Gt) by (propb ; myomega).
-      rewrite e2. cbn.
-      assert (e3 : (i + j ?= S n) = Gt) by (propb ; myomega).
-      rewrite e3. rewrite e0. reflexivity.
+  cbn - [Nat.compare]. nat_case.
+  - subst. nat_case. cbn. nat_case.
+    rewrite substP2 by myomega. reflexivity.
+  - cbn - [Nat.compare]. nat_case.
+    + nat_case. rewrite substP3 by myomega. reflexivity.
+    + nat_case. cbn. nat_case. reflexivity.
+    + nat_case. cbn. nat_case. reflexivity.
+  - cbn - [Nat.compare]. nat_case.
+    nat_case. cbn. nat_case. reflexivity.
 Defined.
 
 Ltac erewrite_close_above_lift :=
@@ -573,17 +437,12 @@ Proof.
             try replace (S (m+l))%nat with (m + S l)%nat by myomega ;
             repeat erewrite_close_above_lift ;
             reflexivity).
-  unfold lift. case_eq (k <=? n) ; intro e ; bprop e ; try myomega.
+  unfold lift. nat_case.
   - unfold closed_above.
-    case_eq (m+n <? m+l) ; intro e1 ; bprop e1 ; try myomega.
-    + case_eq (n <? l) ; intro e3 ; bprop e3 ; try myomega.
-      reflexivity.
-    + case_eq (n <? l) ; intro e3 ; bprop e3 ; try myomega.
-      reflexivity.
-  - unfold closed_above.
-    case_eq (n <? m+l) ; intro e1 ; bprop e1 ; try myomega.
-    case_eq (n <? l) ; intro e3 ; bprop e3 ; try myomega.
-    reflexivity.
+    nat_case.
+    + nat_case. reflexivity.
+    + nat_case. reflexivity.
+  - unfold closed_above. nat_case. nat_case. reflexivity.
 Defined.
 
 Ltac erewrite_close_above_lift_id :=
@@ -603,9 +462,7 @@ Proof.
             repeat erewrite_close_above_lift_id ;
             reflexivity).
   unfold closed in clo. unfold closed_above in clo.
-  bprop clo. cbn.
-  case_eq (k <=? n) ; intro e ; bprop e ; try myomega.
-  reflexivity.
+  bprop clo. cbn. nat_case. reflexivity.
 Defined.
 
 Fact closed_lift :
@@ -637,11 +494,11 @@ Proof.
   all: try (cbn ; cbn in h1 ; repeat destruct_andb ;
             repeat erewrite_close_above_subst ; reflexivity).
   unfold closed_above in h1. bprop h1.
-  cbn. case_eq (m ?= n) ; intro e ; bprop e ; try myomega.
+  cbn. nat_case.
   + subst. replace l with (n + (l - n))%nat by myomega.
     rewrite closed_above_lift by myomega. assumption.
-  + unfold closed_above. propb. myomega.
-  + unfold closed_above. propb. myomega.
+  + unfold closed_above. nat_case. reflexivity.
+  + unfold closed_above. nat_case. reflexivity.
 Defined.
 
 Ltac erewrite_close_above_subst_id :=
@@ -661,9 +518,7 @@ Proof.
             repeat erewrite_close_above_subst_id ;
             reflexivity).
   unfold closed in clo. unfold closed_above in clo.
-  bprop clo. cbn.
-  case_eq (m ?= n) ; intro e ; bprop e ; try myomega.
-  reflexivity.
+  bprop clo. cbn. nat_case. reflexivity.
 Defined.
 
 Fact closed_subst :
