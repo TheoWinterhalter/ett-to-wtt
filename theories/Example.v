@@ -217,13 +217,13 @@ Make Definition coq_vv :=
 (* Fail Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X *)
 (*   := f (vcons a n v). *)
 
-(* Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X *)
-(*   := f {! vcons a n v !}. *)
+Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
+  := f {! vcons a n v !}.
 
 (* This version is already not working *)
 (* It now works *)
-Definition vcons_act {X} (f : vec nat 1 -> X) (a : nat) (v : vec nat 0) : X
-  := f (vcons a 0 v).
+(* Definition vcons_act {X} (f : vec nat 1 -> X) (a : nat) (v : vec nat 0) : X *)
+(*   := f (vcons a 0 v). *)
 
 (* Working *)
 (* Definition vcons_act (f : vec nat 1 -> nat) (a : nat) (v : vec nat 0) : nat *)
@@ -265,10 +265,10 @@ Proof.
   unfold tm_vcons_act, ty_vcons_act.
   pose proof xhΣi.
   ettcheck Σi.
-  (* eapply reflection. *)
-  (* unshelve eapply close_goal *)
-  (* ; [ exact (sAx "vcons_act_obligation") | assumption |]. *)
-  (* simpl. ettcheck Σi. *)
+  eapply reflection.
+  unshelve eapply close_goal
+  ; [ exact (sAx "vcons_act_obligation") | assumption |].
+  simpl. ettcheck Σi.
 Defined.
 
 Definition itt_vcons_act : sterm :=

@@ -197,8 +197,8 @@ Definition Σi : sglobal_context := [
   (* decl "vrev_obligation3" ty_obligation3 ; *)
   (* decl "vrev_obligation2" ty_obligation2 ; *)
   (* decl "vrev_obligation1" ty_obligation1 ; *)
-  (* decl "vcons_act_obligation" ty_vcons_act_obligation ; *)
-  (* decl "add" ty_add ; *)
+  decl "vcons_act_obligation" ty_vcons_act_obligation ;
+  decl "add" ty_add ;
   (* decl "vec_rect" ty_vec_rect ; *)
   decl "vcons" ty_vcons ;
   decl "vnil" ty_vnil ;
@@ -230,8 +230,8 @@ Proof.
   - ittcheck_env.
   - ittcheck_env.
   - ittcheck_env.
-  (* - ittcheck_env. *)
-  (* - ittcheck_env. *)
+  - ittcheck_env.
+  - ittcheck_env.
   (* - ittcheck_env. *)
   (* - ittcheck_env. *)
   (* - ittcheck_env. *)
@@ -254,8 +254,8 @@ Proof.
   - ettcheck_env.
   - ettcheck_env.
   - ettcheck_env.
-  (* - ettcheck_env. *)
-  (* - ettcheck_env. *)
+  - ettcheck_env.
+  - ettcheck_env.
   (* - ettcheck_env. *)
   (* - ettcheck_env. *)
   (* - ettcheck_env. *)
