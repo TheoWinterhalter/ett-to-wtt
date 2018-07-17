@@ -105,8 +105,10 @@ Fact safe_nth_irr :
     safe_nth l (exist _ n isdecl) =
     safe_nth l (exist _ n isdecl').
 Proof.
-  intros A n. induction n ; intro l ; destruct l ; try easy ; intros isdecl isdecl'.
-  cbn. eapply IHn.
+  intros A n. induction n ; intro l ; destruct l ; intros isdecl isdecl'.
+  all: cbn. all: try bang.
+  - reflexivity.
+  - eapply IHn.
 Defined.
 
 Fact safe_nth_cong_irr :
