@@ -44,14 +44,15 @@ Notation " Γ  ,,, Γ' " := (sapp_context Γ Γ') (at level 25, Γ' at next leve
 Fact cat_nil :
   forall {Γ}, Γ ,,, [] = Γ.
 Proof.
-  induction Γ ; easy.
+  reflexivity.
 Defined.
 
 Fact nil_cat :
   forall {Γ}, [] ,,, Γ = Γ.
 Proof.
-  induction Γ ; try easy.
-  cbn. f_equal. assumption.
+  induction Γ.
+  - reflexivity.
+  - cbn. f_equal. assumption.
 Defined.
 
 Fact length_cat :
@@ -79,7 +80,7 @@ Lemma eq_safe_nth' :
     safe_nth Γ (exist _ n isdecl).
 Proof.
   intros Γ. induction Γ ; intros n A isdecl isdecl'.
-  - easy.
+  - exfalso. abstract easy.
   - destruct n.
     + reflexivity.
     + destruct (@safe_nth_S _ (S n) A (a :: Γ) isdecl')
@@ -215,7 +216,7 @@ Fact safe_nth_lift_context :
     lift #|Γ| (#|Δ| - n - 1) (safe_nth Δ (exist _ n isdecl')).
 Proof.
   intros Γ Δ. induction Δ.
-  - cbn. easy.
+  - cbn. intros. bang.
   - intro n. destruct n ; intros isdecl isdecl'.
     + cbn. replace (#|Δ| - 0) with #|Δ| by myomega. reflexivity.
     + cbn. erewrite IHΔ. reflexivity.
@@ -233,7 +234,7 @@ Proof.
   replace (S (n + (#|Ξ| - n - 1)))%nat with #|Ξ|.
   - reflexivity.
   - revert n isdecl isdecl'. induction Ξ ; intros n isdecl isdecl'.
-    + cbn. easy.
+    + cbn. exfalso. abstract easy.
     + cbn. f_equal.
       destruct n.
       * cbn. myomega.
@@ -265,7 +266,7 @@ Fact safe_nth_subst_context :
     (safe_nth Δ (exist _ n isdecl')) { #|Δ| - S n := u }.
 Proof.
   intro Δ. induction Δ.
-  - cbn. easy.
+  - cbn. intros. bang.
   - intro n. destruct n ; intros u isdecl isdecl'.
     + cbn. replace (#|Δ| - 0) with #|Δ| by myomega. reflexivity.
     + cbn. erewrite IHΔ. reflexivity.

@@ -33,7 +33,7 @@ Fact nth_increl :
     ⊏ safe_nth Γ' (exist (fun n0 : nat => n0 < #|Γ'|) n isdecl').
 Proof.
   intros Γ Γ' e. induction e ; intros m isdecl isdecl'.
-  - exfalso. easy.
+  - exfalso. abstract easy.
   - destruct m.
     + cbn. assumption.
     + cbn. apply IHe.
@@ -843,7 +843,7 @@ Proof.
         | |- _ ;;; _ |-i _ : ?T =>
           change T with (llift0 #|Γm| (sHeq (sSort s2) B1' (sSort s2) B2'))
         end.
-        eapply type_llift0 ; try easy.
+        eapply type_llift0 ; eassumption.
       }
       destruct hp3 as [p3 hp3].
       (* Also translating the typing hypothesis for B2 *)
@@ -1004,7 +1004,7 @@ Proof.
         | |- _ ;;; _ |-i _ : ?T =>
           change T with (llift0 #|Γm| (sHeq (sSort s2) B1' (sSort s2) B2'))
         end.
-        eapply type_llift0 ; try easy.
+        eapply type_llift0 ; eassumption.
       }
       destruct hp3 as [p3 hp3].
       (* Also translating the typing hypothesis for B2 *)
@@ -1289,7 +1289,7 @@ Proof.
         | |- _ ;;; _ |-i _ : ?T =>
           change T with (llift0 #|Γm| (sHeq (sSort s2) B1' (sSort s2) B2'))
         end.
-        eapply type_llift0 ; try easy.
+        eapply type_llift0 ; eassumption.
       }
       destruct hp3 as [p3 hp3].
       (* Also translating the typing hypothesis for B2 *)
@@ -1563,7 +1563,7 @@ Proof.
         | |- _ ;;; _ |-i _ : ?T =>
           change T with (llift0 #|Γm| (sHeq (sSort s2) B1' (sSort s2) B2'))
         end.
-        eapply type_llift0 ; try easy.
+        eapply type_llift0 ; eassumption.
       }
       destruct hp3 as [p3 hp3].
       (* Also translating the typing hypothesis for B2 *)
@@ -1724,7 +1724,7 @@ Proof.
         | |- _ ;;; _ |-i _ : ?T =>
           change T with (llift0 #|Γm| (sHeq (sSort s2) B1' (sSort s2) B2'))
         end.
-        eapply type_llift0 ; try easy.
+        eapply type_llift0 ; eassumption.
       }
       destruct hp3 as [p3 hp3].
       (* Also translating the typing hypothesis for B2 *)
@@ -2002,7 +2002,7 @@ Proof.
         | |- _ ;;; _ |-i _ : ?T =>
           change T with (llift0 #|Γm| (sHeq (sSort s2) B1' (sSort s2) B2'))
         end.
-        eapply type_llift0 ; try easy.
+        eapply type_llift0 ; eassumption.
       }
       destruct hp3 as [p3 hp3].
       (* Also translating the typing hypothesis for B2 *)
@@ -2236,7 +2236,7 @@ Proof.
         | |- _ ;;; _ |-i _ : ?T =>
           change T with (llift0 #|Γm| (sHeq (sSort s2) B1' (sSort s2) B2'))
         end.
-        eapply type_llift0 ; try easy.
+        eapply type_llift0 ; eassumption.
       }
       destruct hp3 as [p3 hp3].
       (* Also translating the typing hypothesis for B2 *)

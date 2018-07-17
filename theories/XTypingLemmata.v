@@ -483,7 +483,7 @@ Proof.
         + assert (h : n >= #|Δ|) by myomega.
           rewrite safe_nth_ge' with (h0 := h).
           set (ge := ge_sub isdecl h).
-          destruct n ; try easy.
+          destruct n ; try (exfalso ; abstract easy).
           rewrite substP3 by myomega.
           generalize ge.
           replace (S n - #|Δ|) with (S (n - #|Δ|)) by myomega.
@@ -608,7 +608,7 @@ Proof.
   intros Σ Γ t T xhg w h.
   induction h.
   - revert n isdecl. induction w ; intros n isdecl.
-    + cbn in isdecl. easy.
+    + cbn in isdecl. exfalso. abstract easy.
     + destruct n.
       * cbn. change Ty with (lift0 1 Ty).
         destruct s.

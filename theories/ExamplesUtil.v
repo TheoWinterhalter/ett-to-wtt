@@ -290,7 +290,7 @@ Lemma lift_rel :
   forall {t k}, (lift 1 (S k) t) {k := sRel 0} = t.
 Proof.
   intro t. induction t ; intro k.
-  all: try (cbn ; f_equal ; easy).
+  all: try (cbn ; f_equal ; hyp rewrite ; reflexivity).
   destruct n.
   - cbn. case_eq (k ?= 0) ; intro e ; bprop e.
     + subst. reflexivity.
