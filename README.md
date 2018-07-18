@@ -9,13 +9,16 @@ This project can be compiled with Coq 8.8 and requires
 [Equations](http://mattam82.github.io/Coq-Equations/) 
 and [TemplateCoq](https://github.com/Template-Coq/template-coq)
 to compile.
-In case the TemplateCoq 8.8 release doesn't work, you can always clone
-[my fork](https://github.com/TheoWinterhalter/template-coq/tree/univ-fix)
+You will need a special version of TemplateCoq that features
+type-in-type, while this change is not merged, you can use
+[my fork](https://github.com/TheoWinterhalter/template-coq/tree/type-in-type-fix)
 and run
 ```bash
 make && make install
 ```
 to install the required version of TemplateCoq.
+If you are not interested in examples, then the 8.8 release should do
+just fine.
 
 
 If you want to compile the examples, you also need
