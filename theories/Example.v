@@ -9,7 +9,7 @@ From Template Require Import All.
 From Translation Require Import util Sorts SAst SLiftSubst SCommon ITyping
                                 ITypingLemmata ITypingAdmissible XTyping
                                 Quotes Translation FinalTranslation
-                                FullQuote ExamplesUtil ExampleQuotes
+                                FullQuote ExampleQuotes ExamplesUtil 
                                 XTypingLemmata IChecking XChecking.
 Import MonadNotation.
 
@@ -260,9 +260,9 @@ Definition itt_vcons_act : sterm :=
 
 Definition tc_vcons_act : tsl_result term :=
   Eval lazy in
-  tsl_rec (2 ^ 18) Σ [] itt_vcons_act axoc.
+  tsl_rec (2 ^ 18) Σ [] itt_vcons_act ExamplesUtil.axoc.
 
-Fail Make Definition coq_vcons_act :=
+Make Definition coq_vcons_act :=
   ltac:(
     let t := eval lazy in
              (match tc_vcons_act with
@@ -271,6 +271,8 @@ Fail Make Definition coq_vcons_act :=
               end)
       in exact t
   ).
+
+Print coq_vcons_act.
 
 (*! EXAMPLE 5 *)
 
