@@ -183,6 +183,246 @@ Proof.
   eexists. now eapply opt_sort_heq.
 Defined.
 
-(* TODO sHeqTransport, sCongProd and co, sEqToHeq, sHeqTypeEq? *)
+Definition optHeqTransport p t :=
+  match p with
+  | sRefl s A => sHeqRefl A t
+  | _ => sHeqTransport p t
+  end.
+
+Lemma opt_HeqTransport :
+  forall {Σ Γ s A B p t},
+    type_glob Σ ->
+    Σ ;;; Γ |-i t : A ->
+    Σ ;;; Γ |-i p : sEq (sSort s) A B ->
+    Σ ;;; Γ |-i optHeqTransport p t : sHeq A t B (sTransport A B p t).
+Proof.
+  intros Σ Γ s A B p t hg ht hp.
+  destruct p.
+  all: try (simpl ; eapply type_HeqTransport' ; eassumption).
+  simpl.
+  ttinv hp. destruct (eq_conv_inv h1) as [[? eA] eB].
+  destruct (istype_type hg hp) as [? hT].
+  ttinv hT.
+  eapply type_conv.
+  - econstructor.
+    + econstructor ; eassumption.
+    + apply conv_sym in eA.
+      econstructor ; try eassumption.
+      econstructor ; eassumption.
+  - econstructor ; try eassumption.
+    econstructor ; eassumption.
+  - apply cong_Heq ; try assumption ; try apply conv_refl.
+    eapply conv_red_r ; econstructor. reflexivity.
+Defined.
+
+Definition optEqToHeq p :=
+  match p with
+  | sRefl A x => sHeqRefl A x
+  | _ => sEqToHeq p
+  end.
+
+Lemma opt_EqToHeq :
+  forall {Σ Γ A u v p},
+    type_glob Σ ->
+    Σ ;;; Γ |-i p : sEq A u v ->
+    Σ ;;; Γ |-i optEqToHeq p : sHeq A u A v.
+Proof.
+  intros Σ Γ A u v p hg h.
+  destruct p.
+  all: try (simpl ; eapply type_EqToHeq' ; eassumption).
+  simpl.
+  ttinv h. destruct (eq_conv_inv h2) as [[eA eu] ev].
+  destruct (istype_type hg h) as [? hT].
+  ttinv hT.
+  econstructor.
+  - econstructor ; eassumption.
+  - econstructor ; eassumption.
+  - apply cong_Heq ; assumption.
+Defined.
+
+(* Definition optCongProd B1 B2 pA pB := *)
+(*   match pA, pB with *)
+(*   | sHeqRefl (sSort s) A, sHeqRefl (sSort z) B => *)
+(*     sHeqRefl (sSort (prod_sort s z)) (sProd nAnon A B1) *)
+(*   | _,_ => sCongProd B1 B2 pA pB *)
+(*   end. *)
+
+(* Lemma opt_CongProd : *)
+(*   forall {Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB}, *)
+(*     type_glob Σ -> *)
+(*     Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 -> *)
+(*     Σ;;; Γ,, sPack A1 A2 |-i *)
+(*     pB : sHeq (sSort z1) *)
+(*               ((lift 1 1 B1) {0 := sProjT1 (sRel 0)}) *)
+(*               (sSort z2) *)
+(*               ((lift 1 1 B2) {0 := sProjT2 (sRel 0)}) -> *)
+(*     Σ;;; Γ,, A1 |-i B1 : sSort z1 -> *)
+(*     Σ;;; Γ,, A2 |-i B2 : sSort z2 -> *)
+(*     Σ;;; Γ |-i optCongProd B1 B2 pA pB *)
+(*     : sHeq (sSort (prod_sort s1 z1)) (sProd nx A1 B1) *)
+(*            (sSort (prod_sort s2 z2)) (sProd ny A2 B2). *)
+(* Proof. *)
+(*   intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2. *)
+(*   destruct pA. *)
+(*   all: try (simpl ; eapply type_CongProd' ; eassumption). *)
+(*   destruct pA1. *)
+(*   all: try (simpl ; eapply type_CongProd' ; eassumption). *)
+(*   destruct pB. *)
+(*   all: try (simpl ; eapply type_CongProd' ; eassumption). *)
+(*   destruct pB1. *)
+(*   all: try (simpl ; eapply type_CongProd' ; eassumption). *)
+(*   simpl. *)
+(*   ttinv hpA. ttinv hpB. *)
+(*   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA. *)
+(*   destruct (istype_type hg hpB) as [? hTB]. ttinv hTB. *)
+(*   destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?]. *)
+(*   destruct (heq_conv_inv h4) as [[[es3 ?] es4] ?]. *)
+(*   pose proof (sort_conv_inv h7). *)
+(*   pose proof (sort_conv_inv h12). *)
+(*   pose proof (sort_conv_inv es1). *)
+(*   pose proof (sort_conv_inv es2). *)
+(*   pose proof (sort_conv_inv es3). *)
+(*   pose proof (sort_conv_inv es4). *)
+(*   subst. *)
+(*   econstructor. *)
+(*   - econstructor ; try eassumption. *)
+(*     + econstructor ; try eassumption. eapply typing_wf. eassumption. *)
+(*     + econstructor ; try eassumption. *)
+(*       eapply ContextConversion.type_ctxconv ; try eassumption. *)
+(*       * econstructor ; try eassumption. *)
+(*         eapply typing_wf. eassumption. *)
+(*       * constructor. *)
+(*         -- apply ContextConversion.ctxconv_refl. *)
+(*         -- apply conv_sym. assumption. *)
+(*   - econstructor. *)
+(*     + econstructor ; try eassumption. *)
+(*       eapply typing_wf. eassumption. *)
+(*     + econstructor ; try eassumption. *)
+(*       eapply typing_wf. eassumption. *)
+(*     + econstructor ; eassumption. *)
+(*     + econstructor ; eassumption. *)
+(*   - apply cong_Heq ; try apply conv_refl. *)
+(*     + apply cong_Prod ; try apply conv_refl. assumption. *)
+(*     + apply cong_Prod ; try assumption. *)
+(*       (* eapply conv_trans ; try eassumption. *) *)
+
+(* Same problem with congLambda, congApp, congSum, congPair, congPi1, congPi2 *)
+
+Definition optCongEq pA pu pv :=
+  match pA, pu, pv with
+  | sHeqRefl (sSort s) A, sHeqRefl _ u, sHeqRefl _ v =>
+    sHeqRefl (sSort (eq_sort s)) (sEq A u v)
+  | _,_,_ => sCongEq pA pu pv
+  end.
+
+Lemma opt_CongEq :
+  forall {Σ Γ s1 s2 A1 A2 u1 u2 v1 v2 pA pu pv},
+    type_glob Σ ->
+    Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 ->
+    Σ;;; Γ |-i pu : sHeq A1 u1 A2 u2 ->
+    Σ;;; Γ |-i pv : sHeq A1 v1 A2 v2 ->
+    Σ;;; Γ |-i optCongEq pA pu pv : 
+              sHeq (sSort (eq_sort s1)) (sEq A1 u1 v1)
+                   (sSort (eq_sort s2)) (sEq A2 u2 v2).
+Proof.
+  intros Σ Γ s1 s2 A1 A2 u1 u2 v1 v2 pA pu pv hg hpA hpu hpv.
+  destruct pA.
+  all: try (simpl ; eapply type_CongEq' ; eassumption).
+  destruct pA1.
+  all: try (simpl ; eapply type_CongEq' ; eassumption).
+  destruct pu.
+  all: try (simpl ; eapply type_CongEq' ; eassumption).
+  destruct pv.
+  all: try (simpl ; eapply type_CongEq' ; eassumption).
+  simpl.
+  ttinv hpA. ttinv hpu. ttinv hpv.
+  destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
+  destruct (istype_type hg hpu) as [? hTu]. ttinv hTu.
+  destruct (istype_type hg hpv) as [? hTv]. ttinv hTv.
+  destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
+  destruct (heq_conv_inv h4) as [[[es3 ?] es4] ?].
+  destruct (heq_conv_inv h7) as [[[es5 ?] es6] ?].
+  repeat match goal with
+  | h : _ |-i sSort _ = sSort _ |- _ =>
+    pose proof (sort_conv_inv h) ; clear h
+  end.
+  subst.
+  econstructor.
+  - econstructor ; try eassumption.
+    + econstructor. eapply typing_wf. eassumption.
+    + econstructor ; try eassumption.
+      * econstructor ; try eassumption.
+        eapply conv_trans ; try eassumption.
+        apply conv_sym. assumption.
+      * econstructor ; try eassumption.
+        eapply conv_trans ; try eassumption.
+        apply conv_sym. assumption.
+  - econstructor.
+    + econstructor. eapply typing_wf. eassumption.
+    + econstructor. eapply typing_wf. eassumption.
+    + econstructor ; eassumption.
+    + econstructor ; eassumption.
+  - apply cong_Heq ; try apply conv_refl.
+    + apply cong_Eq ; assumption.
+    + apply cong_Eq ; assumption.
+Defined.
+
+Definition optCongRefl pA pu :=
+  match pA, pu with
+  | sHeqRefl _ A, sHeqRefl _ u =>
+    sHeqRefl (sEq A u u) (sRefl A u)
+  | _,_ => sCongRefl pA pu
+  end.
+
+Lemma opt_CongRefl :
+  forall {Σ Γ s1 s2 A1 A2 u1 u2 pA pu},
+    type_glob Σ ->
+    Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 ->
+    Σ;;; Γ |-i pu : sHeq A1 u1 A2 u2 ->
+    Σ;;; Γ |-i optCongRefl pA pu : sHeq (sEq A1 u1 u1) (sRefl A1 u1)
+                                       (sEq A2 u2 u2) (sRefl A2 u2).
+Proof.
+  intros Σ Γ s1 s2 A1 A2 u1 u2 pA pu hg hpA hpu.
+  destruct pA.
+  all: try (simpl ; eapply type_CongRefl' ; eassumption).
+  destruct pu.
+  all: try (simpl ; eapply type_CongRefl' ; eassumption).
+  simpl.
+  ttinv hpA. ttinv hpu.
+  destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
+  destruct (istype_type hg hpu) as [? hTu]. ttinv hTu.
+  destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
+  destruct (heq_conv_inv h4) as [[[es3 ?] es4] ?].
+  repeat match goal with
+  | h : _ |-i sSort _ = sSort _ |- _ =>
+    pose proof (sort_conv_inv h) ; clear h
+  end.
+  subst.
+  assert (Σ ;;; Γ |-i pA2 : sSort s1).
+  { econstructor ; eassumption. }
+  econstructor.
+  - econstructor.
+    + econstructor ; try eassumption.
+      * econstructor ; try eassumption.
+        eapply conv_trans ; try eassumption.
+        apply conv_sym. assumption.
+      * econstructor ; try eassumption.
+        eapply conv_trans ; try eassumption.
+        apply conv_sym. assumption.
+    + econstructor ; try eassumption.
+      econstructor ; try eassumption.
+      eapply conv_trans ; try eassumption.
+      apply conv_sym. assumption.
+  - econstructor.
+    + econstructor ; eassumption.
+    + econstructor ; eassumption.
+    + econstructor ; eassumption.
+    + econstructor ; eassumption.
+  - apply cong_Heq.
+    + apply cong_Eq ; assumption.
+    + apply cong_Refl ; assumption.
+    + apply cong_Eq ; assumption.
+    + apply cong_Refl ; assumption.
+Defined.
 
 End Optim.
