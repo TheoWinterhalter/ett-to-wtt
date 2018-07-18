@@ -26,7 +26,8 @@ Module T := Typing.
 
 Section Final.
 
-Context `{Sort_notion : Sorts.notion}.
+Existing Instance config.type_in_type.
+Existing Instance Sorts.type_in_type.
 
 (* From Simon Boulier *)
 Inductive tsl_error :=
@@ -79,10 +80,6 @@ Definition myret (Σ : global_context) (Γ : context) (t : term) : tsl_result te
   (* | Checked t' => Success t' *)
   (* | _ => Error TranslationNotHandled *)
   (* end. *)
-
-Instance type_in_type : checker_flags := {|
-  check_univs := false
-|}.
 
 Definition infer_hnf fuel Σ Γ t :=
   infer (F := Build_Fuel fuel) Σ Γ t.
