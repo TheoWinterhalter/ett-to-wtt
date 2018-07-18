@@ -411,7 +411,7 @@ Definition mkCongProd (A1 A2 B1 B2 pA pB : term) :=
   ].
 
 Definition mkCongLambda (A1 A2 B1 B2 t1 t2 pA pB pt : term) :=
-  tApp tCongProd [
+  tApp tCongLambda [
     A1 ;
     A2 ;
     (tLambda nAnon A1 B1) ;
@@ -424,7 +424,7 @@ Definition mkCongLambda (A1 A2 B1 B2 t1 t2 pA pB pt : term) :=
   ].
 
 Definition mkCongApp (A1 A2 B1 B2 t1 t2 u1 u2 pA pB pt pu : term) :=
-  tApp tCongProd [
+  tApp tCongApp [
     A1 ;
     A2 ;
     (tLambda nAnon A1 B1) ;
