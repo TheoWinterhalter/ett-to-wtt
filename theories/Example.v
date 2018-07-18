@@ -260,7 +260,7 @@ Definition itt_vcons_act : sterm :=
 
 Definition tc_vcons_act : tsl_result term :=
   Eval lazy in
-  tsl_rec (2 ^ 18) Σ [] itt_vcons_act ExamplesUtil.axoc.
+  tsl_rec (2 ^ 18) Σ [] itt_vcons_act axoc.
 
 Make Definition coq_vcons_act :=
   ltac:(
@@ -337,15 +337,11 @@ Definition itt_vrev : sterm :=
   Eval lazy in
   let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t.
 
-Print itt_vrev.
-
 Definition tc_vrev : tsl_result term :=
   Eval lazy in
   tsl_rec (2 ^ 18) Σ [] itt_vrev axoc.
 
-Print tc_vrev.
-
-Fail Make Definition coq_vrev :=
+Make Definition coq_vrev :=
   ltac:(
     let t := eval lazy in
              (match tc_vrev with

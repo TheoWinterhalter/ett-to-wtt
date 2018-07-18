@@ -49,10 +49,10 @@ Definition glob_term :=
   let _ := vec in
   let _ := vec_rect in
   let _ := Nat.add in
-  (* let _ := vrev_obligation1 in *)
-  (* let _ := vrev_obligation2 in *)
-  (* let _ := vrev_obligation3 in *)
-  (* let _ := vrev_obligation4 in *)
+  let _ := vrev_obligation1 in
+  let _ := vrev_obligation2 in
+  let _ := vrev_obligation3 in
+  let _ := vrev_obligation4 in
   let _ := vcons_act_obligation in
   Type.
 
@@ -390,7 +390,12 @@ Quote Definition qO := O.
 Quote Definition qS := S.
 Quote Definition qvnil := @vnil.
 Quote Definition qvcons := @vcons.
+Quote Definition qvec_rect := @vec_rect.
 Quote Definition qvcons_act_obligation := @vcons_act_obligation.
+Quote Definition qvrev_obligation1 := @vrev_obligation1.
+Quote Definition qvrev_obligation2 := @vrev_obligation2.
+Quote Definition qvrev_obligation3 := @vrev_obligation3.
+Quote Definition qvrev_obligation4 := @vrev_obligation4.
 
 Definition axoc :=
   [< "nat" --> qnat ;
@@ -400,5 +405,10 @@ Definition axoc :=
      "S" --> qS ;
      "vnil" --> qvnil ;
      "vcons" --> qvcons ;
-     "vcons_act_obligation" --> qvcons_act_obligation
+     "vec_rect" --> qvec_rect ;
+     "vcons_act_obligation" --> qvcons_act_obligation ;
+     "vrev_obligation1" --> qvrev_obligation1 ;
+     "vrev_obligation2" --> qvrev_obligation2 ;
+     "vrev_obligation3" --> qvrev_obligation3 ;
+     "vrev_obligation4" --> qvrev_obligation4
   >].
