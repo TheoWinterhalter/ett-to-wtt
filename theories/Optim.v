@@ -292,6 +292,23 @@ Fixpoint notdepi (t : sterm) (i : nat) {struct t} : bool :=
 
 Definition notdep t := notdepi t 0.
 
+Lemma notdepi_lift :
+  forall {t i},
+    notdepi t i = true ->
+    lift 1 (S i) t = lift 1 i t.
+Proof.
+  intro t. induction t ; intros i h.
+  all: try (cbn in h ; discriminate h).
+  all: try (cbn in h ; repeat destruct_andb ; 
+            cbn ; f_equal ;
+            rewrite_assumption ; (reflexivity || assumption)).
+  revert h. cbn - [Nat.leb]. ncase (i =? n).
+  - cbn. discriminate.
+  - intros _. nat_case.
+    + nat_case. reflexivity.
+    + nat_case. reflexivity.
+Defined.
+
 (* Definition optCongProd B1 B2 pA pB := *)
 (*   match pA, pB with *)
 (*   | sHeqRefl (sSort s) A, sHeqRefl (sSort z) B => *)
