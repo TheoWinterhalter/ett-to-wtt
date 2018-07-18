@@ -503,5 +503,8 @@ Defined.
 Lemma vcons_act_obligation : coq_vcons_act_obligation.
 Proof.
   unfold coq_vcons_act_obligation.
-  intros A n X f a v. f_equal. myomega.
+  intros A n X f a v. f_equal.
+  clear; induction n.
+  - reflexivity.
+  - simpl; f_equal. apply IHn. 
 Defined.
