@@ -240,6 +240,58 @@ Proof.
   - apply cong_Heq ; assumption.
 Defined.
 
+(* Tests if t does not depend on variable i *)
+Fixpoint notdepi (t : sterm) (i : nat) {struct t} : bool :=
+  match t with
+  | sRel j => negb (i =? j)
+  | sSort _ => true
+  | sProd _ A B => notdepi A i && notdepi B (S i)
+  | sLambda _ A B t => notdepi A i && notdepi B (S i) && notdepi t (S i)
+  | sApp u A B v => notdepi A i && notdepi B (S i) && notdepi u i && notdepi v i
+  | sSum _ A B => notdepi A i && notdepi B (S i)
+  | sPair A B u v => notdepi A i && notdepi B (S i) && notdepi u i && notdepi v i
+  | sPi1 A B p => notdepi A i && notdepi B (S i) && notdepi p i
+  | sPi2 A B p => notdepi A i && notdepi B (S i) && notdepi p i
+  | sEq A u v => notdepi A i && notdepi u i && notdepi v i
+  | sRefl A u => notdepi A i && notdepi u i
+  (* | sJ *)
+  | sTransport A B p t =>
+    notdepi A i && notdepi B i && notdepi p i && notdepi t i
+  | sHeq A a B b => notdepi A i && notdepi a i && notdepi B i && notdepi b i
+  | sHeqToEq p => notdepi p i
+  | sHeqRefl A u => notdepi A i && notdepi u i
+  | sHeqSym p => notdepi p i
+  | sHeqTrans p q => notdepi p i && notdepi q i
+  | sHeqTransport p t => notdepi p i && notdepi t i
+  | sCongProd B1 B2 pA pB => 
+    notdepi B1 (S i) && notdepi B2 (S i) && notdepi pA i && notdepi pB (S i)
+  | sCongLambda B1 B2 t1 t2 pA pB pt =>
+    notdepi B1 (S i) && notdepi B2 (S i) &&
+    notdepi t1 (S i) && notdepi t2 (S i) &&
+    notdepi pA i && notdepi pB (S i) && notdepi pt (S i)
+  | sCongApp B1 B2 pu pA pB pv =>
+    notdepi B1 (S i) && notdepi B2 (S i) &&
+    notdepi pA i && notdepi pB (S i) &&
+    notdepi pu i && notdepi pv i
+  | sCongSum B1 B2 pA pB =>
+    notdepi B1 (S i) && notdepi B2 (S i) && notdepi pA i && notdepi pB (S i)
+  (* | sCongPair TODO *)
+  (* | sCongPi1 TODO *)
+  (* | sCongPi2 TODO *)
+  | sCongEq pA pu pv => notdepi pA i && notdepi pu i && notdepi pv i
+  | sCongRefl pA pu => notdepi pA i && notdepi pu i
+  | sEqToHeq p => notdepi p i
+  | sHeqTypeEq A B p => notdepi A i && notdepi B i && notdepi p i
+  | sPack A B => notdepi A i && notdepi B i
+  | sProjT1 p => notdepi p i
+  | sProjT2 p => notdepi p i
+  | sProjTe p => notdepi p i
+  | sAx _ => true
+  | _ => false
+  end.
+
+Definition notdep t := notdepi t 0.
+
 (* Definition optCongProd B1 B2 pA pB := *)
 (*   match pA, pB with *)
 (*   | sHeqRefl (sSort s) A, sHeqRefl (sSort z) B => *)
