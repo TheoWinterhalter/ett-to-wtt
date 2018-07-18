@@ -705,16 +705,16 @@ Proof.
       }
       destruct hqq as [qq hqq].
       assert (hql : ∑ ql, Σ ;;; Γ' |-i ql : sHeq T2' (sTransport T1' T2' e t1') T1' t1').
-      { exists (optHeqSym (sHeqTransport e t1')).
+      { exists (optHeqSym (optHeqTransport e t1')).
         destruct ht1' as [_ ht1'].
-        eapply type_HeqSym' ; try assumption.
-        eapply type_HeqTransport' ; eassumption.
+        eapply opt_HeqSym ; try assumption.
+        eapply opt_HeqTransport ; eassumption.
       }
       destruct hql as [ql hql].
       assert (hqr : ∑ qr, Σ ;;; Γ' |-i qr : sHeq T1' t2' T2' (sTransport T1' T2' e t2')).
-      { exists (sHeqTransport e t2').
+      { exists (optHeqTransport e t2').
         destruct ht2' as [_ ht2'].
-        eapply type_HeqTransport' ; eassumption.
+        eapply opt_HeqTransport ; eassumption.
       }
       destruct hqr as [qr hqr].
       assert (hqf : ∑ qf, Σ ;;; Γ' |-i qf
@@ -1158,7 +1158,7 @@ Proof.
       exists (sProd n1 A1' B1'), (sProd n1 A1' B1').
       exists (sLambda n1 A1' B1' t1'), tλ.
       exists (optHeqTrans (sCongLambda B1' B2' t1' tt2 pA pB qt)
-                   (sHeqTransport eT (sLambda n2 A2' B2' tt2))).
+                   (optHeqTransport eT (sLambda n2 A2' B2' tt2))).
       destruct ht1' as [[[? ?] ?] ?].
       destruct htt2 as [[[? ?] ?] ?].
       destruct hA1' as [[[? ?] ?] ?].
@@ -1179,7 +1179,7 @@ Proof.
            ++ cbn in hqt. rewrite <- !llift_substProj, <- !rlift_substProj in hqt.
               rewrite !llift00, !rlift00 in hqt.
               apply hqt.
-        -- eapply type_HeqTransport' ; try assumption.
+        -- eapply opt_HeqTransport ; try assumption.
            ++ eapply type_Lambda ; eassumption.
            ++ eassumption.
 
@@ -1431,7 +1431,7 @@ Proof.
       (* We conclude *)
       exists (B1'{0 := u1'}), (B1'{0 := u1'}).
       exists (sApp t1' A1' B1' u1'), tapp.
-      exists (optHeqTrans qapp (sHeqTransport e (sApp tt2 A2' B2' tu2))).
+      exists (optHeqTrans qapp (optHeqTransport e (sApp tt2 A2' B2' tu2))).
       destruct ht1' as [[[? ?] ?] ?].
       destruct htt2 as [[[? ?] ?] ?].
       destruct hu1' as [[[? ?] ?] ?].
@@ -1447,7 +1447,7 @@ Proof.
       * constructor ; assumption.
       * constructor. constructor ; assumption.
       * eapply opt_HeqTrans ; try eassumption.
-        eapply type_HeqTransport' ; try assumption.
+        eapply opt_HeqTransport ; try assumption.
         -- eapply type_App ; eassumption.
         -- eapply type_HeqTypeEq' ; try assumption.
            ++ eapply opt_HeqSym ; eassumption.
@@ -1874,7 +1874,7 @@ Proof.
       (* We conclude *)
       exists (sSum n A1' B1'), (sSum n A1' B1').
       exists (sPair A1' B1' u1' v1'), tpi.
-      exists (optHeqTrans qpi (sHeqTransport e (sPair A2' B2' tu2 tv2))).
+      exists (optHeqTrans qpi (optHeqTransport e (sPair A2' B2' tu2 tv2))).
       destruct hu1' as [[[? ?] ?] ?].
       destruct htu2 as [[[? ?] ?] ?].
       destruct hv1' as [[[? ?] ?] ?].
@@ -1890,7 +1890,7 @@ Proof.
       * constructor ; assumption.
       * constructor. constructor ; assumption.
       * eapply opt_HeqTrans ; try eassumption.
-        eapply type_HeqTransport' ; try assumption.
+        eapply opt_HeqTransport ; try assumption.
         -- eapply type_Pair' ; eassumption.
         -- eapply type_HeqTypeEq' ; try assumption.
            ++ eapply opt_HeqSym ; eassumption.
@@ -2110,7 +2110,7 @@ Proof.
       (* We conclude *)
       exists A1', A1'.
       exists (sPi1 A1' B1' p1'), tpi.
-      exists (optHeqTrans qpi (sHeqTransport e (sPi1 A2' B2' tp2))).
+      exists (optHeqTrans qpi (optHeqTransport e (sPi1 A2' B2' tp2))).
       destruct hp1' as [[[? ?] ?] ?].
       destruct htp2 as [[[? ?] ?] ?].
       destruct hA1' as [[[? ?] ?] ?].
@@ -2124,7 +2124,7 @@ Proof.
       * constructor ; assumption.
       * constructor. constructor ; assumption.
       * eapply opt_HeqTrans ; try eassumption.
-        eapply type_HeqTransport' ; try assumption.
+        eapply opt_HeqTransport ; try assumption.
         -- eapply type_Pi1' ; eassumption.
         -- eapply type_HeqTypeEq' ; try assumption.
            ++ eapply opt_HeqSym ; eassumption.
@@ -2344,7 +2344,7 @@ Proof.
       (* We conclude *)
       exists (B1'{ 0 := sPi1 A1' B1' p1' }), (B1'{ 0 := sPi1 A1' B1' p1' }).
       exists (sPi2 A1' B1' p1'), tpi.
-      exists (optHeqTrans qpi (sHeqTransport e (sPi2 A2' B2' tp2))).
+      exists (optHeqTrans qpi (optHeqTransport e (sPi2 A2' B2' tp2))).
       destruct hp1' as [[[? ?] ?] ?].
       destruct htp2 as [[[? ?] ?] ?].
       destruct hA1' as [[[? ?] ?] ?].
@@ -2360,7 +2360,7 @@ Proof.
       * constructor ; assumption.
       * constructor. constructor ; assumption.
       * eapply opt_HeqTrans ; try eassumption.
-        eapply type_HeqTransport' ; try assumption.
+        eapply opt_HeqTransport ; try assumption.
         -- eapply type_Pi2' ; eassumption.
         -- eapply type_HeqTypeEq' ; try assumption.
            ++ eapply opt_HeqSym ; eassumption.
@@ -2473,29 +2473,29 @@ Proof.
       destruct (opt_sort_heq_ex hg hqA) as [eA heA].
       pose (ttu2 := sTransport tA1 tA2 eA tu2).
       assert (hq : ∑ q, Σ ;;; Γ' |-i q : sHeq tA1 tu1 tA2 ttu2).
-      { exists (optHeqTrans qu (sHeqTransport eA tu2)).
+      { exists (optHeqTrans qu (optHeqTransport eA tu2)).
         destruct htu2 as [[[? ?] ?] ?].
         destruct htA1 as [[[? ?] ?] ?].
         destruct htA2 as [[[? ?] ?] ?].
         eapply opt_HeqTrans ; try assumption.
         - eassumption.
-        - eapply type_HeqTransport ; eassumption.
+        - eapply opt_HeqTransport ; eassumption.
       }
       destruct hq as [qu' hqu'].
       pose (ttv2 := sTransport tA1 tA2 eA tv2).
       assert (hq : ∑ q, Σ ;;; Γ' |-i q : sHeq tA1 tv1 tA2 ttv2).
-      { exists (optHeqTrans qv (sHeqTransport eA tv2)).
+      { exists (optHeqTrans qv (optHeqTransport eA tv2)).
         destruct htv2 as [[[? ?] ?] ?].
         destruct htA1 as [[[? ?] ?] ?].
         destruct htA2 as [[[? ?] ?] ?].
         eapply opt_HeqTrans ; try assumption.
         - eassumption.
-        - eapply type_HeqTransport ; eassumption.
+        - eapply opt_HeqTransport ; eassumption.
       }
       destruct hq as [qv' hqv'].
       exists (sSort (Sorts.eq_sort s)), (sSort (Sorts.eq_sort s)).
       exists (sEq tA1 tu1 tv1), (sEq tA2 ttu2 ttv2).
-      exists (sCongEq qA qu' qv').
+      exists (optCongEq qA qu' qv').
       destruct htu1 as [[[? ?] ?] ?].
       destruct htu2 as [[[? ?] ?] ?].
       destruct htA1 as [[[? ?] ?] ?].
@@ -2509,7 +2509,7 @@ Proof.
       * econstructor ; try assumption.
         -- econstructor ; eassumption.
         -- econstructor ; eassumption.
-      * eapply type_CongEq' ; assumption.
+      * eapply opt_CongEq ; assumption.
 
     (* cong_Refl *)
     + destruct (X _ hΓ)
@@ -2586,13 +2586,13 @@ Proof.
       destruct (opt_sort_heq_ex hg hqA) as [eA heA].
       pose (ttu2 := sTransport tA1 tA2 eA tu2).
       assert (hq : ∑ q, Σ ;;; Γ' |-i q : sHeq tA1 tu1 tA2 ttu2).
-      { exists (optHeqTrans qu (sHeqTransport eA tu2)).
+      { exists (optHeqTrans qu (optHeqTransport eA tu2)).
         destruct htu2 as [[[? ?] ?] ?].
         destruct htA1 as [[[? ?] ?] ?].
         destruct htA2 as [[[? ?] ?] ?].
         eapply opt_HeqTrans ; try assumption.
         - eassumption.
-        - eapply type_HeqTransport ; eassumption.
+        - eapply opt_HeqTransport ; eassumption.
       }
       destruct hq as [q hq].
       (* We're still not there yet as we need to have two translations of the
@@ -2600,9 +2600,9 @@ Proof.
       assert (pE : ∑ pE, Σ ;;; Γ' |-i pE : 
                          sHeq (sSort (Sorts.eq_sort s)) (sEq tA2 ttu2 ttu2)
                               (sSort (Sorts.eq_sort s)) (sEq tA1 tu1 tu1)).
-      { exists (optHeqSym (sCongEq qA q q)).
+      { exists (optHeqSym (optCongEq qA q q)).
         eapply opt_HeqSym ; try assumption.
-        eapply type_CongEq' ; eassumption.
+        eapply opt_CongEq ; eassumption.
       }
       destruct pE as [pE hpE].
       assert (eE : ∑ eE, Σ ;;; Γ' |-i eE : 
@@ -2616,7 +2616,7 @@ Proof.
            ).
       exists (sEq tA1 tu1 tu1), (sEq tA1 tu1 tu1).
       exists (sRefl tA1 tu1), trefl2.
-      exists (optHeqTrans (sCongRefl qA q) (sHeqTransport eE (sRefl tA2 ttu2))).
+      exists (optHeqTrans (optCongRefl qA q) (optHeqTransport eE (sRefl tA2 ttu2))).
       destruct htu1 as [[[? ?] ?] ?].
       destruct htu2 as [[[? ?] ?] ?].
       destruct htA1 as [[[? ?] ?] ?].
@@ -2628,8 +2628,8 @@ Proof.
         -- assumption.
         -- econstructor. assumption.
       * eapply opt_HeqTrans ; try assumption.
-        -- eapply type_CongRefl' ; eassumption.
-        -- eapply type_HeqTransport' ; try assumption.
+        -- eapply opt_CongRefl ; eassumption.
+        -- eapply opt_HeqTransport ; try assumption.
            ++ eapply type_Refl' ; try assumption.
               eapply type_Transport' ; eassumption.
            ++ eassumption.
@@ -2643,12 +2643,12 @@ Proof.
       clear hh he'' e'' he'' T' th.
       destruct he' as [[[? ieq] ?] he'].
       exists A', A', u', v'.
-      exists (sEqToHeq e').
+      exists (optEqToHeq e').
       inversion ieq. subst.
       repeat split ; try eassumption.
       destruct (istype_type hg he') as [? heq].
       ttinv heq.
-      eapply type_EqToHeq' ; assumption.
+      eapply opt_EqToHeq ; assumption.
 
   Unshelve. all: try exact 0. exact nAnon.
 

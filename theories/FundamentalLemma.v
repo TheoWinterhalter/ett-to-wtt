@@ -362,7 +362,7 @@ Proof.
 
   (* Left transport *)
   - destruct (IHsim Γ Γ1 Γ2) as [q hq].
-    exists (optHeqTrans (optHeqSym (sHeqTransport (llift0 #|Γ1| p) (llift0 #|Γ1| t1))) q).
+    exists (optHeqTrans (optHeqSym (optHeqTransport (llift0 #|Γ1| p) (llift0 #|Γ1| t1))) q).
     intros Γm U1 U2 hm h1 h2.
     pose proof (mix_length1 hm) as ml. rewrite <- ml.
     ttinv h1.
@@ -372,7 +372,7 @@ Proof.
     eapply opt_HeqTrans ; try assumption.
     + eapply opt_HeqSym ; try assumption.
       eapply type_conv.
-      * eapply type_HeqTransport' ; try assumption.
+      * eapply opt_HeqTransport ; try assumption.
         -- eapply type_llift0 ; eassumption.
         -- instantiate (2 := s). instantiate (1 := llift0 #|Γm| T2).
            change (sEq (sSort s) (llift0 #|Γm| T1) (llift0 #|Γm| T2))
@@ -399,7 +399,7 @@ Proof.
 
   (* Right transport *)
   - destruct (IHsim Γ Γ1 Γ2) as [q hq].
-    exists (optHeqTrans q (sHeqTransport (rlift0 #|Γ1| p) (rlift0 #|Γ1| t2))).
+    exists (optHeqTrans q (optHeqTransport (rlift0 #|Γ1| p) (rlift0 #|Γ1| t2))).
     intros Γm U1 U2 hm h1 h2.
     pose proof (mix_length1 hm) as ml. rewrite <- ml.
     ttinv h2.
@@ -410,7 +410,7 @@ Proof.
     eapply opt_HeqTrans ; try assumption.
     + eassumption.
     + eapply type_conv.
-      * eapply type_HeqTransport' ; try assumption.
+      * eapply opt_HeqTransport ; try assumption.
         -- eapply type_rlift0 ; eassumption.
         -- instantiate (2 := s). instantiate (1 := rlift0 #|Γm| T2).
            change (sEq (sSort s) (rlift0 #|Γm| T1) (rlift0 #|Γm| T2))
@@ -556,7 +556,7 @@ Proof.
   - destruct (IHsim1 Γ Γ1 Γ2) as [pA hpA].
     destruct (IHsim2 Γ Γ1 Γ2) as [pu hpu].
     destruct (IHsim3 Γ Γ1 Γ2) as [pv hpv].
-    exists (sCongEq pA pu pv).
+    exists (optCongEq pA pu pv).
     intros Γm U1 U2 hm h1 h2.
     ttinv h1. ttinv h2.
     specialize (hpA _ _ _ hm h0 h6).
@@ -568,7 +568,7 @@ Proof.
     { cbn in h, h14. eapply sorts_in_sort ; eassumption. }
     subst.
     eapply type_conv.
-    + eapply type_CongEq' ; eassumption.
+    + eapply opt_CongEq ; eassumption.
     + instantiate (1 := Sorts.succ (Sorts.eq_sort s)).
       eapply type_Heq.
       * destruct (istype_type hg h1). lift_sort.
@@ -1002,7 +1002,7 @@ Proof.
   (* Refl *)
   - destruct (IHsim1 Γ Γ1 Γ2) as [pA hpA].
     destruct (IHsim2 Γ Γ1 Γ2) as [pu hpu].
-    exists (sCongRefl pA pu).
+    exists (optCongRefl pA pu).
     intros Γm U1 U2 hm h1 h2.
     ttinv h1. ttinv h2.
     specialize (hpA _ _ _ hm h h0).
@@ -1012,7 +1012,7 @@ Proof.
       cbn in h5, h12. eapply sorts_in_sort ; eassumption.
     } subst.
     eapply type_conv.
-    + eapply type_CongRefl' ; eassumption.
+    + eapply opt_CongRefl ; eassumption.
     + instantiate (1 := eq_sort s).
       eapply type_Heq.
       * lift_sort. eapply type_llift0 ; try eassumption.
