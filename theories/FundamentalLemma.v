@@ -435,7 +435,7 @@ Proof.
   (* Prod *)
   - destruct (IHsim1 Γ Γ1 Γ2) as [pA hpA].
     destruct (IHsim2 Γ (Γ1,, A1) (Γ2,, A2)) as [pB hpB].
-    exists (sCongProd (llift #|Γ1| 1 B1) (rlift #|Γ1| 1 B2) pA pB).
+    exists (optCongProd (llift #|Γ1| 1 B1) (rlift #|Γ1| 1 B2) pA pB).
     intros Γm U1 U2 hm h1 h2.
     pose proof (mix_length1 hm) as ml. rewrite <- ml.
     ttinv h1. ttinv h2.
@@ -461,7 +461,7 @@ Proof.
     destruct (istype_type hg h1).
     destruct (istype_type hg h2).
     eapply type_conv.
-    + eapply type_CongProd' ; try assumption.
+    + eapply opt_CongProd ; try assumption.
       * eassumption.
       * rewrite llift_substProj, rlift_substProj.
         apply hpB.
@@ -633,7 +633,7 @@ Proof.
   - destruct (IHsim1 Γ Γ1 Γ2) as [pA hpA].
     destruct (IHsim2 Γ (Γ1,, A1) (Γ2,, A2)) as [pB hpB].
     destruct (IHsim3 Γ (Γ1,, A1) (Γ2,, A2)) as [pu hpu].
-    exists (sCongLambda (llift #|Γ1| 1 B1) (rlift #|Γ1| 1 B2)
+    exists (optCongLambda (llift #|Γ1| 1 B1) (rlift #|Γ1| 1 B2)
                    (llift #|Γ1| 1 u1) (rlift #|Γ1| 1 u2) pA pB pu).
     intros Γm U1 U2 hm h1 h2.
     pose proof (mix_length1 hm) as ml. rewrite <- ml.
@@ -659,7 +659,7 @@ Proof.
       cbn in h10, h18. eapply sorts_in_sort ; eassumption.
     } subst.
     eapply type_conv.
-    + eapply type_CongLambda' ; try assumption.
+    + eapply opt_CongLambda ; try assumption.
       * eassumption.
       * rewrite llift_substProj, rlift_substProj. apply hpB.
       * rewrite !llift_substProj, !rlift_substProj. apply hpu.
@@ -714,7 +714,7 @@ Proof.
     destruct (IHsim2 Γ Γ1 Γ2) as [pA hpA].
     destruct (IHsim3 Γ (Γ1,, A1) (Γ2,, A2)) as [pB hpB].
     destruct (IHsim4 Γ Γ1 Γ2) as [pv hpv].
-    exists (sCongApp (llift #|Γ1| 1 B1) (rlift #|Γ1| 1 B2) pu pA pB pv).
+    exists (optCongApp (llift #|Γ1| 1 B1) (rlift #|Γ1| 1 B2) pu pA pB pv).
     intros Γm U1 U2 hm h1 h2.
     pose proof (mix_length1 hm) as ml. rewrite <- ml.
     ttinv h1. ttinv h2.
@@ -740,7 +740,7 @@ Proof.
       cbn in h10, h18. eapply sorts_in_sort ; eassumption.
     } subst.
     eapply type_conv.
-    + eapply type_CongApp' ; try assumption.
+    + eapply opt_CongApp ; try assumption.
       * apply hpA.
       * rewrite llift_substProj, rlift_substProj.
         apply hpB.

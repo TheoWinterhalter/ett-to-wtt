@@ -600,7 +600,7 @@ Proof.
     + apply cong_subst ; assumption.
     + apply cong_App ; try apply conv_refl ; assumption.
   Unshelve. exact nAnon.
-Defined.           
+Defined.
 
 (* TODO congSum, congPair, congPi1, congPi2 *)
 

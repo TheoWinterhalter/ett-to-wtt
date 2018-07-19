@@ -886,14 +886,14 @@ Proof.
       (* We can finally conclude! *)
       exists (sSort (Sorts.prod_sort s1 s2)), (sSort (Sorts.prod_sort s1 s2)).
       exists (sProd n1 A1' B1'), (sProd n2 A2' tB2).
-      exists (sCongProd B1' tB2 p1 p5).
+      exists (optCongProd B1' tB2 p1 p5).
       destruct hA1' as [[[? ?] ?] ?].
       destruct hB1' as [[[? ?] ?] ?].
       destruct hA2' as [[[? ?] ?] ?].
       destruct htB2 as [[[? ?] ?] ?].
       repeat split ; [ try constructor .. |].
       all: try assumption.
-      eapply type_CongProd' ; try assumption.
+      eapply opt_CongProd ; try assumption.
       cbn in hp5. rewrite <- llift_substProj, <- rlift_substProj in hp5.
       rewrite !llift00, !rlift00 in hp5.
       apply hp5.
@@ -1138,11 +1138,11 @@ Proof.
                                (sProd n1 A1' B1')
 
       ).
-      { exists (optHeqSym (sCongProd B1' B2' pA pB)).
+      { exists (optHeqSym (optCongProd B1' B2' pA pB)).
         destruct hB1' as [[[? ?] ?] ?].
         destruct hB2' as [[[? ?] ?] ?].
-        eapply type_HeqSym' ; try assumption.
-        eapply type_CongProd' ; try assumption.
+        eapply opt_HeqSym ; try assumption.
+        eapply opt_CongProd ; try assumption.
         cbn in hpB. rewrite <- llift_substProj, <- rlift_substProj in hpB.
         rewrite !llift00, !rlift00 in hpB.
         apply hpB.
@@ -1157,7 +1157,7 @@ Proof.
       (* Now we conclude *)
       exists (sProd n1 A1' B1'), (sProd n1 A1' B1').
       exists (sLambda n1 A1' B1' t1'), tλ.
-      exists (optHeqTrans (sCongLambda B1' B2' t1' tt2 pA pB qt)
+      exists (optHeqTrans (optCongLambda B1' B2' t1' tt2 pA pB qt)
                    (optHeqTransport eT (sLambda n2 A2' B2' tt2))).
       destruct ht1' as [[[? ?] ?] ?].
       destruct htt2 as [[[? ?] ?] ?].
@@ -1172,7 +1172,7 @@ Proof.
       * constructor ; assumption.
       * constructor. constructor ; assumption.
       * eapply opt_HeqTrans ; try assumption.
-        -- eapply type_CongLambda' ; try eassumption.
+        -- eapply opt_CongLambda ; try eassumption.
            ++ cbn in hpB. rewrite <- llift_substProj, <- rlift_substProj in hpB.
               rewrite !llift00, !rlift00 in hpB.
               apply hpB.
@@ -1415,10 +1415,10 @@ Proof.
         Σ ;;; Γ' |-i qapp : sHeq (B1'{0 := u1'}) (sApp t1' A1' B1' u1')
                                 (B2'{0 := tu2}) (sApp tt2 A2' B2' tu2)
       ).
-      { exists (sCongApp B1' B2' qt pA pB qu).
+      { exists (optCongApp B1' B2' qt pA pB qu).
         destruct hB1' as [[[? ?] ?] ?].
         destruct hB2' as [[[? ?] ?] ?].
-        eapply type_CongApp' ; try eassumption.
+        eapply opt_CongApp ; try eassumption.
         cbn in hpB. rewrite <- llift_substProj, <- rlift_substProj in hpB.
         rewrite !llift00, !rlift00 in hpB.
         apply hpB.
