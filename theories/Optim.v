@@ -309,73 +309,300 @@ Proof.
     + nat_case. reflexivity.
 Defined.
 
-(* Definition optCongProd B1 B2 pA pB := *)
-(*   match pA, pB with *)
-(*   | sHeqRefl (sSort s) A, sHeqRefl (sSort z) B => *)
-(*     sHeqRefl (sSort (prod_sort s z)) (sProd nAnon A B1) *)
-(*   | _,_ => sCongProd B1 B2 pA pB *)
-(*   end. *)
+Corollary notdep_lift :
+  forall {t},
+    notdep t = true ->
+    lift 1 1 t = lift0 1 t.
+Proof.
+  intros t h.
+  apply notdepi_lift. assumption.
+Defined.
 
-(* Lemma opt_CongProd : *)
-(*   forall {Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB}, *)
-(*     type_glob Σ -> *)
-(*     Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 -> *)
-(*     Σ;;; Γ,, sPack A1 A2 |-i *)
-(*     pB : sHeq (sSort z1) *)
-(*               ((lift 1 1 B1) {0 := sProjT1 (sRel 0)}) *)
-(*               (sSort z2) *)
-(*               ((lift 1 1 B2) {0 := sProjT2 (sRel 0)}) -> *)
-(*     Σ;;; Γ,, A1 |-i B1 : sSort z1 -> *)
-(*     Σ;;; Γ,, A2 |-i B2 : sSort z2 -> *)
-(*     Σ;;; Γ |-i optCongProd B1 B2 pA pB *)
-(*     : sHeq (sSort (prod_sort s1 z1)) (sProd nx A1 B1) *)
-(*            (sSort (prod_sort s2 z2)) (sProd ny A2 B2). *)
-(* Proof. *)
-(*   intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2. *)
-(*   destruct pA. *)
-(*   all: try (simpl ; eapply type_CongProd' ; eassumption). *)
-(*   destruct pA1. *)
-(*   all: try (simpl ; eapply type_CongProd' ; eassumption). *)
-(*   destruct pB. *)
-(*   all: try (simpl ; eapply type_CongProd' ; eassumption). *)
-(*   destruct pB1. *)
-(*   all: try (simpl ; eapply type_CongProd' ; eassumption). *)
-(*   simpl. *)
-(*   ttinv hpA. ttinv hpB. *)
-(*   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA. *)
-(*   destruct (istype_type hg hpB) as [? hTB]. ttinv hTB. *)
-(*   destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?]. *)
-(*   destruct (heq_conv_inv h4) as [[[es3 ?] es4] ?]. *)
-(*   pose proof (sort_conv_inv h7). *)
-(*   pose proof (sort_conv_inv h12). *)
-(*   pose proof (sort_conv_inv es1). *)
-(*   pose proof (sort_conv_inv es2). *)
-(*   pose proof (sort_conv_inv es3). *)
-(*   pose proof (sort_conv_inv es4). *)
-(*   subst. *)
-(*   econstructor. *)
-(*   - econstructor ; try eassumption. *)
-(*     + econstructor ; try eassumption. eapply typing_wf. eassumption. *)
-(*     + econstructor ; try eassumption. *)
-(*       eapply ContextConversion.type_ctxconv ; try eassumption. *)
-(*       * econstructor ; try eassumption. *)
-(*         eapply typing_wf. eassumption. *)
-(*       * constructor. *)
-(*         -- apply ContextConversion.ctxconv_refl. *)
-(*         -- apply conv_sym. assumption. *)
-(*   - econstructor. *)
-(*     + econstructor ; try eassumption. *)
-(*       eapply typing_wf. eassumption. *)
-(*     + econstructor ; try eassumption. *)
-(*       eapply typing_wf. eassumption. *)
-(*     + econstructor ; eassumption. *)
-(*     + econstructor ; eassumption. *)
-(*   - apply cong_Heq ; try apply conv_refl. *)
-(*     + apply cong_Prod ; try apply conv_refl. assumption. *)
-(*     + apply cong_Prod ; try assumption. *)
-(*       (* eapply conv_trans ; try eassumption. *) *)
+Definition optCongProd B1 B2 pA pB :=
+  match pA, pB with
+  | sHeqRefl (sSort s) A, sHeqRefl (sSort z) B =>
+    if notdep B1 && notdep B2 then
+      sHeqRefl (sSort (prod_sort s z)) (sProd nAnon A B1)
+    else sCongProd B1 B2 pA pB
+  | _,_ => sCongProd B1 B2 pA pB
+  end.
 
-(* Same problem with congLambda, congApp, congSum, congPair, congPi1, congPi2 *)
+Lemma opt_CongProd :
+  forall {Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB},
+    type_glob Σ ->
+    Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 ->
+    Σ;;; Γ,, sPack A1 A2 |-i
+    pB : sHeq (sSort z1)
+              ((lift 1 1 B1) {0 := sProjT1 (sRel 0)})
+              (sSort z2)
+              ((lift 1 1 B2) {0 := sProjT2 (sRel 0)}) ->
+    Σ;;; Γ,, A1 |-i B1 : sSort z1 ->
+    Σ;;; Γ,, A2 |-i B2 : sSort z2 ->
+    Σ;;; Γ |-i optCongProd B1 B2 pA pB
+    : sHeq (sSort (prod_sort s1 z1)) (sProd nx A1 B1)
+           (sSort (prod_sort s2 z2)) (sProd ny A2 B2).
+Proof.
+  intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
+  destruct pA.
+  all: try (simpl ; eapply type_CongProd' ; eassumption).
+  destruct pA1.
+  all: try (simpl ; eapply type_CongProd' ; eassumption).
+  destruct pB.
+  all: try (simpl ; eapply type_CongProd' ; eassumption).
+  destruct pB1.
+  all: try (simpl ; eapply type_CongProd' ; eassumption).
+  simpl.
+  case_eq (notdep B1) ; try (intro ; simpl ; eapply type_CongProd' ; eassumption).
+  case_eq (notdep B2) ; try (intros ; simpl ; eapply type_CongProd' ; eassumption).
+  intros nd2 nd1. simpl.
+  ttinv hpA. ttinv hpB.
+  destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
+  destruct (istype_type hg hpB) as [? hTB]. ttinv hTB.
+  destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
+  destruct (heq_conv_inv h4) as [[[es3 eB1] es4] eB2].
+  pose proof (sort_conv_inv h7).
+  pose proof (sort_conv_inv h12).
+  pose proof (sort_conv_inv es1).
+  pose proof (sort_conv_inv es2).
+  pose proof (sort_conv_inv es3).
+  pose proof (sort_conv_inv es4).
+  subst.
+  econstructor.
+  - econstructor ; try eassumption.
+    + econstructor ; try eassumption. eapply typing_wf. eassumption.
+    + econstructor ; try eassumption.
+      eapply ContextConversion.type_ctxconv ; try eassumption.
+      * econstructor ; try eassumption.
+        eapply typing_wf. eassumption.
+      * constructor.
+        -- apply ContextConversion.ctxconv_refl.
+        -- apply conv_sym. assumption.
+  - econstructor.
+    + econstructor ; try eassumption.
+      eapply typing_wf. eassumption.
+    + econstructor ; try eassumption.
+      eapply typing_wf. eassumption.
+    + econstructor ; eassumption.
+    + econstructor ; eassumption.
+  - apply cong_Heq ; try apply conv_refl.
+    + apply cong_Prod ; try apply conv_refl. assumption.
+    + apply cong_Prod ; try assumption.
+      rewrite notdep_lift, lift_subst in eB1 by assumption.
+      rewrite notdep_lift, lift_subst in eB2 by assumption.
+      eapply conv_trans ; try eassumption.
+      apply conv_sym. assumption.
+Defined.
+
+Definition optCongLambda B1 B2 t1 t2 pA pB pt :=
+  match pA, pB, pt with
+  | sHeqRefl _ A, sHeqRefl _ _, sHeqRefl _ _ =>
+    if notdep B1 && notdep B2 && notdep t1 && notdep t2 then
+      sHeqRefl (sProd nAnon A B1) (sLambda nAnon A B1 t1)
+    else sCongLambda B1 B2 t1 t2 pA pB pt
+  | _,_,_ => sCongLambda B1 B2 t1 t2 pA pB pt
+  end.
+
+Lemma opt_CongLambda :
+  forall {Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 t1 t2 pA pB pt},
+    type_glob Σ ->
+    Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 ->
+    Σ;;; Γ,, sPack A1 A2 |-i pB
+    : sHeq (sSort z1) ((lift 1 1 B1) {0 := sProjT1 (sRel 0)})
+           (sSort z2) ((lift 1 1 B2) {0 := sProjT2 (sRel 0)}) ->
+    Σ;;; Γ,, sPack A1 A2 |-i pt
+    : sHeq ((lift 1 1 B1) {0 := sProjT1 (sRel 0)})
+           ((lift 1 1 t1) {0 := sProjT1 (sRel 0)})
+           ((lift 1 1 B2) {0 := sProjT2 (sRel 0)})
+           ((lift 1 1 t2) {0 := sProjT2 (sRel 0)}) ->
+    Σ;;; Γ,, A1 |-i B1 : sSort z1 ->
+    Σ;;; Γ,, A2 |-i B2 : sSort z2 ->
+    Σ;;; Γ,, A1 |-i t1 : B1 ->
+    Σ;;; Γ,, A2 |-i t2 : B2 ->
+    Σ;;; Γ |-i optCongLambda B1 B2 t1 t2 pA pB pt
+    : sHeq (sProd nx A1 B1) (sLambda nx A1 B1 t1)
+           (sProd ny A2 B2) (sLambda ny A2 B2 t2).
+Proof.
+  intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 t1 t2 pA pB pt
+         hg hpA hpB hpt hB1 hB2 ht1 ht2.
+  destruct pA.
+  all: try (simpl ; eapply type_CongLambda' ; eassumption).
+  destruct pB.
+  all: try (simpl ; eapply type_CongLambda' ; eassumption).
+  destruct pt.
+  all: try (simpl ; eapply type_CongLambda' ; eassumption).
+  simpl.
+  case_eq (notdep B1) ; try (intro ; simpl ; eapply type_CongLambda' ; eassumption).
+  case_eq (notdep B2) ; try (intros ; simpl ; eapply type_CongLambda' ; eassumption).
+  case_eq (notdep t1) ; try (intros ; simpl ; eapply type_CongLambda' ; eassumption).
+  case_eq (notdep t2) ; try (intros ; simpl ; eapply type_CongLambda' ; eassumption).
+  intros ndt2 ndt1 ndB2 ndB1. simpl.
+  ttinv hpA. ttinv hpB. ttinv hpt.
+  destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
+  destruct (istype_type hg hpB) as [? hTB]. ttinv hTB.
+  destruct (istype_type hg hpt) as [? hTt]. ttinv hTt.
+  destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
+  destruct (heq_conv_inv h4) as [[[es3 eB1] es4] eB2].
+  destruct (heq_conv_inv h7) as [[[_ et1] _] et2].
+  assert (Σ |-i sSort s1 = sSort s2).
+  { eapply conv_trans ; try eassumption.
+    apply conv_sym. assumption.
+  }
+  assert (Σ |-i sSort z1 = sSort z2).
+  { eapply conv_trans ; try eassumption.
+    apply conv_sym. assumption.
+  }
+  repeat match goal with
+  | h : _ |-i sSort _ = sSort _ |- _ =>
+    pose proof (sort_conv_inv h) ; clear h
+  end.
+  subst.
+  assert (Σ;;; Γ |-i pA2 : sSort s2).
+  { econstructor ; eassumption. }
+  assert (wf Σ Γ).
+  { eapply typing_wf. eassumption. }
+  econstructor.
+  - eapply type_HeqRefl' ; try eassumption.
+    eapply type_Lambda ; try eassumption.
+    + eapply ContextConversion.type_ctxconv ; try eassumption.
+      * econstructor ; eassumption.
+      * econstructor ; try apply ContextConversion.ctxconv_refl.
+        apply conv_sym. assumption.
+    + eapply ContextConversion.type_ctxconv ; try eassumption.
+      * econstructor ; eassumption.
+      * econstructor ; try apply ContextConversion.ctxconv_refl.
+        apply conv_sym. assumption.
+  - econstructor.
+    + econstructor ; eassumption.
+    + econstructor ; eassumption.
+    + econstructor ; eassumption.
+    + econstructor ; eassumption.
+  - apply cong_Heq.
+    + apply cong_Prod ; try apply conv_refl. assumption.
+    + apply cong_Lambda ; try apply conv_refl. assumption.
+    + apply cong_Prod ; try apply conv_refl. assumption.
+      rewrite notdep_lift, lift_subst in eB1 by assumption.
+      rewrite notdep_lift, lift_subst in eB2 by assumption.
+      eapply conv_trans ; try eassumption.
+      apply conv_sym. assumption.
+    + apply cong_Lambda ; try apply conv_refl. assumption.
+      * rewrite notdep_lift, lift_subst in eB1 by assumption.
+        rewrite notdep_lift, lift_subst in eB2 by assumption.
+        eapply conv_trans ; try eassumption.
+        apply conv_sym. assumption.
+      * rewrite notdep_lift, lift_subst in et1 by assumption.
+        rewrite notdep_lift, lift_subst in et2 by assumption.
+        eapply conv_trans ; try eassumption.
+        apply conv_sym. assumption.
+Defined.
+
+Definition optCongApp B1 B2 pu pA pB pv :=
+  match pA, pB, pu, pv with
+  | sHeqRefl _ A, sHeqRefl _ _, sHeqRefl _ u, sHeqRefl _ v =>
+    if notdep B1 && notdep B2 then
+      sHeqRefl (B1{ 0 := v }) (sApp u A B1 v)
+    else sCongApp B1 B2 pu pA pB pv
+  | _,_,_,_ => sCongApp B1 B2 pu pA pB pv
+  end.
+
+Lemma opt_CongApp :
+  forall {Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 u1 u2 v1 v2 pA pB pu pv},
+    type_glob Σ ->
+    Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 ->
+    Σ;;; Γ,, sPack A1 A2 |-i pB
+    : sHeq (sSort z1) ((lift 1 1 B1) {0 := sProjT1 (sRel 0)})
+           (sSort z2) ((lift 1 1 B2) {0 := sProjT2 (sRel 0)}) ->
+    Σ;;; Γ |-i pu : sHeq (sProd nx A1 B1) u1 (sProd ny A2 B2) u2 ->
+    Σ;;; Γ |-i pv : sHeq A1 v1 A2 v2 ->
+    Σ;;; Γ,, A1 |-i B1 : sSort z1 ->
+    Σ;;; Γ,, A2 |-i B2 : sSort z2 ->
+    Σ;;; Γ |-i optCongApp B1 B2 pu pA pB pv
+    : sHeq (B1 {0 := v1}) (sApp u1 A1 B1 v1) (B2 {0 := v2}) (sApp u2 A2 B2 v2).
+Proof.
+  intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 u1 u2 v1 v2 pA pB pu pv
+         hg hpA hpB hpu hpv hB1 hB2.
+  destruct pA.
+  all: try (simpl ; eapply type_CongApp' ; eassumption).
+  destruct pB.
+  all: try (simpl ; eapply type_CongApp' ; eassumption).
+  destruct pu.
+  all: try (simpl ; eapply type_CongApp' ; eassumption).
+  destruct pv.
+  all: try (simpl ; eapply type_CongApp' ; eassumption).
+  simpl.
+  case_eq (notdep B1) ; try (intro ; simpl ; eapply type_CongApp' ; eassumption).
+  case_eq (notdep B2) ; try (intros ; simpl ; eapply type_CongApp' ; eassumption).
+  intros ndB2 ndB1. simpl.
+  ttinv hpA. ttinv hpB. ttinv hpu. ttinv hpv.
+  destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
+  destruct (istype_type hg hpB) as [? hTB]. ttinv hTB.
+  destruct (istype_type hg hpu) as [? hTu]. ttinv hTu.
+  destruct (istype_type hg hpv) as [? hTv]. ttinv hTv.
+  destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
+  destruct (heq_conv_inv h4) as [[[es3 eB1] es4] eB2].
+  destruct (heq_conv_inv h7) as [[[? eu1] ?] eu2].
+  destruct (heq_conv_inv h10) as [[[? ev1] ?] ev2].
+  assert (Σ |-i sSort s1 = sSort s2).
+  { eapply conv_trans ; try eassumption.
+    apply conv_sym. assumption.
+  }
+  assert (Σ |-i sSort z1 = sSort z2).
+  { eapply conv_trans ; try eassumption.
+    apply conv_sym. assumption.
+  }
+  repeat match goal with
+  | h : _ |-i sSort _ = sSort _ |- _ =>
+    pose proof (sort_conv_inv h) ; clear h
+  end.
+  subst.
+  assert (Σ;;; Γ |-i pA2 : sSort s2).
+  { econstructor ; eassumption. }
+  assert (wf Σ Γ).
+  { eapply typing_wf. eassumption. }
+  assert (Σ;;; Γ,, pA2 |-i B1 : sSort z2).
+  { eapply ContextConversion.type_ctxconv ; try eassumption.
+    - econstructor ; eassumption.
+    - econstructor ; try apply ContextConversion.ctxconv_refl.
+      apply conv_sym. assumption.
+  }
+  assert (Σ |-i B1 = B2).
+  { rewrite notdep_lift, lift_subst in eB1 by assumption.
+    rewrite notdep_lift, lift_subst in eB2 by assumption.
+    eapply conv_trans ; try eassumption.
+    apply conv_sym. assumption.
+  }
+  assert (Σ |-i pv1 = pA2).
+  { eapply conv_trans ; try eassumption.
+    apply conv_sym. assumption.
+  }
+  assert (Σ |-i A1 = pA2).
+  { eapply conv_trans ; try eassumption.
+    apply conv_sym. assumption.
+  }
+  econstructor.
+  - econstructor.
+    + ContextConversion.lift_sort. eapply typing_subst ; try eassumption.
+      econstructor ; eassumption.
+    + econstructor ; try eassumption.
+      * econstructor ; try eassumption.
+        -- econstructor ; eassumption.
+        -- eapply conv_trans ; try eassumption.
+           apply conv_sym. apply cong_Prod ; assumption.
+      * econstructor ; eassumption.
+  - econstructor.
+    + ContextConversion.lift_sort. eapply typing_subst ; try eassumption.
+      econstructor ; eassumption.
+    + ContextConversion.lift_sort. eapply typing_subst ; eassumption.
+    + econstructor ; eassumption.
+    + econstructor ; eassumption.
+  - apply cong_Heq.
+    + apply substs_conv. assumption.
+    + apply cong_App ; try apply conv_refl ; assumption.
+    + apply cong_subst ; assumption.
+    + apply cong_App ; try apply conv_refl ; assumption.
+  Unshelve. exact nAnon.
+Defined.           
+
+(* TODO congSum, congPair, congPi1, congPi2 *)
 
 Definition optCongEq pA pu pv :=
   match pA, pu, pv with
