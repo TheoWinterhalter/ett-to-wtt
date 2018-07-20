@@ -68,6 +68,51 @@ Section Decide.
       reduce1 A >> A' ==> sTransport A' B p t --
       reduce1 B >> B' ==> sTransport A B' p t --
       None
+    | sHeq A a B b =>
+      reduce1 A >> A' ==> sHeq A' a B b --
+      reduce1 a >> a' ==> sHeq A a' B b --
+      reduce1 B >> B' ==> sHeq A a B' b --
+      reduce1 b >> b' ==> sHeq A a B b' --
+      None
+    | sHeqToEq p =>
+      reduce1 p >> p' ==> sHeqToEq p' --
+      None
+    | sHeqRefl A a =>
+      reduce1 A >> A' ==> sHeqRefl A' a --
+      reduce1 a >> a' ==> sHeqRefl A a' --
+      None
+    | sHeqSym p =>
+      reduce1 p >> p' ==> sHeqSym p' -- None
+    | sHeqTrans p q =>
+      reduce1 p >> p' ==> sHeqTrans p' q --
+      reduce1 q >> q' ==> sHeqTrans p q' --
+      None
+    | sHeqTransport p t =>
+      reduce1 p >> p' ==> sHeqTransport p' t --
+      reduce1 t >> t' ==> sHeqTransport p t' --
+      None
+    (* | sCongProd *)
+    (* | sCongLambda *)
+    (* | sCongApp *)
+    (* | sCongSum *)
+    (* | sCongPair *)
+    (* | sCongPi1 *)
+    (* | sCongPi2 *)
+    (* | sCongEq *)
+    (* | sCongRefl *)
+    | sEqToHeq p =>
+      reduce1 p >> p' ==> sEqToHeq p' -- None
+    | sHeqTypeEq A B p =>
+      reduce1 p >> p' ==> sHeqTypeEq A B p' --
+      reduce1 A >> A' ==> sHeqTypeEq A' B p --
+      reduce1 B >> B' ==> sHeqTypeEq A B' p --
+      None
+    | sProjT1 p =>
+      reduce1 p >> p' ==> sProjT1 p' -- None
+    | sProjT2 p =>
+      reduce1 p >> p' ==> sProjT2 p' -- None
+    | sProjTe p =>
+      reduce1 p >> p' ==> sProjTe p' -- None
     | _ => None
     end.
 
