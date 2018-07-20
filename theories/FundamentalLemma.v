@@ -191,7 +191,7 @@ Lemma inrel_optTransport :
 Proof.
   intros A B p t t' h.
   unfold optTransport.
-  destruct (Equality.eq_term A B).
+  destruct (DecideConversion.isconv (2 ^ 18) A B).
   - assumption.
   - constructor. assumption.
 Defined.
@@ -1409,21 +1409,24 @@ Proof.
   intros Σ A A' t t' Γ' hg hth hA ht.
   destruct (trel_transport_seq hA) as [A'' [tseq [[hh heq] hrel]]].
   exists A''. split.
-  - case_eq (Equality.eq_term A' A'').
+  - case_eq (DecideConversion.isconv (2 ^ 18) A' A'').
     + intro eq. exists t'. repeat split ; try assumption.
       intro h. 
-      destruct (istype_type hg h).
-      apply Equality.eq_term_spec in eq.
-      eapply type_conv ; try eassumption.
-      * eapply nl_type ; eassumption.
-      * constructor. assumption.
-    + { assert (simA : A' ∼ A'').
-        { apply trel_sym.
-          eapply trel_trans.
-          - apply trel_sym. apply inrel_trel. eassumption.
-          - apply inrel_trel. assumption.
-        }
-        destruct (trel_to_heq Γ' hg simA) as [p hp].
+      rewrite heq in h.
+      destruct (istype_type hg h) as [s hs].
+      assert (hth' : type_head (head A'')) by (now rewrite hh).
+      destruct (inversion_transportType hg hth' hs) as [s' [h' hss']].
+      apply @DecideConversion.isconv_sound with (Σ := Σ) in eq.
+      rewrite <- heq in h.
+      eapply type_conv ; eassumption.
+    + intros _.
+      assert (simA : A' ∼ A'').
+      { apply trel_sym.
+        eapply trel_trans.
+        - apply trel_sym. apply inrel_trel. eassumption.
+        - apply inrel_trel. assumption.
+      }
+      { destruct (trel_to_heq Γ' hg simA) as [p hp].
         exists (optTransport A' A'' (optHeqToEq p) t').
         repeat split.
         + apply inrel_optTransport. assumption.
@@ -1485,11 +1488,10 @@ Proof.
     - eapply inrel_trel. eassumption.
   }
   destruct (trel_to_heq Γ' hg simA) as [p hp].
-  case_eq (Equality.eq_term A' A'').
+  case_eq (DecideConversion.isconv (2 ^ 18) A' A'').
   - intro eq. exists t'. repeat split ; try assumption.
-    apply Equality.eq_term_spec in eq.
-    eapply type_conv ; try eassumption.
-    constructor. assumption.
+    apply @DecideConversion.isconv_sound with (Σ := Σ) in eq.
+    eapply type_conv ; eassumption.
   - exists (optTransport A' A'' (optHeqToEq p) t').
     repeat split.
     + assumption.

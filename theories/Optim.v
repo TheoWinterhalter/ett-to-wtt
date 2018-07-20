@@ -4,7 +4,7 @@ From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
 Require Import util Sorts SAst SLiftSubst Equality SCommon XTyping Conversion
-               ITyping ITypingInversions ITypingLemmata ITypingAdmissible.
+ITyping ITypingInversions ITypingLemmata ITypingAdmissible DecideConversion.
 
 Section Optim.
 
@@ -109,7 +109,8 @@ Proof.
 Defined.
 
 Definition optTransport A B p t :=
-  if Equality.eq_term A B then t else sTransport A B p t.
+  (* if Equality.eq_term A B then t else sTransport A B p t. *)
+  if isconv (2^18) A B then t else sTransport A B p t.
 
 Lemma opt_Transport :
   forall {Σ Γ s A B p t},
@@ -119,13 +120,14 @@ Lemma opt_Transport :
     Σ ;;; Γ |-i optTransport A B p t : B.
 Proof.
   intros Σ Γ s A B p t hg hp ht.
-  unfold optTransport, Equality.eq_term.
-  destruct (nl_dec (nl A) (nl B)).
-  - destruct (istype_type hg hp) as [z hT].
+  unfold optTransport.
+  case_eq (isconv (2 ^ 18) A B).
+  - intro h.
+    destruct (istype_type hg hp) as [z hT].
     ttinv hT.
     eapply type_conv ; try eassumption.
-    constructor. assumption.
-  - eapply type_Transport' ; eassumption.
+    eapply isconv_sound. eassumption.
+  - intros _. eapply type_Transport' ; eassumption.
 Defined.
 
 Definition optHeqToEq p :=
