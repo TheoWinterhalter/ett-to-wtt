@@ -232,7 +232,7 @@ Their respective definitions can be found in
 To realise the sugar of ITT, we define some constants in [Quotes](theories/Quotes.v)
 and then quote them to TemplateCoq's inner representation of terms.
 The translation from ITT to TemplateCoq is done in [FinalTranslation](theories/FinalTranslation.v).
-[FullQuote](theories/FullQuoten.v)
+[FullQuote](theories/FullQuote.v)
 is for the opposite: generating an ITT term from a TemplateCoq (and
 thus Coq) term, it is useful to generate examples.
 [ExampleQuotes](theories/ExampleQuotes.v) is about defining terms that will be useful for
