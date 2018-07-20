@@ -1,9 +1,126 @@
-# Translation from ETT to ITT
+# Eliminating Reflection from Type Theory
+**A translation from extensional type theory (ETT) to intensional type theory (ITT)**
 
-Formalisation (in Coq) of a translation from extensional type theory
-to intensional type theory.
+**Quick jump**
+- [Installing](#installing)
+- [Structure](#structure-of-the-project)
 
-## Requirements
+## Overview
+
+This work is a Coq formalisation of a translation from ETT to ITT that can
+be interfaced with Coq thanks to the TemplateCoq plugin.
+Additionally, sorts are handled quite generically (although without cumulativity)
+which means in particular that we can have a translation from
+Homotopy Type System (HTS) to Two-Level Type Theory (2TT) as a direct application.
+
+ETT differs from ITT by the addition of the **reflection rule**:
+```
+Γ ⊢ e : u = v
+--------------
+  Γ ⊢ u ≡ v
+```
+
+### Examples
+
+In order to see more clearly what it does, here are a few examples that can be found
+in this repository.
+
+#### Identity with a coercion
+
+A toy example of ETT would be to use an equality between types in context to
+coerce a term.
+```coq
+Fail Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := x.
+```
+This of course fails in Coq / ITT because `A` and `B` are not convertible.
+In order to still be able to write our example in Coq we use a notation
+reminiscent of Agda `{! _ !}` with an underlying axiom going from any type
+to any other. With it we can write:
+```coq
+Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
+```
+Using the power of TemplateCoq, we can quote it, translate it using our
+translation, and then unquote it to get back a Coq term:
+```coq
+fun (A B : Type) (e : A = B) (x : A) => transport e x
+     : forall A B : Type, A = B -> A -> B
+```
+This is what you would expect, and what you would write by hand:
+**the use of reflection has been replaced by a transport**.
+
+#### Playing with vectors
+
+An already more challenging example involves playing around with
+inductive types and eliminators (we don't handle fixed points and
+pattern-matching).
+
+Consider for this the type of length-indexed lists:
+```coq
+Inductive vec A : nat -> Type :=
+| vnil : vec A 0
+| vcons : A -> forall n, vec A n -> vec A (S n).
+```
+
+Let's say we want to use a vector of length `S n` as a vector of
+length `n + 1`, in ITT you cannot as `S n` and `n + 1` are
+(propositionally) equal but not convertible.
+```coq
+Fail Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
+  := f (vcons a n v).
+```
+In ETT, we can use the equality to type-check it.
+```coq
+Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
+  := f {! vcons a n v !}.
+```
+The translation of this term is again what one would expect (or do
+by hand):
+```coq
+fun (A : Type) (n : nat) (X : Type) (f : vec A (n + 1) -> X) (a : A) (v : vec A n) =>
+f (transport (vcons_act_obligation A n X f a v) (vcons a n v))
+     : forall (A : Type) (n : nat) (X : Type), (vec A (n + 1) -> X) -> A -> vec A n -> X
+```
+
+#### Reversal of vectors
+
+One more *realistic* example would be the reversal of vectors (using an accumulator):
+```coq
+Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
+           (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc))
+           n v m acc.
+```
+Indeed, in ITT, it is not possible to write it directly like this, as we would
+do in the non dependent case (lists). This time it has to do with comutativity
+of addition: `S n + m` and `n + S m` are not convertible.
+We then write the ETT definition below.
+```coq
+Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
+           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
+           n v m acc.
+```
+Unfortunately, this time, we reach the limitations of our translation as it could
+be more optimised. Indeed, in the general case we need Streicher's **axiom K**
+and **functional extensionality** to translate ETT to ITT, and it can happen that our
+translation produces a term using even when it is not necessary.
+We hope to improve that in the future.
+Thus the translation we get is (with a relatively large proof-term ellipsed):
+```coq
+fun (A : Type) (n m : nat) (v : vec A n) (acc : vec A m) =>
+vec_rect A (fun (n0 : nat) (_ : vec A n0) => forall m0 : nat, vec A m0 -> vec A (n0 + m0))
+  (transport 
+       (* big equality term *) 
+       (fun (m0 : nat) (acc0 : vec A m0) => acc0))
+  (fun (a : A) (n0 : nat) (v0 : vec A n0) (rv : forall m0 : nat, vec A m0 -> vec A (n0 + m0)) 
+     (m0 : nat) (acc0 : vec A m0) =>
+   transport (vrev_obligation3 A n m v acc a n0 v0 rv m0 acc0) (rv (S m0) (vcons a m0 acc0))) n v m acc
+     : forall (A : Type) (n m : nat), vec A n -> vec A m -> vec A (n + m)
+```
+
+## Installing
+
+### Requirements
 
 This project can be compiled with Coq 8.8 and requires
 [Equations](http://mattam82.github.io/Coq-Equations/) 
@@ -13,7 +130,7 @@ to compile (probably best to `make && make install` before they release).
 If you want to compile the examples, you also need
 [TypingFlags](https://github.com/SimonBoulier/TypingFlags).
 
-## Building
+### Building
 
 Once you have the dependencies (at least Equations), simply run
 ```bash
@@ -23,67 +140,62 @@ to build the project (it takes quite some time unfortunately, so you
 can use options like `-j4` to speed up a little bit).
 
 
-### Structure of the project
+## Structure of the project
 
 All of the formalisation can be found in the `theories` directory.
 
-*The file [util.v](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/util.v)
+*The file [util.v](theories/util.v)
 provides useful lemmata that aren't specific to the formalisation.*
 
-#### Syntax
+### Syntax
 
-First, [Sorts](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Sorts.v) introduces a
-notion of sort (as a type-class) stating the basic properties required, and provides different instances
+First, [Sorts](theories/Sorts.v) introduces a notion of sort (as a type-class)
+stating the basic properties required, and provides different instances
 like the natural number hierarchy, type-in-type, or even HTS/2-level TT.
-In [SAst](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/SAst.v)
-we define the common syntax to both ETT (Extensional type theory) and ITT (our own version of Itensional
-type theory with some sugar) in the form of a simple inductive type `sterm`.
+In [SAst](SAst.v) we define the common syntax to both ETT (Extensional type theory)
+and ITT (our own version of Itensional type theory with some sugar) in the form of
+a simple inductive type `sterm`.
 Since terms (`sterm`) are annotated with names—for printing—which are
 irrelevant for computation and typing, we define an erasure map `nl : sterm -> nlterm`
-in [Equality](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Equality.v)
-from which we derive a decidable equality on `sterm`.
-We then define lifting operations, substitution and closedness in
-[SLiftSubst](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/SLiftSubst.v).
+in [Equality](theories/Equality.v) from which we derive a decidable equality on `sterm`.
+We then define lifting operations, substitution and closedness in [SLiftSubst](SLiftSubst.v).
 
-#### Typing
+### Typing
 
-First, in [SCommon](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/SCommon.v)
-we define common utility to both ETT and ITT, namely with the definition of contexts (`scontext`) and global
+First, in [SCommon](theories/SCommon.v) we define common utility to both ETT and ITT,
+namely with the definition of contexts (`scontext`) and global
 contexts (`sglobal_context`), the latter containing the declarations of constants.
-[Conversion](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Conversion.v)
-is about the untyped conversion used in ITT (conversion `Σ |-i t = u` is derived from one-step reduction
-`Σ |-i t ▷ u`) and contains the **only axiom** of the whole formalisation.
-[XTyping](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/XTyping.v)
-contains the definition of typing rules of ETT (`Σ ;;; Γ |-x t : A`), mutually defined with a typed
-conversion (`Σ ;;; Γ |-x t = u : A`) and the well-formedness of contexts (`wf Σ Γ`).
-[ITyping](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ITyping.v)
-is the same for ITT with the difference that the conversion isn't mutually defined but instead the
-one defined in [Conversion](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Conversion.v))
+[Conversion](theories/Conversion.v) is about the untyped conversion used in ITT
+(conversion `Σ |-i t = u` is derived from one-step reduction `Σ |-i t ▷ u`) and contains
+the **only axiom** of the whole formalisation.
+[XTyping](theories/XTyping.v) contains the definition of typing rules of ETT
+(`Σ ;;; Γ |-x t : A`), mutually defined with a typed conversion (`Σ ;;; Γ |-x t = u : A`)
+and the well-formedness of contexts (`wf Σ Γ`).
+[ITyping](theories/ITyping.v) is the same for ITT with the difference that the conversion
+isn't mutually defined but instead the one defined in [Conversion](theories/Conversion.v))
 and that it also defines a notion of well-formedness of global declarations (`type_glob Σ`).
 
-#### Lemmata regarding ITT
+### Lemmata regarding ITT
 
-In [ITypingInversions](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ITypingInversions.v)
-one can find an inversion lemma for each constructor of the syntax, together with the tactic `ttinv`
-to apply the right one.
-In [ITypingLemmata](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ITypingLemmata.v)
-are proven a list of different lemmata regarding ITT, including the fact that whenever we have
-`Σ ;;; Γ |-i t : A` then `A` is well sorted and that lifting and substitution preserve typing.
+In [ITypingInversions](theories/ITypingInversions.v) one can find an inversion lemma for
+each constructor of the syntax, together with the tactic `ttinv` to apply the right one.
+In [ITypingLemmata](theories/ITypingLemmata.v) are proven a list of different lemmata
+regarding ITT, including the fact that whenever we have `Σ ;;; Γ |-i t : A` then `A` is
+well sorted and that lifting and substitution preserve typing.
 Context conversion and the associated typing preservation lemma are found in
-[ContextConversion](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ContextConversion.v).
+[ContextConversion](theories/ContextConversion.v).
 A uniqueness of typing lemma (if `Σ ;;; Γ |-i t :A` and `Σ ;;; Γ |-i t :B` then `Σ |-i A = B`) is proven in
-[Uniqueness](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Uniqueness.v).
+[Uniqueness](theories/Uniqueness.v).
 Subject reduction and the corollary that we call subject conversion (whenever two terms are convertible
 and well-typed, their types are also convertible) are proven in
-[SubjectReduction](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/SubjectReduction.v).
-[ITypingAdmissible](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ITypingAdmissible.v)
-states admissible rules in ITT.
+[SubjectReduction](theories/SubjectReduction.v).
+[ITypingAdmissible](theories/ITypingAdmissible.v) states admissible rules in ITT.
 
-#### Translation
+### Translation
 
-[PackLifts](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/PackLifts.v)
-defines the lifting operations related to packing. Packing consists in taking two types `A1` and `A2`
-and yielding the following record type (where `x ≅ y` stands for heterogenous equality between `x` and `y`).
+[PackLifts](PackLifts.v) defines the lifting operations related to packing. Packing consists
+in taking two types `A1` and `A2` and yielding the following record type (where `x ≅ y`
+stands for heterogenous equality between `x` and `y`).
 ```coq
 Record Pack A1 A2 := pack {
   ProjT1 : A1 ;
@@ -93,45 +205,38 @@ Record Pack A1 A2 := pack {
 ```
 In order to produce terms as small / efficient as possible, we provide
 *optimised* versions of some constructors, for instance, transport
-between two syntactically equal terms is remapped to
-identity. Thanks to this, terms that live in ITT should be
+between two convertible terms is remapped to identity. Thanks to this, terms that live in ITT should be
 translated to themselves syntactically (and not just up to transport).
-This is done in
-[Optim](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Optim.v).
-[FundamentalLemma](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/FundamentalLemma.v)
+This is done in [Optim](theories/Optim.v), relying on a (semi-)decision procedure for
+conversion in ITT defined in [DecideConversion.v](theories/DecideConversion.v).
+[FundamentalLemma](theories/FundamentalLemma.v)
 contains the proof of the fundamental lemma, crucial step for our translation.
-[Translation](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Translation.v)
+[Translation](theories/Translation.v)
 contains the translation from ETT to ITT.
 
-#### Meta Theory of ETT
+### Meta Theory of ETT
 
 In order to write ETT derivations more effectively, we develop some of the meta-theory of ETT.
-[XInversions](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/XInversions.v) provides
-inversion lemmata for ETT while
-[XTypingLemmata](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/XTypingLemmata.v) provides
-lift and substitution lemmata, along with the proof that the type in a judgement is well sorted.
+[XInversions](theories/XInversions.v) provides inversion lemmata for ETT while
+[XTypingLemmata](theories/XTypingLemmata.v) provides lift and substitution lemmata, along with
+the proof that the type in a judgement is well sorted.
 
-#### Checking
+### Checking
 
 For type checking, we write one tactic for ITT and one for ETT.
 Their respective definitions can be found in
-[IChecking](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/IChecking.v) and
-[XChecking](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/XChecking.v).
+[IChecking](theories/IChecking.v) and [XChecking](theories/XChecking.v).
 
-#### Interaction with (Template)Coq
+### Interaction with (Template)Coq
 
-To realise the sugar of ITT, we define some constants in
-[Quotes](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Quotes.v)
+To realise the sugar of ITT, we define some constants in [Quotes](theories/Quotes.v)
 and then quote them to TemplateCoq's inner representation of terms.
-The translation from ITT to TemplateCoq is done in
-[FinalTranslation](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/FinalTranslation.v).
-[FullQuote](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/FullQuoten.v)
+The translation from ITT to TemplateCoq is done in [FinalTranslation](theories/FinalTranslation.v).
+[FullQuote](theories/FullQuoten.v)
 is for the opposite: generating an ITT term from a TemplateCoq (and
 thus Coq) term, it is useful to generate examples.
-[ExampleQuotes](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ExampleQuotes.v)
-is about defining terms that will be useful for examples but need quoting.
-The module [ExamplesUtil](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/ExamplesUtil.v)
-provides useful lemmata and the proof of well-formedness of a global
-context with `nat` and `vec` as axiomatised constants.
-Finally, some examples can be found in
-[Example](https://github.com/TheoWinterhalter/ett-to-itt/blob/master/theories/Example.v).
+[ExampleQuotes](theories/ExampleQuotes.v) is about defining terms that will be useful for
+examples but need quoting.
+The module [ExamplesUtil](theories/ExamplesUtil.v) provides useful lemmata and the proof of
+well-formedness of a global context with `nat` and `vec` as axiomatised constants.
+Finally, some examples can be found in [Example](theories/Example.v).
