@@ -161,9 +161,14 @@ Fixpoint tsl_rec (fuel : nat) (Σ : global_context) (Γ : context) (t : sterm)
     | sTransport T1 T2 p t =>
       T1' <- tsl_rec fuel Σ Γ T1 axt ;;
       T2' <- tsl_rec fuel Σ Γ T2 axt ;;
-      p' <- tsl_rec fuel Σ Γ p axt ;;
       t' <- tsl_rec fuel Σ Γ t axt ;;
-      myret Σ Γ (mkTransport T1' T2' p' t')
+      (* Final optimisation to remove useless transports *)
+      match check_conv Σ Γ T1' T2' with
+      | Checked tt => myret Σ Γ t'
+      | _ =>
+        p' <- tsl_rec fuel Σ Γ p axt ;;
+        myret Σ Γ (mkTransport T1' T2' p' t')
+      end
     | sHeq A a B b =>
       A' <- tsl_rec fuel Σ Γ A axt ;;
       B' <- tsl_rec fuel Σ Γ B axt ;;
