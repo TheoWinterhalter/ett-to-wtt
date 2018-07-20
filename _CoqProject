@@ -16,6 +16,7 @@ theories/ContextConversion.v
 theories/Uniqueness.v
 theories/SubjectReduction.v
 theories/ITypingAdmissible.v
+theories/DecideConversion.v
 theories/Optim.v
 theories/PackLifts.v
 theories/FundamentalLemma.v
