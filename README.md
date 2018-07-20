@@ -102,21 +102,18 @@ Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
            n v m acc.
 ```
-Unfortunately, this time, we reach the limitations of our translation as it could
-be more optimised. Indeed, in the general case we need Streicher's **axiom K**
-and **functional extensionality** to translate ETT to ITT, and it can happen that our
-translation produces a term using even when it is not necessary.
-We hope to improve that in the future.
-Thus the translation we get is (with a relatively large proof-term ellipsed):
+We then obtain the following translation with exactly one transport as expected.
 ```coq
 fun (A : Type) (n m : nat) (v : vec A n) (acc : vec A m) =>
-vec_rect A (fun (n0 : nat) (_ : vec A n0) => forall m0 : nat, vec A m0 -> vec A (n0 + m0))
-  (transport 
-       (* big equality term *) 
-       (fun (m0 : nat) (acc0 : vec A m0) => acc0))
-  (fun (a : A) (n0 : nat) (v0 : vec A n0) (rv : forall m0 : nat, vec A m0 -> vec A (n0 + m0)) 
+vec_rect A
+  (fun (n0 : nat) (_ : vec A n0) =>
+   forall m0 : nat, vec A m0 -> vec A (n0 + m0))
+  (fun (m0 : nat) (acc0 : vec A m0) => acc0)
+  (fun (a : A) (n0 : nat) (v0 : vec A n0)
+     (rv : forall m0 : nat, vec A m0 -> vec A (n0 + m0)) 
      (m0 : nat) (acc0 : vec A m0) =>
-   transport (vrev_obligation3 A n m v acc a n0 v0 rv m0 acc0) (rv (S m0) (vcons a m0 acc0))) n v m acc
+   transport (vrev_obligation3 A n m v acc a n0 v0 rv m0 acc0)
+     (rv (S m0) (vcons a m0 acc0))) n v m acc
      : forall (A : Type) (n m : nat), vec A n -> vec A m -> vec A (n + m)
 ```
 
