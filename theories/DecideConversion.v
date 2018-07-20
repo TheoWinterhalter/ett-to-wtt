@@ -35,6 +35,39 @@ Section Decide.
       reduce1 B >> B' ==> sLambda n A B' t --
       reduce1 t >> t' ==> sLambda n A B t' --
       None
+    | sApp (sLambda n _ _ t) _ _ u =>
+      Some (t{ 0 := u })
+    | sApp u A B v =>
+      reduce1 u >> u' ==> sApp u' A B v --
+      reduce1 v >> v' ==> sApp u A B v' --
+      reduce1 A >> A' ==> sApp u A' B v --
+      reduce1 B >> B' ==> sApp u A B' v --
+      None
+    | sSum n A B =>
+      reduce1 A >> A' ==> sSum n A' B --
+      reduce1 B >> B' ==> sSum n A B' --
+      None
+    (* | sPair *)
+    (* | sPi1 *)
+    (* | sPi2 *)
+    | sEq A u v =>
+      reduce1 A >> A' ==> sEq A' u v --
+      reduce1 u >> u' ==> sEq A u' v --
+      reduce1 v >> v' ==> sEq A u v' --
+      None
+    | sRefl A u =>
+      reduce1 A >> A' ==> sRefl A' u --
+      reduce1 u >> u' ==> sRefl A u' --
+      None
+    (* | sJ *)
+    | sTransport _ _ (sRefl _ _) t =>
+      Some t
+    | sTransport A B p t =>
+      reduce1 p >> p' ==> sTransport A B p' t --
+      reduce1 t >> t' ==> sTransport A B p t' --
+      reduce1 A >> A' ==> sTransport A' B p t --
+      reduce1 B >> B' ==> sTransport A B' p t --
+      None
     | _ => None
     end.
 
@@ -56,8 +89,15 @@ Section Decide.
     intros Σ t u h. revert u h.
     induction t ; intros u h.
     all: try (cbn in h ; discriminate h).
-    - revert h. cbn. repeat one_case. discriminate.
-    - revert h. cbn. repeat one_case. discriminate.
+    all: try (revert h ; cbn ; repeat one_case ; discriminate).
+    - destruct t1.
+      all: try (revert h ; cbn ; repeat one_case ; discriminate).
+      cbn in h. inversion h. subst. clear h.
+      constructor.
+    - destruct t3.
+      all: try (revert h ; cbn ; repeat one_case ; discriminate).
+      cbn in h. inversion h. subst. clear h.
+      constructor.
   Defined.
 
   (* When it returns [true], we have [Σ |-i u = v].
