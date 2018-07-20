@@ -1,6 +1,8 @@
 # Eliminating Reflection from Type Theory
 **A translation from extensional type theory (ETT) to intensional type theory (ITT)**
 
+*Authors:* Théo Winterhalter, Matthieu Sozeau and Nicolas Tabareau
+
 **Quick jump**
 - [Installing](#installing)
 - [Structure](#structure-of-the-project)
