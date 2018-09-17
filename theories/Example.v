@@ -330,7 +330,7 @@ Proof.
     unshelve eapply close_goal
     ; [ exact (sAx "vrev_obligation4") | assumption |].
     simpl. ettcheck Σi.
-  Unshelve. exact nAnon.
+  Unshelve. all: exact nAnon.
 Defined.
 
 Definition itt_vrev : sterm :=
