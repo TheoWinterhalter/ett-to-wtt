@@ -82,9 +82,9 @@ Definition myret (Σ : global_context) (Γ : context) (t : term) : tsl_result te
   (* end. *)
 
 Definition infer_hnf fuel Σ Γ t :=
-  infer (F := Build_Fuel fuel) Σ Γ t.
-  (* t' <- @infer (Build_Fuel fuel) Σ Γ t ;; *)
-  (* hnf Σ Γ t'. *)
+  (* infer (F := Build_Fuel fuel) Σ Γ t. *)
+  t' <- infer (F := Build_Fuel fuel) Σ Γ t ;;
+  hnf Σ Γ t'.
 
 Fixpoint brs_repack (l : list (nat * tsl_result term)) :
   tsl_result (list (prod nat term)) :=
