@@ -58,252 +58,536 @@ Definition ty_obligation1 : sterm :=
                            (sRel 4)))))))).
 
 Definition ty_obligation2 : sterm :=
-  sProd nAnon Ty
-      (sProd nAnon (sAx "nat")
-         (sProd nAnon (sAx "nat")
-            (sProd nAnon (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 2)) (sAx "nat") Ty (sRel 1))
-               (sProd nAnon (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 3)) (sAx "nat") Ty (sRel 1))
-                  (sEq Ty
-                     (sProd (nNamed "f")
-                        (sProd (nNamed "a") (sRel 4)
-                           (sProd (nNamed "n") (sAx "nat")
-                              (sProd (nNamed "v")
-                                 (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 6)) (sAx "nat") Ty (sRel 0))
-                                 (sProd nAnon
-                                    (sApp
-                                       (sApp
-                                          (sLambda (nNamed "n") (sAx "nat")
-                                             (sProd (nNamed "v")
-                                                (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8))
-                                                   (sAx "nat") Ty (sRel 0)) Ty)
-                                             (sLambda (nNamed "v")
-                                                (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8))
-                                                   (sAx "nat") Ty (sRel 0)) Ty
-                                                (sProd (nNamed "m") (sAx "nat")
-                                                   (sProd nAnon
-                                                      (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 10))
-                                                         (sAx "nat") Ty (sRel 0))
-                                                      (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 11))
-                                                         (sAx "nat") Ty
-                                                         (sApp
-                                                            (sApp (sAx "add") (sAx "nat")
-                                                               (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                               (sRel 3)) (sAx "nat") (sAx "nat") (sRel 1)))))))
-                                          (sAx "nat")
-                                          (sProd (nNamed "v")
-                                             (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8))
-                                                (sAx "nat") Ty (sRel 0)) Ty) (sRel 1))
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 7)) (sAx "nat") Ty (sRel 1))
-                                       Ty (sRel 0))
-                                    (sApp
-                                       (sApp
-                                          (sLambda (nNamed "n") (sAx "nat")
-                                             (sProd (nNamed "v")
-                                                (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                                   (sAx "nat") Ty (sRel 0)) Ty)
-                                             (sLambda (nNamed "v")
-                                                (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                                   (sAx "nat") Ty (sRel 0)) Ty
-                                                (sProd (nNamed "m") (sAx "nat")
-                                                   (sProd nAnon
-                                                      (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 11))
-                                                         (sAx "nat") Ty (sRel 0))
-                                                      (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 12))
-                                                         (sAx "nat") Ty
-                                                         (sApp
-                                                            (sApp (sAx "add") (sAx "nat")
-                                                               (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                               (sRel 3)) (sAx "nat") (sAx "nat") (sRel 1)))))))
-                                          (sAx "nat")
-                                          (sProd (nNamed "v")
-                                             (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                                (sAx "nat") Ty (sRel 0)) Ty) (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 2)))
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8))
-                                          (sAx "nat") Ty (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 2))) Ty
-                                       (sApp
-                                          (sApp
-                                             (sApp
-                                                (sApp (sAx "vcons") Ty
-                                                   (sProd nAnon (sRel 0)
-                                                      (sProd (nNamed "n") (sAx "nat")
-                                                         (sProd nAnon
-                                                            (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 2))
-                                                               (sAx "nat") Ty (sRel 0))
-                                                            (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 3))
-                                                               (sAx "nat") Ty (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 1))))))
-                                                   (sRel 8)) (sRel 8)
-                                                (sProd (nNamed "n") (sAx "nat")
-                                                   (sProd nAnon
-                                                      (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 10))
-                                                         (sAx "nat") Ty (sRel 0))
-                                                      (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 11))
-                                                         (sAx "nat") Ty (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 1)))))
-                                                (sRel 3)) (sAx "nat")
-                                             (sProd nAnon
-                                                (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                                   (sAx "nat") Ty (sRel 0))
-                                                (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 10))
-                                                   (sAx "nat") Ty (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 1))))
-                                             (sRel 2))
-                                          (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8))
-                                             (sAx "nat") Ty (sRel 2))
-                                          (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                             (sAx "nat") Ty (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 3)))
-                                          (sRel 1)))))))
-                        (sProd (nNamed "n") (sAx "nat")
-                           (sProd (nNamed "v")
-                              (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 6)) (sAx "nat") Ty (sRel 0))
-                              (sApp
-                                 (sApp
-                                    (sLambda (nNamed "n") (sAx "nat")
-                                       (sProd (nNamed "v")
-                                          (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8))
-                                             (sAx "nat") Ty (sRel 0)) Ty)
-                                       (sLambda (nNamed "v")
-                                          (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8))
-                                             (sAx "nat") Ty (sRel 0)) Ty
-                                          (sProd (nNamed "m") (sAx "nat")
-                                             (sProd nAnon
-                                                (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 10))
-                                                   (sAx "nat") Ty (sRel 0))
-                                                (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 11))
-                                                   (sAx "nat") Ty
-                                                   (sApp
-                                                      (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                         (sRel 3)) (sAx "nat") (sAx "nat") (sRel 1)))))))
-                                    (sAx "nat")
-                                    (sProd (nNamed "v")
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8)) (sAx "nat") Ty (sRel 0))
-                                       Ty) (sRel 1))
-                                 (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 7)) (sAx "nat") Ty (sRel 1)) Ty
-                                 (sRel 0)))))
-                     (sProd nAnon
-                        (sProd (nNamed "a") (sRel 4)
-                           (sProd (nNamed "n") (sAx "nat")
-                              (sProd (nNamed "v")
-                                 (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 6)) (sAx "nat") Ty (sRel 0))
-                                 (sProd nAnon
-                                    (sProd (nNamed "m") (sAx "nat")
-                                       (sProd nAnon
-                                          (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8))
-                                             (sAx "nat") Ty (sRel 0))
-                                          (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                             (sAx "nat") Ty
-                                             (sApp
-                                                (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                   (sRel 3)) (sAx "nat") (sAx "nat") (sRel 1)))))
-                                    (sProd (nNamed "m") (sAx "nat")
-                                       (sProd nAnon
-                                          (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                             (sAx "nat") Ty (sRel 0))
-                                          (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 10))
-                                             (sAx "nat") Ty
-                                             (sApp
-                                                (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                   (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 4)))
-                                                (sAx "nat") (sAx "nat") (sRel 1)))))))))
-                        (sProd (nNamed "n") (sAx "nat")
-                           (sProd (nNamed "v")
-                              (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 6)) (sAx "nat") Ty (sRel 0))
-                              (sProd (nNamed "m") (sAx "nat")
-                                 (sProd nAnon
-                                    (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8)) (sAx "nat") Ty (sRel 0))
-                                    (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                       (sAx "nat") Ty
-                                       (sApp
-                                          (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat")) (sRel 3))
-                                          (sAx "nat") (sAx "nat") (sRel 1))))))))))))).
+  sProd nAnon (sSort tt)
+    (sProd nAnon (sAx "nat")
+       (sProd nAnon (sAx "nat")
+          (sProd nAnon
+             (sApp
+                (sApp (sAx "vec") (sSort tt) (sProd nAnon (sAx "nat") (sSort tt))
+                   (sRel 2)) (sAx "nat") (sSort tt) (sRel 1))
+             (sProd nAnon
+                (sApp
+                   (sApp (sAx "vec") (sSort tt)
+                      (sProd nAnon (sAx "nat") (sSort tt)) 
+                      (sRel 3)) (sAx "nat") (sSort tt) 
+                   (sRel 1))
+                (sProd nAnon (sRel 4)
+                   (sProd nAnon (sAx "nat")
+                      (sProd nAnon
+                         (sApp
+                            (sApp (sAx "vec") (sSort tt)
+                               (sProd nAnon (sAx "nat") (sSort tt)) 
+                               (sRel 6)) (sAx "nat") (sSort tt) 
+                            (sRel 0))
+                         (sProd nAnon
+                            (sProd (nNamed "m") (sAx "nat")
+                               (sProd nAnon
+                                  (sApp
+                                     (sApp (sAx "vec") 
+                                        (sSort tt)
+                                        (sProd nAnon (sAx "nat") (sSort tt))
+                                        (sRel 8)) (sAx "nat") 
+                                     (sSort tt) (sRel 0))
+                                  (sApp
+                                     (sApp (sAx "vec") 
+                                        (sSort tt)
+                                        (sProd nAnon (sAx "nat") (sSort tt))
+                                        (sRel 9)) (sAx "nat") 
+                                     (sSort tt)
+                                     (sApp
+                                        (sApp (sAx "add") 
+                                           (sAx "nat")
+                                           (sProd (nNamed "m") 
+                                              (sAx "nat") 
+                                              (sAx "nat")) 
+                                           (sRel 3)) (sAx "nat") 
+                                        (sAx "nat") (sRel 1)))))
+                            (sProd nAnon (sAx "nat")
+                               (sProd nAnon
+                                  (sApp
+                                     (sApp (sAx "vec") 
+                                        (sSort tt)
+                                        (sProd nAnon (sAx "nat") (sSort tt))
+                                        (sRel 9)) (sAx "nat") 
+                                     (sSort tt) (sRel 0))
+                                  (sEq Ty
+                                     (sApp
+                                        (sApp (sAx "vec") Ty
+                                           (sProd nAnon (sAx "nat") Ty) 
+                                           (sRel 10)) 
+                                        (sAx "nat") Ty
+                                        (sApp
+                                           (sApp (sAx "add") 
+                                              (sAx "nat")
+                                              (sProd (nNamed "m") 
+                                                 (sAx "nat") 
+                                                 (sAx "nat")) 
+                                              (sRel 4)) 
+                                           (sAx "nat") 
+                                           (sAx "nat")
+                                           (sApp (sAx "S") 
+                                              (sAx "nat") 
+                                              (sAx "nat") 
+                                              (sRel 1))))
+                                     (sApp
+                                        (sApp (sAx "vec") 
+                                           (sSort tt)
+                                           (sProd nAnon (sAx "nat") (sSort tt))
+                                           (sRel 10)) 
+                                        (sAx "nat") (sSort tt)
+                                        (sApp
+                                           (sApp (sAx "add") 
+                                              (sAx "nat")
+                                              (sProd (nNamed "m") 
+                                                 (sAx "nat") 
+                                                 (sAx "nat"))
+                                              (sApp (sAx "S") 
+                                                 (sAx "nat") 
+                                                 (sAx "nat") 
+                                                 (sRel 4))) 
+                                           (sAx "nat") 
+                                           (sAx "nat") 
+                                           (sRel 1)))))))))))))).
 
 Definition ty_obligation3 : sterm :=
-  sProd nAnon Ty
-      (sProd nAnon (sAx "nat")
-         (sProd nAnon (sAx "nat")
-            (sProd nAnon (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 2)) (sAx "nat") Ty (sRel 1))
-               (sProd nAnon (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 3)) (sAx "nat") Ty (sRel 1))
-                  (sProd nAnon (sRel 4)
-                     (sProd nAnon (sAx "nat")
-                        (sProd nAnon (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 6)) (sAx "nat") Ty (sRel 0))
-                           (sProd nAnon
-                              (sProd (nNamed "m") (sAx "nat")
-                                 (sProd nAnon
-                                    (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8)) (sAx "nat") Ty (sRel 0))
-                                    (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                       (sAx "nat") Ty
-                                       (sApp
-                                          (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat")) (sRel 3))
-                                          (sAx "nat") (sAx "nat") (sRel 1)))))
-                              (sProd nAnon (sAx "nat")
-                                 (sProd nAnon
-                                    (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9)) (sAx "nat") Ty (sRel 0))
-                                    (sEq Ty
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 10))
-                                          (sAx "nat") Ty
-                                          (sApp
-                                             (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                (sRel 4)) (sAx "nat") (sAx "nat")
-                                             (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 1))))
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 10))
-                                          (sAx "nat") Ty
-                                          (sApp
-                                             (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 4)))
-                                             (sAx "nat") (sAx "nat") (sRel 1)))))))))))))).
+  sProd nAnon (sSort tt)
+    (sProd nAnon (sAx "nat")
+       (sProd nAnon (sAx "nat")
+          (sProd nAnon
+             (sApp
+                (sApp (sAx "vec") (sSort tt) (sProd nAnon (sAx "nat") (sSort tt))
+                   (sRel 2)) (sAx "nat") (sSort tt) (sRel 1))
+             (sProd nAnon
+                (sApp
+                   (sApp (sAx "vec") (sSort tt)
+                      (sProd nAnon (sAx "nat") (sSort tt)) 
+                      (sRel 3)) (sAx "nat") (sSort tt) 
+                   (sRel 1))
+                (sEq Ty
+                   (sProd nAnon (sRel 4)
+                      (sProd (nNamed "n") (sAx "nat")
+                         (sProd (nNamed "v")
+                            (sApp
+                               (sApp (sAx "vec") (sSort tt)
+                                  (sProd nAnon (sAx "nat") (sSort tt)) 
+                                  (sRel 6)) (sAx "nat") 
+                               (sSort tt) (sRel 0))
+                            (sProd (nNamed "rv")
+                               (sProd (nNamed "m") (sAx "nat")
+                                  (sProd nAnon
+                                     (sApp
+                                        (sApp (sAx "vec") 
+                                           (sSort tt)
+                                           (sProd nAnon (sAx "nat") (sSort tt))
+                                           (sRel 8)) (sAx "nat") 
+                                        (sSort tt) (sRel 0))
+                                     (sApp
+                                        (sApp (sAx "vec") 
+                                           (sSort tt)
+                                           (sProd nAnon (sAx "nat") (sSort tt))
+                                           (sRel 9)) (sAx "nat") 
+                                        (sSort tt)
+                                        (sApp
+                                           (sApp (sAx "add") 
+                                              (sAx "nat")
+                                              (sProd (nNamed "m") 
+                                                 (sAx "nat") 
+                                                 (sAx "nat")) 
+                                              (sRel 3)) 
+                                           (sAx "nat") 
+                                           (sAx "nat") 
+                                           (sRel 1)))))
+                               (sProd (nNamed "m") (sAx "nat")
+                                  (sProd (nNamed "acc")
+                                     (sApp
+                                        (sApp (sAx "vec") 
+                                           (sSort tt)
+                                           (sProd nAnon (sAx "nat") (sSort tt))
+                                           (sRel 9)) (sAx "nat") 
+                                        (sSort tt) (sRel 0))
+                                     (sApp
+                                        (sApp (sAx "vec") 
+                                           (sSort tt)
+                                           (sProd nAnon (sAx "nat") (sSort tt))
+                                           (sRel 10)) 
+                                        (sAx "nat") (sSort tt)
+                                        (sApp
+                                           (sApp (sAx "add") 
+                                              (sAx "nat")
+                                              (sProd (nNamed "m") 
+                                                 (sAx "nat") 
+                                                 (sAx "nat"))
+                                              (sApp (sAx "S") 
+                                                 (sAx "nat") 
+                                                 (sAx "nat") 
+                                                 (sRel 4))) 
+                                           (sAx "nat") 
+                                           (sAx "nat") 
+                                           (sRel 1)))))))))
+                   (sProd (nNamed "a") (sRel 4)
+                      (sProd (nNamed "n") (sAx "nat")
+                         (sProd (nNamed "v")
+                            (sApp
+                               (sApp (sAx "vec") (sSort tt)
+                                  (sProd nAnon (sAx "nat") (sSort tt)) 
+                                  (sRel 6)) (sAx "nat") 
+                               (sSort tt) (sRel 0))
+                            (sProd nAnon
+                               (sApp
+                                  (sApp
+                                     (sLambda (nNamed "n") 
+                                        (sAx "nat")
+                                        (sProd (nNamed "v")
+                                           (sApp
+                                              (sApp (sAx "vec") 
+                                                 (sSort tt)
+                                                 (sProd nAnon 
+                                                    (sAx "nat") 
+                                                    (sSort tt)) 
+                                                 (sRel 8)) 
+                                              (sAx "nat") 
+                                              (sSort tt) 
+                                              (sRel 0)) 
+                                           (sSort tt))
+                                        (sLambda (nNamed "v")
+                                           (sApp
+                                              (sApp (sAx "vec") 
+                                                 (sSort tt)
+                                                 (sProd nAnon 
+                                                    (sAx "nat") 
+                                                    (sSort tt)) 
+                                                 (sRel 8)) 
+                                              (sAx "nat") 
+                                              (sSort tt) 
+                                              (sRel 0)) 
+                                           (sSort tt)
+                                           (sProd (nNamed "m") 
+                                              (sAx "nat")
+                                              (sProd nAnon
+                                                 (sApp
+                                                    (sApp 
+                                                     (sAx "vec") 
+                                                     (sSort tt)
+                                                     (sProd nAnon 
+                                                     (sAx "nat") 
+                                                     (sSort tt)) 
+                                                     (sRel 10)) 
+                                                    (sAx "nat") 
+                                                    (sSort tt) 
+                                                    (sRel 0))
+                                                 (sApp
+                                                    (sApp 
+                                                     (sAx "vec") 
+                                                     (sSort tt)
+                                                     (sProd nAnon 
+                                                     (sAx "nat") 
+                                                     (sSort tt)) 
+                                                     (sRel 11)) 
+                                                    (sAx "nat") 
+                                                    (sSort tt)
+                                                    (sApp
+                                                     (sApp 
+                                                     (sAx "add") 
+                                                     (sAx "nat")
+                                                     (sProd 
+                                                     (nNamed "m") 
+                                                     (sAx "nat") 
+                                                     (sAx "nat")) 
+                                                     (sRel 3)) 
+                                                     (sAx "nat") 
+                                                     (sAx "nat") 
+                                                     (sRel 1))))))) 
+                                     (sAx "nat")
+                                     (sProd (nNamed "v")
+                                        (sApp
+                                           (sApp (sAx "vec") 
+                                              (sSort tt)
+                                              (sProd nAnon (sAx "nat") (sSort tt))
+                                              (sRel 8)) 
+                                           (sAx "nat") 
+                                           (sSort tt) 
+                                           (sRel 0)) (sSort tt)) 
+                                     (sRel 1))
+                                  (sApp
+                                     (sApp (sAx "vec") 
+                                        (sSort tt)
+                                        (sProd nAnon (sAx "nat") (sSort tt))
+                                        (sRel 7)) (sAx "nat") 
+                                     (sSort tt) (sRel 1)) 
+                                  (sSort tt) (sRel 0))
+                               (sApp
+                                  (sApp
+                                     (sLambda (nNamed "n") 
+                                        (sAx "nat")
+                                        (sProd (nNamed "v")
+                                           (sApp
+                                              (sApp (sAx "vec") 
+                                                 (sSort tt)
+                                                 (sProd nAnon 
+                                                    (sAx "nat") 
+                                                    (sSort tt)) 
+                                                 (sRel 9)) 
+                                              (sAx "nat") 
+                                              (sSort tt) 
+                                              (sRel 0)) 
+                                           (sSort tt))
+                                        (sLambda (nNamed "v")
+                                           (sApp
+                                              (sApp (sAx "vec") 
+                                                 (sSort tt)
+                                                 (sProd nAnon 
+                                                    (sAx "nat") 
+                                                    (sSort tt)) 
+                                                 (sRel 9)) 
+                                              (sAx "nat") 
+                                              (sSort tt) 
+                                              (sRel 0)) 
+                                           (sSort tt)
+                                           (sProd (nNamed "m") 
+                                              (sAx "nat")
+                                              (sProd nAnon
+                                                 (sApp
+                                                    (sApp 
+                                                     (sAx "vec") 
+                                                     (sSort tt)
+                                                     (sProd nAnon 
+                                                     (sAx "nat") 
+                                                     (sSort tt)) 
+                                                     (sRel 11)) 
+                                                    (sAx "nat") 
+                                                    (sSort tt) 
+                                                    (sRel 0))
+                                                 (sApp
+                                                    (sApp 
+                                                     (sAx "vec") 
+                                                     (sSort tt)
+                                                     (sProd nAnon 
+                                                     (sAx "nat") 
+                                                     (sSort tt)) 
+                                                     (sRel 12)) 
+                                                    (sAx "nat") 
+                                                    (sSort tt)
+                                                    (sApp
+                                                     (sApp 
+                                                     (sAx "add") 
+                                                     (sAx "nat")
+                                                     (sProd 
+                                                     (nNamed "m") 
+                                                     (sAx "nat") 
+                                                     (sAx "nat")) 
+                                                     (sRel 3)) 
+                                                     (sAx "nat") 
+                                                     (sAx "nat") 
+                                                     (sRel 1))))))) 
+                                     (sAx "nat")
+                                     (sProd (nNamed "v")
+                                        (sApp
+                                           (sApp (sAx "vec") 
+                                              (sSort tt)
+                                              (sProd nAnon (sAx "nat") (sSort tt))
+                                              (sRel 9)) 
+                                           (sAx "nat") 
+                                           (sSort tt) 
+                                           (sRel 0)) (sSort tt))
+                                     (sApp (sAx "S") (sAx "nat") 
+                                        (sAx "nat") (sRel 2)))
+                                  (sApp
+                                     (sApp (sAx "vec") 
+                                        (sSort tt)
+                                        (sProd nAnon (sAx "nat") (sSort tt))
+                                        (sRel 8)) (sAx "nat") 
+                                     (sSort tt)
+                                     (sApp (sAx "S") (sAx "nat") 
+                                        (sAx "nat") (sRel 2))) 
+                                  (sSort tt)
+                                  (sApp
+                                     (sApp
+                                        (sApp
+                                           (sApp (sAx "vcons") 
+                                              (sSort tt)
+                                              (sProd nAnon 
+                                                 (sRel 0)
+                                                 (sProd 
+                                                    (nNamed "n") 
+                                                    (sAx "nat")
+                                                    (sProd nAnon
+                                                     (sApp
+                                                     (sApp 
+                                                     (sAx "vec") 
+                                                     (sSort tt)
+                                                     (sProd nAnon 
+                                                     (sAx "nat") 
+                                                     (sSort tt)) 
+                                                     (sRel 2)) 
+                                                     (sAx "nat") 
+                                                     (sSort tt) 
+                                                     (sRel 0))
+                                                     (sApp
+                                                     (sApp 
+                                                     (sAx "vec") 
+                                                     (sSort tt)
+                                                     (sProd nAnon 
+                                                     (sAx "nat") 
+                                                     (sSort tt)) 
+                                                     (sRel 3)) 
+                                                     (sAx "nat") 
+                                                     (sSort tt)
+                                                     (sApp 
+                                                     (sAx "S") 
+                                                     (sAx "nat") 
+                                                     (sAx "nat") 
+                                                     (sRel 1)))))) 
+                                              (sRel 8)) 
+                                           (sRel 8)
+                                           (sProd (nNamed "n") 
+                                              (sAx "nat")
+                                              (sProd nAnon
+                                                 (sApp
+                                                    (sApp 
+                                                     (sAx "vec") 
+                                                     (sSort tt)
+                                                     (sProd nAnon 
+                                                     (sAx "nat") 
+                                                     (sSort tt)) 
+                                                     (sRel 10)) 
+                                                    (sAx "nat") 
+                                                    (sSort tt) 
+                                                    (sRel 0))
+                                                 (sApp
+                                                    (sApp 
+                                                     (sAx "vec") 
+                                                     (sSort tt)
+                                                     (sProd nAnon 
+                                                     (sAx "nat") 
+                                                     (sSort tt)) 
+                                                     (sRel 11)) 
+                                                    (sAx "nat") 
+                                                    (sSort tt)
+                                                    (sApp 
+                                                     (sAx "S") 
+                                                     (sAx "nat") 
+                                                     (sAx "nat") 
+                                                     (sRel 1))))) 
+                                           (sRel 3)) (sAx "nat")
+                                        (sProd nAnon
+                                           (sApp
+                                              (sApp (sAx "vec") 
+                                                 (sSort tt)
+                                                 (sProd nAnon 
+                                                    (sAx "nat") 
+                                                    (sSort tt)) 
+                                                 (sRel 9)) 
+                                              (sAx "nat") 
+                                              (sSort tt) 
+                                              (sRel 0))
+                                           (sApp
+                                              (sApp (sAx "vec") 
+                                                 (sSort tt)
+                                                 (sProd nAnon 
+                                                    (sAx "nat") 
+                                                    (sSort tt)) 
+                                                 (sRel 10)) 
+                                              (sAx "nat") 
+                                              (sSort tt)
+                                              (sApp (sAx "S") 
+                                                 (sAx "nat") 
+                                                 (sAx "nat") 
+                                                 (sRel 1)))) 
+                                        (sRel 2))
+                                     (sApp
+                                        (sApp (sAx "vec") 
+                                           (sSort tt)
+                                           (sProd nAnon (sAx "nat") (sSort tt))
+                                           (sRel 8)) (sAx "nat") 
+                                        (sSort tt) (sRel 2))
+                                     (sApp
+                                        (sApp (sAx "vec") 
+                                           (sSort tt)
+                                           (sProd nAnon (sAx "nat") (sSort tt))
+                                           (sRel 9)) (sAx "nat") 
+                                        (sSort tt)
+                                        (sApp (sAx "S") 
+                                           (sAx "nat") 
+                                           (sAx "nat") 
+                                           (sRel 3))) 
+                                     (sRel 1)))))))))))).
 
 Definition ty_obligation4 : sterm :=
-  sProd nAnon Ty
-      (sProd nAnon (sAx "nat")
-         (sProd nAnon (sAx "nat")
-            (sProd nAnon (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 2)) (sAx "nat") Ty (sRel 1))
-               (sProd nAnon (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 3)) (sAx "nat") Ty (sRel 1))
-                  (sEq Ty
-                     (sProd nAnon (sRel 4)
-                        (sProd (nNamed "n") (sAx "nat")
-                           (sProd (nNamed "v")
-                              (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 6)) (sAx "nat") Ty (sRel 0))
-                              (sProd (nNamed "rv")
-                                 (sProd (nNamed "m") (sAx "nat")
-                                    (sProd nAnon
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8))
-                                          (sAx "nat") Ty (sRel 0))
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                          (sAx "nat") Ty
-                                          (sApp
-                                             (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                (sRel 3)) (sAx "nat") (sAx "nat") (sRel 1)))))
-                                 (sProd (nNamed "m") (sAx "nat")
-                                    (sProd (nNamed "acc")
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                          (sAx "nat") Ty (sRel 0))
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 10))
-                                          (sAx "nat") Ty
-                                          (sApp
-                                             (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 4)))
-                                             (sAx "nat") (sAx "nat") (sRel 1)))))))))
-                     (sProd (nNamed "a") (sRel 4)
-                        (sProd (nNamed "n") (sAx "nat")
-                           (sProd (nNamed "v")
-                              (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 6)) (sAx "nat") Ty (sRel 0))
-                              (sProd nAnon
-                                 (sProd (nNamed "m") (sAx "nat")
-                                    (sProd nAnon
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 8))
-                                          (sAx "nat") Ty (sRel 0))
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                          (sAx "nat") Ty
-                                          (sApp
-                                             (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                (sRel 3)) (sAx "nat") (sAx "nat") (sRel 1)))))
-                                 (sProd (nNamed "m") (sAx "nat")
-                                    (sProd nAnon
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 9))
-                                          (sAx "nat") Ty (sRel 0))
-                                       (sApp (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 10))
-                                          (sAx "nat") Ty
-                                          (sApp
-                                             (sApp (sAx "add") (sAx "nat") (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
-                                                (sApp (sAx "S") (sAx "nat") (sAx "nat") (sRel 4)))
-                                             (sAx "nat") (sAx "nat") (sRel 1)))))))))))))).
+  sProd nAnon (sSort tt)
+    (sProd nAnon (sAx "nat")
+       (sProd nAnon (sAx "nat")
+          (sProd nAnon
+             (sApp
+                (sApp (sAx "vec") (sSort tt) (sProd nAnon (sAx "nat") (sSort tt))
+                   (sRel 2)) (sAx "nat") (sSort tt) (sRel 1))
+             (sProd nAnon
+                (sApp
+                   (sApp (sAx "vec") (sSort tt)
+                      (sProd nAnon (sAx "nat") (sSort tt)) 
+                      (sRel 3)) (sAx "nat") (sSort tt) 
+                   (sRel 1))
+                (sEq Ty
+                   (sApp
+                      (sApp
+                         (sLambda (nNamed "n") (sAx "nat")
+                            (sProd (nNamed "v")
+                               (sApp
+                                  (sApp (sAx "vec") Ty 
+                                     (sProd nAnon (sAx "nat") Ty) 
+                                     (sRel 5)) (sAx "nat") Ty 
+                                  (sRel 0)) Ty)
+                            (sLambda (nNamed "v")
+                               (sApp
+                                  (sApp (sAx "vec") Ty 
+                                     (sProd nAnon (sAx "nat") Ty) 
+                                     (sRel 5)) (sAx "nat") Ty 
+                                  (sRel 0)) Ty
+                               (sProd (nNamed "m") (sAx "nat")
+                                  (sProd nAnon
+                                     (sApp
+                                        (sApp (sAx "vec") Ty
+                                           (sProd nAnon (sAx "nat") Ty) 
+                                           (sRel 7)) (sAx "nat") Ty 
+                                        (sRel 0))
+                                     (sApp
+                                        (sApp (sAx "vec") Ty
+                                           (sProd nAnon (sAx "nat") Ty) 
+                                           (sRel 8)) (sAx "nat") Ty
+                                        (sApp
+                                           (sApp (sAx "add") 
+                                              (sAx "nat")
+                                              (sProd (nNamed "m") 
+                                                 (sAx "nat") 
+                                                 (sAx "nat")) 
+                                              (sRel 3)) 
+                                           (sAx "nat") 
+                                           (sAx "nat") 
+                                           (sRel 1))))))) 
+                         (sAx "nat")
+                         (sProd (nNamed "v")
+                            (sApp
+                               (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty)
+                                  (sRel 5)) (sAx "nat") Ty 
+                               (sRel 0)) Ty) (sRel 3))
+                      (sApp
+                         (sApp (sAx "vec") Ty (sProd nAnon (sAx "nat") Ty) (sRel 4))
+                         (sAx "nat") Ty (sRel 3)) Ty (sRel 1))
+                   (sProd nAnon (sAx "nat")
+                      (sProd nAnon
+                         (sApp
+                            (sApp (sAx "vec") (sSort tt)
+                               (sProd nAnon (sAx "nat") (sSort tt)) 
+                               (sRel 5)) (sAx "nat") (sSort tt) 
+                            (sRel 0))
+                         (sApp
+                            (sApp (sAx "vec") (sSort tt)
+                               (sProd nAnon (sAx "nat") (sSort tt)) 
+                               (sRel 6)) (sAx "nat") (sSort tt)
+                            (sApp
+                               (sApp (sAx "add") (sAx "nat")
+                                  (sProd (nNamed "m") (sAx "nat") (sAx "nat"))
+                                  (sRel 5)) (sAx "nat") 
+                               (sAx "nat") (sRel 1)))))))))).
 
 Definition ty_vcons_act_obligation :=
   sProd nAnon Ty
@@ -483,17 +767,17 @@ Defined.
 Lemma vrev_obligation2 : coq_obligation2.
 Proof.
   unfold coq_obligation2.
-  intros A n m v acc. reflexivity.
-Defined.
-
-Lemma vrev_obligation3 : coq_obligation3.
-Proof.
-  unfold coq_obligation3.
   intros A n' m' v acc a n v' h m acc'.
   f_equal. clear.
   induction n.
   - reflexivity.
   - cbn. f_equal. assumption.
+Defined.
+
+Lemma vrev_obligation3 : coq_obligation3.
+Proof.
+  unfold coq_obligation3.
+  intros. reflexivity.
 Defined.
 
 Lemma vrev_obligation4 : coq_obligation4.

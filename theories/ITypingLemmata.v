@@ -212,7 +212,14 @@ Defined.
 
 Lemma ident_eq_spec x y : reflect (x = y) (ident_eq x y).
 Proof.
-  unfold ident_eq. destruct string_dec; constructor; auto.
+  unfold ident_eq.
+  case_eq (string_compare x y).
+  all: intro e ; constructor.
+  1: apply string_compare_eq ; assumption.
+  all: intro bot.
+  all: apply string_compare_eq in bot.
+  all: rewrite bot in e.
+  all: discriminate e.
 Defined.
 
 Fact ident_neq_fresh :
