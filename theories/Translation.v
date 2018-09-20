@@ -2674,6 +2674,35 @@ Defined.
 
 End Translation.
 
+Section Conservativity.
+
+Context `{Sort_notion : Sorts.notion}.
+
+Corollary conservativity :
+  forall {Σ t A s},
+    type_glob Σ ->
+    Xcomp A ->
+    Σ ;;; [] |-i A : sSort s ->
+    Σ ;;; [] |-x t : A ->
+    ∑ t', Σ ;;; [] |-i t' : A.
+Proof.
+  intros Σ t A s hg xA hA ht.
+  assert (h' : Σ ;;;; [] |--- [ A ] : sSort s
+             # ⟦ [] |--- [ A ] : sSort s ⟧).
+  { repeat split.
+    - constructor.
+    - constructor.
+    - apply inrel_refl. assumption.
+    - assumption.
+  }
+  destruct (complete_translation hg) as [thm _].
+  destruct (thm _ _ _ ht [] ltac:(repeat constructor)) as [A' [t'' h'']].
+  destruct (change_type hg h'' h') as [t' [_ ht']].
+  exists t'. assumption.
+Defined.
+
+End Conservativity.
+
 Section Consistency.
 
 Local Existing Instance Sorts.nat_sorts.
@@ -2687,22 +2716,15 @@ Corollary consistency :
 Proof.
   intros Σ t hg h.
   set (T := sProd nAnon (@sSort Sorts.nat_sorts 0) (sRel 0)) in *.
-  assert (h' : Σ ;;;; [] |--- [ T ] : sSort 1
-             # ⟦ [] |--- [ T ] : sSort 1 ⟧).
-  { repeat split.
-    - constructor.
-    - constructor.
-    - apply inrel_refl. repeat constructor.
-    - change 1 with (Sorts.prod_sort 1 0). econstructor.
-      + econstructor. constructor.
-      + refine (type_Rel _ _ _ _ _).
-        * repeat econstructor.
-        * auto with arith.
-  }
-  destruct (complete_translation hg) as [thm _].
-  destruct (thm _ _ _ h [] ltac:(repeat constructor)) as [A' [t'' h'']].
-  destruct (change_type hg h'' h') as [t' [_ ht']].
-  exists t'. assumption.
+  eapply conservativity.
+  all: try eassumption.
+  - repeat constructor.
+  - instantiate (1 := Sorts.prod_sort 1 0).
+    econstructor.
+    + econstructor. constructor.
+    + refine (type_Rel _ _ _ _ _).
+      * repeat econstructor.
+      * auto with arith.
 Defined.
 
 End Consistency.
