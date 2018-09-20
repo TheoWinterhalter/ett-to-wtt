@@ -93,7 +93,7 @@ Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
            n v m acc.
 ```
 Indeed, in ITT, it is not possible to write it directly like this, as we would
-do in the non dependent case (lists). This time it has to do with comutativity
+do in the non dependent case (lists). This time it has to do with commutativity
 of addition: `S n + m` and `n + S m` are not convertible.
 We then write the ETT definition below.
 ```coq
