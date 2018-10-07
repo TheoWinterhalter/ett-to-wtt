@@ -30,7 +30,7 @@ Definition Translate ident : TemplateMonad () :=
       name <- tmFreshName name ;;
       der <- tmLemma name (Σi ;;; [] |-x tm : ty) ;;
       let '(_ ; itt_tm ; _) := type_translation der istrans_nil in
-      t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm empty) ;;
+      t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm axoc) ;;
       match t with
       | FinalTranslation.Success _ t =>
         (* t' <- tmUnquote t ;; *)
@@ -213,22 +213,29 @@ Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
            n v m acc.
 
+Arguments vrev : clear implicits.
+
 Run TemplateProgram (Translate "vrev").
 Next Obligation.
   pose proof xhΣi.
-  ettcheck Σi.
-  - eapply reflection.
-    unshelve eapply close_goal
-    ; [ exact (sAx "vrev_obligation1") | assumption |].
-    simpl. ettcheck Σi.
-  - admit.
-  - admit.
-  - admit.
-  - eapply reflection.
-    unshelve eapply close_goal
-    ; [ exact (sAx "vrev_obligation4") | assumption |].
-    simpl. ettcheck Σi.
-  Unshelve. all: exact nAnon.
+  (* ettcheck Σi. *)
+  (* - eapply reflection. *)
+  (*   unshelve eapply close_goal *)
+  (*   ; [ exact (sAx "vrev_obligation1") | assumption |]. *)
+  (*   simpl. ettcheck Σi. *)
+  (* - eapply reflection. *)
+  (*   unshelve eapply close_goal *)
+  (*   ; [ exact (sAx "vrev_obligation2") | assumption |]. *)
+  (*   simpl. ettcheck Σi. *)
+  (* - eapply reflection. *)
+  (*   unshelve eapply close_goal *)
+  (*   ; [ exact (sAx "vrev_obligation3") | assumption |]. *)
+  (*   simpl. ettcheck Σi. *)
+  (* - eapply reflection. *)
+  (*   unshelve eapply close_goal *)
+  (*   ; [ exact (sAx "vrev_obligation4") | assumption |]. *)
+  (*   simpl. ettcheck Σi. *)
+  (* Unshelve. all: exact nAnon. *)
 Abort.
 
 Quote Definition vrev_term :=
