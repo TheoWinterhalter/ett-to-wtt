@@ -9,7 +9,7 @@ From Template Require Import All.
 From Translation Require Import util Sorts SAst SLiftSubst SCommon ITyping
                                 ITypingLemmata ITypingAdmissible XTyping
                                 Quotes Translation FinalTranslation
-                                FullQuote ExampleQuotes ExamplesUtil 
+                                FullQuote ExampleQuotes ExamplesUtil
                                 XTypingLemmata IChecking XChecking.
 Import MonadNotation.
 
@@ -24,15 +24,15 @@ Fail Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := x.
 
 Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 
-Quote Definition pseudoid_term := 
+Quote Definition pseudoid_term :=
   ltac:(let t := eval compute in pseudoid in exact t).
-Quote Definition pseudoid_type := 
+Quote Definition pseudoid_type :=
   ltac:(let T := type of pseudoid in exact T).
 
 Definition pretm_pseudoid :=
   Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_term empty empty nomap.
 Definition tm_pseudoid :=
-  Eval lazy in 
+  Eval lazy in
   match pretm_pseudoid with
   | Success t => t
   | Error _ => sRel 0
@@ -42,7 +42,7 @@ Definition prety_pseudoid :=
   Eval lazy in fullquote (2 ^ 18) Σ [] pseudoid_type empty empty nomap.
 
 Definition ty_pseudoid :=
-  Eval lazy in 
+  Eval lazy in
   match prety_pseudoid with
   | Success t => t
   | Error _ => sRel 0
@@ -52,7 +52,7 @@ Lemma type_pseudoid : Σi ;;; [] |-x tm_pseudoid : ty_pseudoid.
 Proof.
   unfold tm_pseudoid, ty_pseudoid.
   pose proof xhΣi.
-  ettcheck Σi. cbn. 
+  ettcheck Σi. cbn.
   eapply reflection with (e := sRel 1).
   ettcheck Σi.
 Defined.
@@ -109,15 +109,15 @@ Make Definition coq_pseudoid :=
 (*! EXAMPLE 2 *)
 
 Definition realid := fun (A B : Type) (x : A) => x.
-Quote Definition realid_term := 
+Quote Definition realid_term :=
   ltac:(let t := eval compute in realid in exact t).
-Quote Definition realid_type := 
+Quote Definition realid_type :=
   ltac:(let T := type of realid in exact T).
 
 Definition pretm_realid :=
   Eval lazy in fullquote (2 ^ 18) Σ [] realid_term empty empty nomap.
 Definition tm_realid :=
-  Eval lazy in 
+  Eval lazy in
   match pretm_realid with
   | Success t => t
   | Error _ => sRel 0
@@ -126,7 +126,7 @@ Definition tm_realid :=
 Definition prety_realid :=
   Eval lazy in fullquote (2 ^ 18) Σ [] realid_type empty empty nomap.
 Definition ty_realid :=
-  Eval lazy in 
+  Eval lazy in
   match prety_realid with
   | Success t => t
   | Error _ => sRel 0
@@ -165,13 +165,13 @@ Definition vv : vec nat 1 := vcons 2 _ vnil.
 
 Quote Definition vv_term :=
   ltac:(let t := eval unfold vv in @vv in exact t).
-Quote Definition vv_type := 
+Quote Definition vv_type :=
   ltac:(let T := type of @vv in exact T).
 
 Definition pretm_vv :=
   Eval lazy - [Σi] in fullquote (2 ^ 18) Σ [] vv_term indt constt cot.
 Definition tm_vv :=
-  Eval lazy - [Σi] in 
+  Eval lazy - [Σi] in
   match pretm_vv with
   | Success t => t
   | Error _ => sRel 0
@@ -180,7 +180,7 @@ Definition tm_vv :=
 Definition prety_vv :=
   Eval lazy in fullquote (2 ^ 18) Σ [] vv_type indt constt cot.
 Definition ty_vv :=
-  Eval lazy in 
+  Eval lazy in
   match prety_vv with
   | Success t => t
   | Error _ => sRel 0
@@ -222,13 +222,13 @@ Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
 
 Quote Definition vcons_act_term :=
   ltac:(let t := eval unfold vcons_act in @vcons_act in exact t).
-Quote Definition vcons_act_type := 
+Quote Definition vcons_act_type :=
   ltac:(let T := type of @vcons_act in exact T).
 
 Definition pretm_vcons_act :=
   Eval lazy - [Σi] in fullquote (2 ^ 18) Σ [] vcons_act_term indt constt cot.
 Definition tm_vcons_act :=
-  Eval lazy - [Σi] in 
+  Eval lazy - [Σi] in
   match pretm_vcons_act with
   | Success t => t
   | Error _ => sRel 0
@@ -237,7 +237,7 @@ Definition tm_vcons_act :=
 Definition prety_vcons_act :=
   Eval lazy in fullquote (2 ^ 18) Σ [] vcons_act_type indt constt cot.
 Definition ty_vcons_act :=
-  Eval lazy in 
+  Eval lazy in
   match prety_vcons_act with
   | Success t => t
   | Error _ => sRel 0
