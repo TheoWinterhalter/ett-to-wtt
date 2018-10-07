@@ -18,6 +18,75 @@ Open Scope x_scope.
 
 Definition nomap : string -> nat -> option sterm := fun _ _ => None.
 
+Definition ETTcheck ident : TemplateMonad () :=
+  entry <- tmQuoteConstant ident false ;;
+  match entry with
+  | DefinitionEntry {| definition_entry_body := tm ; definition_entry_type := ty |} =>
+    pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm indt constt cot) ;;
+    prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty indt constt cot) ;;
+    match pretm, prety with
+    | Success tm, Success ty =>
+      name <- tmEval all (ident ++ "_der") ;;
+      name <- tmFreshName name ;;
+      der <- tmLemma name (Σi ;;; [] |-x tm : ty) ;;
+      tmReturn tt
+    | _,_ => tmFail "Cannot transalte from TemplateCoq to ETT"
+    end
+  | _ => tmFail "Expected a constant definition"
+  end.
+
+Definition _vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
+           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
+           n v m acc.
+
+Arguments _vrev : clear implicits.
+
+Opaque vec_rect. Opaque Init.Nat.add.
+Definition _vrev' :=
+  Eval cbv in _vrev.
+Transparent vec_rect. Transparent Init.Nat.add.
+
+Run TemplateProgram (ETTcheck "_vrev'").
+Next Obligation.
+  pose proof xhΣi.
+  ettcheck Σi.
+  - eapply reflection.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation1") | assumption |].
+    simpl. ettcheck Σi.
+  - eapply reflection.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation2") | assumption |].
+    simpl. ettcheck Σi.
+  - eapply reflection.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation3") | assumption |].
+    simpl. ettcheck Σi.
+  - eapply reflection.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation4") | assumption |].
+    simpl. ettcheck Σi.
+  Unshelve. all: exact nAnon.
+Defined.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Definition Translate ident : TemplateMonad () :=
   entry <- tmQuoteConstant ident false ;;
   match entry with
@@ -219,25 +288,7 @@ Transparent vec_rect. Transparent Init.Nat.add.
 
 Run TemplateProgram (Translate "vrev'").
 Next Obligation.
-  pose proof xhΣi.
-  ettcheck Σi.
-  - eapply reflection.
-    unshelve eapply close_goal
-    ; [ exact (sAx "vrev_obligation1") | assumption |].
-    simpl. ettcheck Σi.
-  - eapply reflection.
-    unshelve eapply close_goal
-    ; [ exact (sAx "vrev_obligation2") | assumption |].
-    simpl. ettcheck Σi.
-  - eapply reflection.
-    unshelve eapply close_goal
-    ; [ exact (sAx "vrev_obligation3") | assumption |].
-    simpl. ettcheck Σi.
-  - eapply reflection.
-    unshelve eapply close_goal
-    ; [ exact (sAx "vrev_obligation4") | assumption |].
-    simpl. ettcheck Σi.
-  Unshelve. all: exact nAnon.
+  eapply _vrev'_der.
 Defined.
 
 Print vrev'ᵗ.
