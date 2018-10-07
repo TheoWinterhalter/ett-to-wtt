@@ -22,8 +22,8 @@ Definition Translate ident : TemplateMonad () :=
   entry <- tmQuoteConstant ident false ;;
   match entry with
   | DefinitionEntry {| definition_entry_body := tm ; definition_entry_type := ty |} =>
-    pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm empty empty nomap) ;;
-    prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty empty empty nomap) ;;
+    pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm indt constt cot) ;;
+    prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty indt constt cot) ;;
     match pretm, prety with
     | Success tm, Success ty =>
       name <- tmEval all (ident ++ "_der") ;;
@@ -213,7 +213,23 @@ Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
            n v m acc.
 
-Fail Run TemplateProgram (Translate "vrev").
+Run TemplateProgram (Translate "vrev").
+Next Obligation.
+  pose proof xhΣi.
+  ettcheck Σi.
+  - eapply reflection.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation1") | assumption |].
+    simpl. ettcheck Σi.
+  - admit.
+  - admit.
+  - admit.
+  - eapply reflection.
+    unshelve eapply close_goal
+    ; [ exact (sAx "vrev_obligation4") | assumption |].
+    simpl. ettcheck Σi.
+  Unshelve. all: exact nAnon.
+Abort.
 
 Quote Definition vrev_term :=
   ltac:(let t := eval unfold vrev in @vrev in exact t).
