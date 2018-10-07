@@ -33,9 +33,6 @@ Definition Translate ident : TemplateMonad () :=
       t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm axoc) ;;
       match t with
       | FinalTranslation.Success _ t =>
-        (* t' <- tmUnquote t ;; *)
-        (* t' <- tmEval Core.hnf (my_projT2 t') ;; *)
-        (* tmPrint t' *)
         tmMkDefinition (ident ++ "ᵗ") t
       | _ => tmFail "Cannot translate from ITT to TemplateCoq"
       end
@@ -215,55 +212,13 @@ Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
 
 Arguments vrev : clear implicits.
 
-Run TemplateProgram (Translate "vrev").
+Opaque vec_rect. Opaque Init.Nat.add.
+Definition vrev' :=
+  Eval cbv in vrev.
+Transparent vec_rect. Transparent Init.Nat.add.
+
+Run TemplateProgram (Translate "vrev'").
 Next Obligation.
-  pose proof xhΣi.
-  (* ettcheck Σi. *)
-  (* - eapply reflection. *)
-  (*   unshelve eapply close_goal *)
-  (*   ; [ exact (sAx "vrev_obligation1") | assumption |]. *)
-  (*   simpl. ettcheck Σi. *)
-  (* - eapply reflection. *)
-  (*   unshelve eapply close_goal *)
-  (*   ; [ exact (sAx "vrev_obligation2") | assumption |]. *)
-  (*   simpl. ettcheck Σi. *)
-  (* - eapply reflection. *)
-  (*   unshelve eapply close_goal *)
-  (*   ; [ exact (sAx "vrev_obligation3") | assumption |]. *)
-  (*   simpl. ettcheck Σi. *)
-  (* - eapply reflection. *)
-  (*   unshelve eapply close_goal *)
-  (*   ; [ exact (sAx "vrev_obligation4") | assumption |]. *)
-  (*   simpl. ettcheck Σi. *)
-  (* Unshelve. all: exact nAnon. *)
-Abort.
-
-Quote Definition vrev_term :=
-  ltac:(let t := eval unfold vrev in @vrev in exact t).
-Quote Definition vrev_type :=
-  ltac:(let T := type of @vrev in exact T).
-
-Definition pretm_vrev :=
-  Eval lazy - [Σi] in fullquote (2 ^ 18) Σ [] vrev_term indt constt cot.
-Definition tm_vrev :=
-  Eval lazy - [Σi] in
-  match pretm_vrev with
-  | Success t => t
-  | Error _ => sRel 0
-  end.
-
-Definition prety_vrev :=
-  Eval lazy in fullquote (2 ^ 18) Σ [] vrev_type indt constt cot.
-Definition ty_vrev :=
-  Eval lazy in
-  match prety_vrev with
-  | Success t => t
-  | Error _ => sRel 0
-  end.
-
-Lemma type_vrev : Σi ;;; [] |-x tm_vrev : ty_vrev.
-Proof.
-  unfold tm_vrev, ty_vrev.
   pose proof xhΣi.
   ettcheck Σi.
   - eapply reflection.
@@ -285,22 +240,4 @@ Proof.
   Unshelve. all: exact nAnon.
 Defined.
 
-Definition itt_vrev : sterm :=
-  Eval lazy in
-  let '(_ ; t ; _) := type_translation type_vrev istrans_nil in t.
-
-Definition tc_vrev : tsl_result term :=
-  Eval lazy in
-  tsl_rec (2 ^ 18) Σ [] itt_vrev axoc.
-
-Make Definition coq_vrev :=
-  ltac:(
-    let t := eval lazy in
-             (match tc_vrev with
-              | FinalTranslation.Success _ t => t
-              | _ => tRel 0
-              end)
-      in exact t
-  ).
-
-Print coq_vrev.
+Print vrev'ᵗ.
