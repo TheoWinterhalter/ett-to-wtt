@@ -16,8 +16,9 @@ From Equations Require Import Equations DepElimDec.
 From Template Require Import All.
 From Translation
 Require Import util Sorts SAst SLiftSubst SCommon ITyping ITypingLemmata
-ITypingAdmissible DecideConversion XTyping Quotes Translation FinalTranslation
-FullQuote ExampleQuotes ExamplesUtil XTypingLemmata IChecking XChecking.
+ITypingAdmissible DecideConversion XTyping Quotes Translation FundamentalLemma
+FinalTranslation FullQuote ExampleQuotes ExamplesUtil XTypingLemmata IChecking
+XChecking.
 Import MonadNotation.
 
 Open Scope string_scope.
@@ -62,6 +63,22 @@ Fixpoint _ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : ster
     isconv fuel Ty T &&
     _ittcheck fuel Σ Γ A Ty &&
     _ittcheck fuel Σ (Γ,, A) B Ty
+  | sPair A B u v =>
+    _ittcheck fuel Σ Γ u A &&
+    _ittcheck fuel Σ Γ v (B{0 := u}) &&
+    _ittcheck fuel Σ Γ A Ty &&
+    _ittcheck fuel Σ (Γ,,A) B Ty &&
+    isconv fuel (sSum nAnon A B) T
+  | sPi1 A B p =>
+    _ittcheck fuel Σ Γ p (sSum nAnon A B) &&
+    _ittcheck fuel Σ Γ A Ty &&
+    _ittcheck fuel Σ (Γ,,A) B Ty &&
+    isconv fuel A T
+  | sPi2 A B p =>
+    _ittcheck fuel Σ Γ p (sSum nAnon A B) &&
+    _ittcheck fuel Σ Γ A Ty &&
+    _ittcheck fuel Σ (Γ,,A) B Ty &&
+    isconv fuel (B{0 := sPi1 A B p}) T
   | _ => false
   end.
 
@@ -134,6 +151,55 @@ Proof.
         constructor. assumption.
       * intro. eapply IHt2 ; try eassumption.
         constructor. assumption.
+    + eassumption.
+    + eapply isconv_sound. eassumption.
+  - repeat destruct_andb.
+    eapply I.type_conv.
+    + assert (Σ ;;; Γ |-i t1 : Ty).
+      { eapply IHt1 ; try eassumption.
+        constructor. assumption.
+      }
+      assert (I.wf Σ (Γ,, t1)).
+      { econstructor ; eassumption. }
+      eapply type_Pair' ; try assumption.
+      * eapply IHt3 ; eassumption.
+      * eapply IHt4 ; try eassumption.
+        lift_sort. eapply ITypingLemmata.typing_subst ; try eassumption.
+        -- eapply IHt2 ; try eassumption.
+           constructor. assumption.
+        -- eapply IHt3 ; eassumption.
+      * eapply IHt2 ; try eassumption.
+        constructor. assumption.
+    + eassumption.
+    + eapply isconv_sound. eassumption.
+  - repeat destruct_andb.
+    eapply I.type_conv.
+    + assert (Σ ;;; Γ |-i t1 : Ty).
+      { eapply IHt1 ; try eassumption.
+        constructor. assumption.
+      }
+      assert (I.wf Σ (Γ,, t1)).
+      { econstructor ; eassumption. }
+      eapply type_Pi1' ; try assumption.
+      eapply IHt3 ; try eassumption.
+      eapply type_Sum' ; try eassumption.
+      intro. eapply IHt2 ; try eassumption.
+      constructor. assumption.
+    + eassumption.
+    + eapply isconv_sound. eassumption.
+  - repeat destruct_andb.
+    eapply I.type_conv.
+    + assert (Σ ;;; Γ |-i t1 : Ty).
+      { eapply IHt1 ; try eassumption.
+        constructor. assumption.
+      }
+      assert (I.wf Σ (Γ,, t1)).
+      { econstructor ; eassumption. }
+      eapply type_Pi2' ; try assumption.
+      eapply IHt3 ; try eassumption.
+      eapply type_Sum' ; try eassumption.
+      intro. eapply IHt2 ; try eassumption.
+      constructor. assumption.
     + eassumption.
     + eapply isconv_sound. eassumption.
 Qed.
