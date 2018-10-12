@@ -31,7 +31,8 @@ Module I := ITyping.
 
    TODO Actually we could write infer directly.
  *)
-Fixpoint ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : sterm) (T : sterm) {struct t} : bool :=
+Fixpoint _ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : sterm)
+                  (T : sterm) {struct t} : bool :=
   match t with
   | sRel n =>
     match nth_error Γ n with
@@ -41,21 +42,27 @@ Fixpoint ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : sterm
   | sSort _ => isconv fuel Ty T
   | sProd n A B =>
     isconv fuel Ty T &&
-    ittcheck fuel Σ Γ A Ty &&
-    ittcheck fuel Σ (Γ,, A) B Ty
+    _ittcheck fuel Σ Γ A Ty &&
+    _ittcheck fuel Σ (Γ,, A) B Ty
+  | sLambda n A B t =>
+    _ittcheck fuel Σ (Γ,, A) t B &&
+    _ittcheck fuel Σ Γ A Ty &&
+    _ittcheck fuel Σ (Γ,, A) B Ty &&
+    isconv fuel (sProd n A B) T
   | _ => false
   end.
 
-Lemma ittcheck_sound :
+Lemma _ittcheck_sound :
   forall fuel Σ Γ t A,
-    ittcheck fuel Σ Γ t A = true ->
+    _ittcheck fuel Σ Γ t A = true ->
+    type_glob Σ ->
     I.wf Σ Γ ->
     Σ ;;; Γ |-i A : Ty ->
     Σ ;;; Γ |-i t : A.
 Proof.
-  intros fuel Σ Γ t A h hΓ hA.
-  revert fuel Σ Γ A h hΓ hA.
-  induction t ; intros fuel Σ Γ A h hΓ hA.
+  intros fuel Σ Γ t A h hg hΓ hA.
+  revert fuel Γ A h hΓ hA.
+  induction t ; intros fuel Γ A h hΓ hA.
   all: cbn in h.
   all: try discriminate h.
   - revert h. case_eq (nth_error Γ n).
@@ -83,4 +90,33 @@ Proof.
       econstructor. assumption.
     + eassumption.
     + cbn. eapply isconv_sound. eassumption.
+  - repeat destruct_andb.
+    eapply I.type_conv.
+    + eapply type_Lambda' ; try assumption.
+      * eapply IHt1 ; try eassumption.
+        econstructor. assumption.
+      * intro hΓ'. eapply IHt3 ; try eassumption.
+        eapply IHt2 ; try eassumption.
+        econstructor. assumption.
+    + eassumption.
+    + eapply isconv_sound. eassumption.
+Qed.
+
+Definition ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : sterm)
+           (T : sterm) : bool :=
+  _ittcheck fuel Σ Γ T Ty && _ittcheck fuel Σ Γ t T.
+
+Lemma ittcheck_sound :
+  forall fuel Σ Γ t A,
+    ittcheck fuel Σ Γ t A = true ->
+    type_glob Σ ->
+    I.wf Σ Γ ->
+    Σ ;;; Γ |-i t : A.
+Proof.
+  intros fuel Σ Γ t A h hg hw.
+  unfold ittcheck in h.
+  destruct_andb.
+  eapply _ittcheck_sound ; try eassumption.
+  eapply _ittcheck_sound ; try eassumption.
+  econstructor. assumption.
 Qed.
