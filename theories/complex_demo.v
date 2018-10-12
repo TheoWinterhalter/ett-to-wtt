@@ -88,6 +88,11 @@ Fixpoint _ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : ster
     _ittcheck fuel Σ Γ u A &&
     _ittcheck fuel Σ Γ A Ty &&
     isconv fuel (sEq A u u) T
+  | sAx id =>
+    match lookup_glob Σ id with
+    | Some A => isconv fuel A T
+    | None => false
+    end
   | _ => false
   end.
 
@@ -230,6 +235,14 @@ Proof.
       constructor. assumption.
     + eassumption.
     + eapply isconv_sound. eassumption.
+  - revert h.
+    case_eq (lookup_glob Σ id).
+    + intros T eq h.
+      eapply I.type_conv.
+      * eapply I.type_Ax ; eassumption.
+      * eassumption.
+      * eapply isconv_sound. eassumption.
+    + intros _ bot. discriminate bot.
 Qed.
 
 Definition ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : sterm)
