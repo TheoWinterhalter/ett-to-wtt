@@ -28,29 +28,37 @@ Module I := ITyping.
 (* First we write an ITT checker that will not generate any obligation.
    It will be proven sound but not complete.
    Since ITT derivations are proof-irrelevant, it needs only return a boolean.
+
+   TODO Actually we could write infer directly.
  *)
-Fixpoint ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : sterm) (A : sterm) {struct t} : bool :=
+Fixpoint ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : sterm) (T : sterm) {struct t} : bool :=
   match t with
   | sRel n =>
     match nth_error Γ n with
-    | Some B => isconv fuel (lift0 (S n) B) A
+    | Some B => isconv fuel (lift0 (S n) B) T
     | None => false
     end
+  | sSort _ => isconv fuel Ty T
+  | sProd n A B =>
+    isconv fuel Ty T &&
+    ittcheck fuel Σ Γ A Ty &&
+    ittcheck fuel Σ (Γ,, A) B Ty
   | _ => false
   end.
 
 Lemma ittcheck_sound :
-  forall fuel Σ Γ t A s,
+  forall fuel Σ Γ t A,
     ittcheck fuel Σ Γ t A = true ->
     I.wf Σ Γ ->
-    Σ ;;; Γ |-i A : sSort s ->
+    Σ ;;; Γ |-i A : Ty ->
     Σ ;;; Γ |-i t : A.
 Proof.
-  intros fuel Σ Γ t A s h hΓ hA.
-  revert fuel Σ Γ A s h hΓ hA.
-  induction t ; intros fuel Σ Γ A z h hΓ hA.
-  all: try (cbn in h ; discriminate h).
-  - cbn in h. revert h. case_eq (nth_error Γ n).
+  intros fuel Σ Γ t A h hΓ hA.
+  revert fuel Σ Γ A h hΓ hA.
+  induction t ; intros fuel Σ Γ A h hΓ hA.
+  all: cbn in h.
+  all: try discriminate h.
+  - revert h. case_eq (nth_error Γ n).
     + intros B eq h.
       eapply I.type_conv.
       * eapply I.type_Rel. assumption.
@@ -58,4 +66,21 @@ Proof.
       * eapply isconv_sound. erewrite nth_error_Some_safe_nth with (e := eq).
         eassumption.
     + intros _ bot. discriminate bot.
+  - destruct s. eapply I.type_conv.
+    + econstructor. assumption.
+    + eassumption.
+    + cbn. eapply isconv_sound. eassumption.
+  - repeat destruct_andb.
+    assert (Σ;;; Γ |-i t1 : Ty).
+    { eapply IHt1 ; try eassumption.
+      econstructor. assumption.
+    }
+    assert (I.wf Σ (Γ,, t1)).
+    { econstructor ; eassumption. }
+    eapply I.type_conv.
+    + econstructor ; try eassumption.
+      eapply IHt2 ; try eassumption.
+      econstructor. assumption.
+    + eassumption.
+    + cbn. eapply isconv_sound. eassumption.
 Qed.
