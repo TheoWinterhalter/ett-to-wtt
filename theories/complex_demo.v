@@ -30,6 +30,9 @@ Module I := ITyping.
    Since ITT derivations are proof-irrelevant, it needs only return a boolean.
 
    TODO Actually we could write infer directly.
+
+   TODO The fact that we require the hyp on the type forces us to check
+   it anyway when it could be simpler...
  *)
 Fixpoint _ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : sterm)
                   (T : sterm) {struct t} : bool :=
@@ -49,6 +52,16 @@ Fixpoint _ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : ster
     _ittcheck fuel Σ Γ A Ty &&
     _ittcheck fuel Σ (Γ,, A) B Ty &&
     isconv fuel (sProd n A B) T
+  | sApp u A B v =>
+    _ittcheck fuel Σ Γ u (sProd nAnon A B) &&
+    _ittcheck fuel Σ Γ v A &&
+    _ittcheck fuel Σ Γ A Ty &&
+    _ittcheck fuel Σ (Γ,, A) B Ty &&
+    isconv fuel (B{0 := v}) T
+  | sSum n A B =>
+    isconv fuel Ty T &&
+    _ittcheck fuel Σ Γ A Ty &&
+    _ittcheck fuel Σ (Γ,, A) B Ty
   | _ => false
   end.
 
@@ -98,6 +111,29 @@ Proof.
       * intro hΓ'. eapply IHt3 ; try eassumption.
         eapply IHt2 ; try eassumption.
         econstructor. assumption.
+    + eassumption.
+    + eapply isconv_sound. eassumption.
+  - repeat destruct_andb.
+    eapply I.type_conv.
+    + eapply type_App' ; try eassumption.
+      * eapply IHt1 ; try eassumption.
+        eapply type_Prod'.
+        -- eapply IHt2 ; try eassumption.
+           constructor. assumption.
+        -- intro. eapply IHt3 ; try eassumption.
+           constructor. assumption.
+      * eapply IHt4 ; try eassumption.
+        eapply IHt2 ; try eassumption.
+        constructor. assumption.
+    + eassumption.
+    + eapply isconv_sound. eassumption.
+  - repeat destruct_andb.
+    eapply I.type_conv.
+    + eapply type_Sum'.
+      * eapply IHt1 ; try eassumption.
+        constructor. assumption.
+      * intro. eapply IHt2 ; try eassumption.
+        constructor. assumption.
     + eassumption.
     + eapply isconv_sound. eassumption.
 Qed.
