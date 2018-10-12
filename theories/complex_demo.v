@@ -79,6 +79,15 @@ Fixpoint _ittcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : ster
     _ittcheck fuel Σ Γ A Ty &&
     _ittcheck fuel Σ (Γ,,A) B Ty &&
     isconv fuel (B{0 := sPi1 A B p}) T
+  | sEq A u v =>
+    _ittcheck fuel Σ Γ u A &&
+    _ittcheck fuel Σ Γ v A &&
+    _ittcheck fuel Σ Γ A Ty &&
+    isconv fuel Ty T
+  | sRefl A u =>
+    _ittcheck fuel Σ Γ u A &&
+    _ittcheck fuel Σ Γ A Ty &&
+    isconv fuel (sEq A u u) T
   | _ => false
   end.
 
@@ -199,6 +208,25 @@ Proof.
       eapply IHt3 ; try eassumption.
       eapply type_Sum' ; try eassumption.
       intro. eapply IHt2 ; try eassumption.
+      constructor. assumption.
+    + eassumption.
+    + eapply isconv_sound. eassumption.
+  - repeat destruct_andb.
+    eapply I.type_conv.
+    + eapply type_Eq' ; try assumption.
+      * eapply IHt2 ; try eassumption.
+        eapply IHt1 ; try eassumption.
+        constructor. assumption.
+      * eapply IHt3 ; try eassumption.
+        eapply IHt1 ; try eassumption.
+        constructor. assumption.
+    + eassumption.
+    + eapply isconv_sound. eassumption.
+  - repeat destruct_andb.
+    eapply I.type_conv.
+    + eapply type_Refl' ; try assumption.
+      eapply IHt2 ; try eassumption.
+      eapply IHt1 ; try eassumption.
       constructor. assumption.
     + eassumption.
     + eapply isconv_sound. eassumption.
