@@ -94,48 +94,48 @@ Definition cot (id : string) (n : nat) : option sterm :=
   end.
 
 (* nat *)
-Quote Definition nat_type := 
+Quote Definition nat_type :=
   ltac:(let T := type of nat in exact T).
 Definition prety_nat :=
   Eval lazy in fullquote (2 ^ 18) Σ [] nat_type indt constt cot.
 Definition ty_nat :=
-  Eval lazy in 
+  Eval lazy in
   match prety_nat with
   | Success t => t
   | Error _ => sRel 0
   end.
 
 (* O *)
-Quote Definition O_type := 
+Quote Definition O_type :=
   ltac:(let T := type of O in exact T).
 Definition prety_O :=
   Eval lazy in fullquote (2 ^ 18) Σ [] O_type indt constt cot.
 Definition ty_O :=
-  Eval lazy in 
+  Eval lazy in
   match prety_O with
   | Success t => t
   | Error _ => sRel 0
   end.
 
 (* S *)
-Quote Definition S_type := 
+Quote Definition S_type :=
   ltac:(let T := type of S in exact T).
 Definition prety_S :=
   Eval lazy in fullquote (2 ^ 18) Σ [] S_type indt constt cot.
 Definition ty_S :=
-  Eval lazy in 
+  Eval lazy in
   match prety_S with
   | Success t => t
   | Error _ => sRel 0
   end.
 
 (* vec *)
-Quote Definition vec_type := 
+Quote Definition vec_type :=
   ltac:(let T := type of vec in exact T).
 Definition prety_vec :=
   Eval lazy in fullquote (2 ^ 18) Σ [] vec_type indt constt cot.
 Definition ty_vec :=
-  Eval lazy in 
+  Eval lazy in
   match prety_vec with
   | Success t => t
   | Error _ => sRel 0
@@ -213,7 +213,7 @@ Arguments Σi : simpl never.
 Ltac setenv nΣ :=
   match goal with
   | |- ?Σ ;;; _ |-i _ : _ => set (nΣ := Σ)
-  | |- ?Σ ;;; _ |-x _ : _ => set (nΣ := Σ)    
+  | |- ?Σ ;;; _ |-x _ : _ => set (nΣ := Σ)
   end.
 
 Ltac ittcheck_env :=
@@ -303,39 +303,36 @@ Proof.
 Defined.
 
 Lemma close_goal_ex :
-  forall {Σ Γ t T},
+  forall {Γ t T},
+    ∑ t', forall {Σ},
     xtype_glob Σ ->
     wf Σ Γ ->
     Σ ;;; [] |-x t : Prods Γ T ->
     Σ ;;; Γ |-x T : Ty ->
-    ∑ t', Σ ;;; Γ |-x t' : T.
+    Σ ;;; Γ |-x t' : T.
 Proof.
-  intros Σ Γ t T hg hw h hT.
-  revert hw t T h hT. induction Γ as [| A Γ].
-  - intros hw t T h hT. eexists. eassumption.
-  - intros hwA t T h hT. cbn in h.
+  intros Γ. induction Γ as [| A Γ].
+  - intros t T. eexists. intros Σ hg hw h hT. eassumption.
+  - intros t T. destruct (IHΓ t (sProd nAnon A T)) as [t' ht'].
+    eexists. intros Σ hg hwA h hT. cbn in h.
     inversion hwA. subst. rename X into hw, X0 into hA.
-    destruct s.
-    destruct (IHΓ hw _ _ h) as [t' ht'].
-    + eapply xtype_Prod'.
+    destruct s. eapply meta_conv.
+    + eapply xtype_App'.
       * assumption.
       * assumption.
-      * intros _. assumption.
-    + eexists. eapply meta_conv.
-      * eapply xtype_App'.
+      * instantiate (2 := lift0 1 A).
+        instantiate (1 := lift 1 1 T).
+        instantiate (1 := nAnon).
+        change (sProd nAnon (lift0 1 A) (lift 1 1 T))
+          with (lift0 1 (sProd nAnon A T)).
+        eapply typing_lift01.
         -- assumption.
-        -- assumption.
-        -- instantiate (2 := lift0 1 A).
-           instantiate (1 := lift 1 1 T).
-           instantiate (1 := nAnon).
-           change (sProd nAnon (lift0 1 A) (lift 1 1 T))
-             with (lift0 1 (sProd nAnon A T)).
-           eapply typing_lift01.
-           ++ assumption.
-           ++ exact ht'.
-           ++ instantiate (1 := tt). assumption.
-        -- instantiate (1 := sRel 0). ettcheck  Σi.
-      * eapply lift_rel.
+        -- eapply ht' ; try assumption.
+           eapply xtype_Prod' ; try assumption.
+           intros _. assumption.
+        -- instantiate (1 := tt). assumption.
+      * instantiate (1 := sRel 0). ettcheck  Σi.
+    + eapply lift_rel.
 Defined.
 
 Lemma inversionProds :
@@ -357,28 +354,29 @@ Proof.
 Defined.
 
 Lemma close_goal_ex' :
-  forall {Σ Γ t T},
+  forall {Γ t T}, ∑ t', forall {Σ},
     xtype_glob Σ ->
     Σ ;;; [] |-x t : Prods Γ T ->
-    ∑ t', Σ ;;; Γ |-x t' : T.
+    Σ ;;; Γ |-x t' : T.
 Proof.
-  intros Σ Γ t T hg ht.
+  intros Γ t T. eexists. intros Σ hg ht.
   pose proof (istype_type hg (wf_nil _) ht) as hPi.
   destruct (inversionProds hPi) as [hw hT].
   eapply close_goal_ex ; eassumption.
 Defined.
 
-Definition closet {Σ Γ t T} hg h :=
-  let '(t' ; _) := @close_goal_ex' Σ Γ t T hg h in t'.
+Definition closet Γ t T :=
+  let '(t' ; _) := @close_goal_ex' Γ t T in t'.
 
 Definition close_goal :
   forall {Σ Γ t T}
     (hg : xtype_glob Σ)
     (h : Σ ;;; [] |-x t : Prods Γ T),
-    Σ ;;; Γ |-x closet hg h : T.
+    Σ ;;; Γ |-x closet Γ t T : T.
 Proof.
   intros Σ Γ t T h.
   eapply close_goal_ex'.
+  assumption.
 Defined.
 
 (* For interpretation of terms *)
