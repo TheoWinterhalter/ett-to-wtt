@@ -18,7 +18,7 @@ From Translation
 Require Import util Sorts SAst SLiftSubst SCommon ITyping ITypingLemmata
 ITypingAdmissible DecideConversion XTyping Quotes Translation FundamentalLemma
 FinalTranslation FullQuote ExampleQuotes ExamplesUtil XTypingLemmata IChecking
-XChecking.
+XChecking Equality.
 Import MonadNotation.
 
 Open Scope string_scope.
@@ -263,3 +263,71 @@ Proof.
   eapply _ittcheck_sound ; try eassumption.
   econstructor. assumption.
 Qed.
+
+(*
+  For ETT we want to be able to build the derivation constructively
+  and we should be able to get a set of obligations from it.
+
+  For now it only checks α-equality but in case it fails it should
+  discharge them in another global context.
+*)
+Fixpoint _ettcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : sterm)
+                  (T : sterm) {struct t} : bool :=
+  match t with
+  | sRel n =>
+    match nth_error Γ n with
+    | Some B => eq_term (lift0 (S n) B) T
+    | None => false
+    end
+  | sSort _ => eq_term Ty T
+  | sProd n A B =>
+    eq_term Ty T &&
+    _ettcheck fuel Σ Γ A Ty &&
+    _ettcheck fuel Σ (Γ,, A) B Ty
+  | sLambda n A B t =>
+    _ettcheck fuel Σ (Γ,, A) t B &&
+    _ettcheck fuel Σ Γ A Ty &&
+    _ettcheck fuel Σ (Γ,, A) B Ty &&
+    eq_term (sProd n A B) T
+  | sApp u A B v =>
+    _ettcheck fuel Σ Γ u (sProd nAnon A B) &&
+    _ettcheck fuel Σ Γ v A &&
+    _ettcheck fuel Σ Γ A Ty &&
+    _ettcheck fuel Σ (Γ,, A) B Ty &&
+    eq_term (B{0 := v}) T
+  | sSum n A B =>
+    eq_term Ty T &&
+    _ettcheck fuel Σ Γ A Ty &&
+    _ettcheck fuel Σ (Γ,, A) B Ty
+  | sPair A B u v =>
+    _ettcheck fuel Σ Γ u A &&
+    _ettcheck fuel Σ Γ v (B{0 := u}) &&
+    _ettcheck fuel Σ Γ A Ty &&
+    _ettcheck fuel Σ (Γ,,A) B Ty &&
+    eq_term (sSum nAnon A B) T
+  | sPi1 A B p =>
+    _ettcheck fuel Σ Γ p (sSum nAnon A B) &&
+    _ettcheck fuel Σ Γ A Ty &&
+    _ettcheck fuel Σ (Γ,,A) B Ty &&
+    eq_term A T
+  | sPi2 A B p =>
+    _ettcheck fuel Σ Γ p (sSum nAnon A B) &&
+    _ettcheck fuel Σ Γ A Ty &&
+    _ettcheck fuel Σ (Γ,,A) B Ty &&
+    eq_term (B{0 := sPi1 A B p}) T
+  | sEq A u v =>
+    _ettcheck fuel Σ Γ u A &&
+    _ettcheck fuel Σ Γ v A &&
+    _ettcheck fuel Σ Γ A Ty &&
+    eq_term Ty T
+  | sRefl A u =>
+    _ettcheck fuel Σ Γ u A &&
+    _ettcheck fuel Σ Γ A Ty &&
+    eq_term (sEq A u u) T
+  | sAx id =>
+    match lookup_glob Σ id with
+    | Some A => eq_term A T
+    | None => false
+    end
+  | _ => false
+  end.
