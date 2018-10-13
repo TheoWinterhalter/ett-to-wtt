@@ -380,5 +380,13 @@ Proof.
            eapply reflection. eapply close_goal ; try eassumption.
            instantiate (1 := sAx (name ++ "0")).
            eapply type_Ax. cbn.
-           (* TODO With ident_eq_spec or so *)
+           destruct (ident_eq_spec (name ++ "0") (name ++ "0")).
+           ++ reflexivity.
+           ++ exfalso. auto.
+    + intros _ bot. discriminate bot.
+  - simpl in h. destruct s.
+    eapply type_conv.
+    + eapply xtype_Sort'.
+    + eassumption.
+    +
 Abort.
