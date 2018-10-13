@@ -268,9 +268,15 @@ Qed.
   For ETT we want to be able to build the derivation constructively
   and we should be able to get a set of obligations from it.
 
-  For now it only checks α-equality but in case it fails it should
-  discharge them in another global context.
+  ettconv generates a list (actually none or one) of obligations
+  that are necessary to entail the conversion.
+  TODO Replace eq_term in _ettcheck by ettconv
 *)
+Definition ettconv Γ u v A : list sterm :=
+  if eq_term u v
+  then []
+  else [ Prods Γ (sEq A u v) ].
+
 Fixpoint _ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm)
                   (T : sterm) {struct t} : bool :=
   match t with
