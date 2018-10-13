@@ -335,3 +335,16 @@ Fixpoint _ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm)
     ret (ettconv Γ A T)
   | _ => None
   end.
+
+(* For the soundness lemma, we need to write an extend function that takes
+   a global context and a list of obligations and put them together using a
+   base name for the obligations.
+ *)
+Fixpoint extendi i (Σ : sglobal_context) name l : sglobal_context :=
+  match l with
+  | A :: l =>
+    extendi (S i) (decl (name ++ string_of_nat i) A :: Σ) name l
+  | [] => Σ
+  end.
+
+Definition extend := extendi 0.
