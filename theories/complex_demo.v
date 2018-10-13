@@ -348,3 +348,37 @@ Fixpoint extendi i (Σ : sglobal_context) name l : sglobal_context :=
   end.
 
 Definition extend := extendi 0.
+
+
+Lemma _ettcheck_sound :
+  forall Σ Γ t A ob name,
+    _ettcheck Σ Γ t A = Some ob ->
+    let Σ' := extend Σ name ob in
+    xtype_glob Σ' ->
+    I.wf Σ' Γ ->
+    Σ' ;;; Γ |-x A : Ty ->
+    Σ' ;;; Γ |-x t : A.
+Proof.
+  intros Σ Γ t A ob name h Σ' hg hw hA.
+  revert Σ Γ A ob name h Σ' hg hw hA.
+  induction t ; intros Σ Γ A ob name h Σ' hg hw hA.
+  all: try discriminate h.
+  - cbn in h. revert h. case_eq (nth_error Γ n).
+    + intros B eq.
+      unfold ettconv. case_eq (eq_term (lift0 (S n) B) A).
+      * intros eq' h. eapply type_conv.
+        -- eapply type_Rel.
+        -- eassumption.
+        -- erewrite nth_error_Some_safe_nth with (e := eq).
+           eapply eq_symmetry. eapply eq_alpha ; try assumption.
+           symmetry. eapply eq_term_spec. assumption.
+      * intros _ h. inversion h. subst. clear h. cbn in Σ'.
+        eapply type_conv.
+        -- eapply type_Rel.
+        -- eassumption.
+        -- erewrite nth_error_Some_safe_nth with (e := eq).
+           eapply reflection. eapply close_goal ; try eassumption.
+           instantiate (1 := sAx (name ++ "0")).
+           eapply type_Ax. cbn.
+           (* TODO With ident_eq_spec or so *)
+Abort.
