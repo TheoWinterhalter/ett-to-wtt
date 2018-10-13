@@ -270,70 +270,68 @@ Qed.
 
   ettconv generates a list (actually none or one) of obligations
   that are necessary to entail the conversion.
-  TODO Replace eq_term in _ettcheck by ettconv
+
+  _ettcheck returns either a list of obligations or an error (None)
 *)
-Definition ettconv Γ u v A : list sterm :=
-  if eq_term u v
+Definition ettconv Γ A B : list sterm :=
+  if eq_term A B
   then []
-  else [ Prods Γ (sEq A u v) ].
+  else [ Prods Γ (sEq Ty A B) ].
 
 Fixpoint _ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm)
-                  (T : sterm) {struct t} : bool :=
+                  (T : sterm) {struct t} : option (list sterm) :=
   match t with
   | sRel n =>
-    match nth_error Γ n with
-    | Some B => eq_term (lift0 (S n) B) T
-    | None => false
-    end
-  | sSort _ => eq_term Ty T
+    B <- nth_error Γ n ;;
+    ret (ettconv Γ (lift0 (S n) B) T)
+  | sSort _ => ret (ettconv Γ Ty T)
   | sProd n A B =>
-    eq_term Ty T &&
-    _ettcheck Σ Γ A Ty &&
-    _ettcheck Σ (Γ,, A) B Ty
+    ob1 <- _ettcheck Σ Γ A Ty ;;
+    ob2 <- _ettcheck Σ Γ A Ty ;;
+    ob3 <- _ettcheck Σ (Γ,, A) B Ty ;;
+    ret (ob1 ,,, ob2 ,,, ob3 ,,, ettconv Γ Ty T)
   | sLambda n A B t =>
-    _ettcheck Σ (Γ,, A) t B &&
-    _ettcheck Σ Γ A Ty &&
-    _ettcheck Σ (Γ,, A) B Ty &&
-    eq_term (sProd n A B) T
+    ob1 <- _ettcheck Σ (Γ,, A) t B ;;
+    ob2 <- _ettcheck Σ Γ A Ty ;;
+    ob3 <- _ettcheck Σ (Γ,, A) B Ty ;;
+    ret (ob1 ,,, ob2 ,,, ob3 ,,, ettconv Γ (sProd n A B) T)
   | sApp u A B v =>
-    _ettcheck Σ Γ u (sProd nAnon A B) &&
-    _ettcheck Σ Γ v A &&
-    _ettcheck Σ Γ A Ty &&
-    _ettcheck Σ (Γ,, A) B Ty &&
-    eq_term (B{0 := v}) T
+    ob1 <- _ettcheck Σ Γ u (sProd nAnon A B) ;;
+    ob2 <- _ettcheck Σ Γ v A ;;
+    ob3 <- _ettcheck Σ Γ A Ty ;;
+    ob4 <- _ettcheck Σ (Γ,, A) B Ty ;;
+    ret (ob1 ,,, ob2 ,,, ob3 ,,, ob4 ,,, ettconv Γ (B{0 := v}) T)
   | sSum n A B =>
-    eq_term Ty T &&
-    _ettcheck Σ Γ A Ty &&
-    _ettcheck Σ (Γ,, A) B Ty
+    ob1 <- _ettcheck Σ Γ A Ty ;;
+    ob2 <- _ettcheck Σ (Γ,, A) B Ty ;;
+    ret (ob1 ,,, ob2 ,,, ettconv Γ Ty T)
   | sPair A B u v =>
-    _ettcheck Σ Γ u A &&
-    _ettcheck Σ Γ v (B{0 := u}) &&
-    _ettcheck Σ Γ A Ty &&
-    _ettcheck Σ (Γ,,A) B Ty &&
-    eq_term (sSum nAnon A B) T
+    ob1 <- _ettcheck Σ Γ u A ;;
+    ob2 <- _ettcheck Σ Γ v (B{0 := u}) ;;
+    ob3 <- _ettcheck Σ Γ A Ty ;;
+    ob4 <- _ettcheck Σ (Γ,,A) B Ty ;;
+    ret (ob1 ,,, ob2 ,,, ob3 ,,, ob4 ,,, ettconv Γ (sSum nAnon A B) T)
   | sPi1 A B p =>
-    _ettcheck Σ Γ p (sSum nAnon A B) &&
-    _ettcheck Σ Γ A Ty &&
-    _ettcheck Σ (Γ,,A) B Ty &&
-    eq_term A T
+    ob1 <- _ettcheck Σ Γ p (sSum nAnon A B) ;;
+    ob2 <- _ettcheck Σ Γ A Ty ;;
+    ob3 <- _ettcheck Σ (Γ,,A) B Ty ;;
+    ret (ob1 ,,, ob2 ,,, ob3 ,,, ettconv Γ A T)
   | sPi2 A B p =>
-    _ettcheck Σ Γ p (sSum nAnon A B) &&
-    _ettcheck Σ Γ A Ty &&
-    _ettcheck Σ (Γ,,A) B Ty &&
-    eq_term (B{0 := sPi1 A B p}) T
+    ob1 <- _ettcheck Σ Γ p (sSum nAnon A B) ;;
+    ob2 <- _ettcheck Σ Γ A Ty ;;
+    ob3 <- _ettcheck Σ (Γ,,A) B Ty ;;
+    ret (ob1 ,,, ob2 ,,, ob3 ,,, ettconv Γ (B{0 := sPi1 A B p}) T)
   | sEq A u v =>
-    _ettcheck Σ Γ u A &&
-    _ettcheck Σ Γ v A &&
-    _ettcheck Σ Γ A Ty &&
-    eq_term Ty T
+    ob1 <- _ettcheck Σ Γ u A ;;
+    ob2 <- _ettcheck Σ Γ v A ;;
+    ob3 <- _ettcheck Σ Γ A Ty ;;
+    ret (ob1 ,,, ob2 ,,, ob3 ,,, ettconv Γ Ty T)
   | sRefl A u =>
-    _ettcheck Σ Γ u A &&
-    _ettcheck Σ Γ A Ty &&
-    eq_term (sEq A u u) T
+    ob1 <- _ettcheck Σ Γ u A ;;
+    ob2 <- _ettcheck Σ Γ A Ty ;;
+    ret (ob1 ,,, ob2 ,,, ettconv Γ (sEq A u u) T)
   | sAx id =>
-    match lookup_glob Σ id with
-    | Some A => eq_term A T
-    | None => false
-    end
-  | _ => false
+    A <- lookup_glob Σ id ;;
+    ret (ettconv Γ A T)
+  | _ => None
   end.
