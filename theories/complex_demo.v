@@ -271,7 +271,7 @@ Qed.
   For now it only checks α-equality but in case it fails it should
   discharge them in another global context.
 *)
-Fixpoint _ettcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : sterm)
+Fixpoint _ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm)
                   (T : sterm) {struct t} : bool :=
   match t with
   | sRel n =>
@@ -282,47 +282,47 @@ Fixpoint _ettcheck (fuel : nat) (Σ : sglobal_context) (Γ : scontext) (t : ster
   | sSort _ => eq_term Ty T
   | sProd n A B =>
     eq_term Ty T &&
-    _ettcheck fuel Σ Γ A Ty &&
-    _ettcheck fuel Σ (Γ,, A) B Ty
+    _ettcheck Σ Γ A Ty &&
+    _ettcheck Σ (Γ,, A) B Ty
   | sLambda n A B t =>
-    _ettcheck fuel Σ (Γ,, A) t B &&
-    _ettcheck fuel Σ Γ A Ty &&
-    _ettcheck fuel Σ (Γ,, A) B Ty &&
+    _ettcheck Σ (Γ,, A) t B &&
+    _ettcheck Σ Γ A Ty &&
+    _ettcheck Σ (Γ,, A) B Ty &&
     eq_term (sProd n A B) T
   | sApp u A B v =>
-    _ettcheck fuel Σ Γ u (sProd nAnon A B) &&
-    _ettcheck fuel Σ Γ v A &&
-    _ettcheck fuel Σ Γ A Ty &&
-    _ettcheck fuel Σ (Γ,, A) B Ty &&
+    _ettcheck Σ Γ u (sProd nAnon A B) &&
+    _ettcheck Σ Γ v A &&
+    _ettcheck Σ Γ A Ty &&
+    _ettcheck Σ (Γ,, A) B Ty &&
     eq_term (B{0 := v}) T
   | sSum n A B =>
     eq_term Ty T &&
-    _ettcheck fuel Σ Γ A Ty &&
-    _ettcheck fuel Σ (Γ,, A) B Ty
+    _ettcheck Σ Γ A Ty &&
+    _ettcheck Σ (Γ,, A) B Ty
   | sPair A B u v =>
-    _ettcheck fuel Σ Γ u A &&
-    _ettcheck fuel Σ Γ v (B{0 := u}) &&
-    _ettcheck fuel Σ Γ A Ty &&
-    _ettcheck fuel Σ (Γ,,A) B Ty &&
+    _ettcheck Σ Γ u A &&
+    _ettcheck Σ Γ v (B{0 := u}) &&
+    _ettcheck Σ Γ A Ty &&
+    _ettcheck Σ (Γ,,A) B Ty &&
     eq_term (sSum nAnon A B) T
   | sPi1 A B p =>
-    _ettcheck fuel Σ Γ p (sSum nAnon A B) &&
-    _ettcheck fuel Σ Γ A Ty &&
-    _ettcheck fuel Σ (Γ,,A) B Ty &&
+    _ettcheck Σ Γ p (sSum nAnon A B) &&
+    _ettcheck Σ Γ A Ty &&
+    _ettcheck Σ (Γ,,A) B Ty &&
     eq_term A T
   | sPi2 A B p =>
-    _ettcheck fuel Σ Γ p (sSum nAnon A B) &&
-    _ettcheck fuel Σ Γ A Ty &&
-    _ettcheck fuel Σ (Γ,,A) B Ty &&
+    _ettcheck Σ Γ p (sSum nAnon A B) &&
+    _ettcheck Σ Γ A Ty &&
+    _ettcheck Σ (Γ,,A) B Ty &&
     eq_term (B{0 := sPi1 A B p}) T
   | sEq A u v =>
-    _ettcheck fuel Σ Γ u A &&
-    _ettcheck fuel Σ Γ v A &&
-    _ettcheck fuel Σ Γ A Ty &&
+    _ettcheck Σ Γ u A &&
+    _ettcheck Σ Γ v A &&
+    _ettcheck Σ Γ A Ty &&
     eq_term Ty T
   | sRefl A u =>
-    _ettcheck fuel Σ Γ u A &&
-    _ettcheck fuel Σ Γ A Ty &&
+    _ettcheck Σ Γ u A &&
+    _ettcheck Σ Γ A Ty &&
     eq_term (sEq A u u) T
   | sAx id =>
     match lookup_glob Σ id with
