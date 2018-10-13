@@ -270,7 +270,7 @@ Proof.
       destruct (istype_type hg h2) as [s2 ?].
       destruct (ismix_nth_sort hg hm x is1' is2') as [ss [? ?]].
       eapply type_conv.
-      * eapply type_Rel. 
+      * eapply type_Rel.
         eapply (@wf_llift Sort_notion) with (Δ := []) ; try eassumption.
         eapply typing_wf ; eassumption.
       * instantiate (1 := ss).
@@ -1136,6 +1136,20 @@ Proof.
   - constructor.
 Defined.
 
+Lemma inrel_nl :
+  forall {u u' v},
+    u ⊏ u' ->
+    nl u = nl v ->
+    v ⊏ u'.
+Proof.
+  intros u u' v h eq.
+  revert v eq. induction h.
+  all: intros w eq.
+  2:{ constructor. eapply IHh. assumption. }
+  all: destruct w ; try discriminate eq.
+  all: cbn in eq ; inversion eq ; now constructor.
+Defined.
+
 Lemma trel_lift :
   forall {t1 t2},
     t1 ∼ t2 ->
@@ -1411,7 +1425,7 @@ Proof.
   exists A''. split.
   - case_eq (DecideConversion.isconv (2 ^ 18) A' A'').
     + intro eq. exists t'. repeat split ; try assumption.
-      intro h. 
+      intro h.
       rewrite heq in h.
       destruct (istype_type hg h) as [s hs].
       assert (hth' : type_head (head A'')) by (now rewrite hh).
