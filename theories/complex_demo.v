@@ -287,9 +287,8 @@ Fixpoint _ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm)
   | sSort _ => ret (ettconv Γ Ty T)
   | sProd n A B =>
     ob1 <- _ettcheck Σ Γ A Ty ;;
-    ob2 <- _ettcheck Σ Γ A Ty ;;
-    ob3 <- _ettcheck Σ (Γ,, A) B Ty ;;
-    ret (ob1 ,,, ob2 ,,, ob3 ,,, ettconv Γ Ty T)
+    ob2 <- _ettcheck Σ (Γ,, A) B Ty ;;
+    ret (ob1 ,,, ob2 ,,, ettconv Γ Ty T)
   | sLambda n A B t =>
     ob1 <- _ettcheck Σ (Γ,, A) t B ;;
     ob2 <- _ettcheck Σ Γ A Ty ;;
@@ -355,7 +354,7 @@ Lemma _ettcheck_sound :
     _ettcheck Σ Γ t A = Some ob ->
     let Σ' := extend Σ name ob in
     xtype_glob Σ' ->
-    I.wf Σ' Γ ->
+    wf Σ' Γ ->
     Σ' ;;; Γ |-x A : Ty ->
     Σ' ;;; Γ |-x t : A.
 Proof.
@@ -388,5 +387,30 @@ Proof.
     eapply type_conv.
     + eapply xtype_Sort'.
     + eassumption.
-    +
+    + unfold ettconv in h. revert h.
+      case_eq (eq_term Ty A).
+      * intros eq h. eapply eq_alpha.
+        -- eapply eq_term_spec. assumption.
+        -- constructor.
+      * intros _ h. inversion h. subst. clear h. cbn in Σ'.
+        set (na := name ++ "0") in *.
+        eapply reflection. eapply close_goal ; try eassumption.
+        instantiate (1 := sAx na).
+        eapply type_Ax. cbn.
+        destruct (ident_eq_spec na na).
+        -- reflexivity.
+        -- exfalso. auto.
+  - simpl in h. revert h.
+    case_eq (_ettcheck Σ Γ t1 Ty).
+    + intros ob1 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty).
+      * intros ob2 eq2 h.
+        eapply type_conv.
+        -- eapply xtype_Prod'.
+           ++ assumption.
+           ++ eapply IHt1.
+              (* Either we need to change the theorem slightly,
+                 or we need to use some weakening properties regarding
+                 global context. Problem: it needs to take into account
+                 interleaving.
+               *)
 Abort.
