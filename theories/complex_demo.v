@@ -358,6 +358,50 @@ Proof.
   reflexivity.
 Defined.
 
+Definition rev_mapi (k : nat) {A B} (f : nat -> A -> B) (l : list A) : list B :=
+  let fix aux (i : nat) (l : list A) (acc : list B) : list B :=
+    match l with
+    | [] => acc
+    | x :: l => aux (S i) l (f i x :: acc)
+    end
+  in aux k l [].
+
+Lemma rev_mapi_cons :
+  forall {A B} {f : nat -> A -> B} {k a l},
+    rev_mapi k f (a :: l) = rev_mapi (S k) f l ++ [ f k a ].
+Proof.
+  intros A B f.
+  unfold rev_mapi.
+  match goal with
+  | |- forall k a l, ?faux _ _ _ = _ => set (aux := faux)
+  end.
+  assert (h : forall l acc i, aux i l acc = aux i l [] ++ acc).
+  { intro l. induction l ; intros acc i.
+    - cbn. reflexivity.
+    - cbn. rewrite (IHl [f i a]). rewrite IHl.
+      change (f i a :: acc) with ([f i a] ++ acc)%list.
+      auto with datatypes.
+  }
+  intros k l a.
+  apply h.
+Defined.
+
+Lemma extendi_comp :
+  forall {i Σ name l},
+    extendi i Σ name l =
+    rev_mapi i (fun i => decl (name @ string_of_nat i)) l ++ Σ.
+Proof.
+  intros i Σ name l. revert i Σ.
+  induction l as [| A l ih ] ; intros i Σ.
+  - reflexivity.
+  - rewrite extendi_cons. rewrite ih. rewrite rev_mapi_cons.
+    match goal with
+    | |- ?x ++ ?y :: _ = _ => set (L := x) ; set (X := y)
+    end. clearbody L X. clear. revert X. induction L ; intros X.
+    + reflexivity.
+    + cbn. rewrite IHL. reflexivity.
+Defined.
+
 Notation extend := (extendi 0).
 
 Open Scope nat_scope.
@@ -367,54 +411,45 @@ Inductive allfresh : sglobal_context -> Type :=
 | allfresh_cons Σ d : allfresh Σ -> fresh_glob d.(dname) Σ -> allfresh (d :: Σ).
 
 Lemma lookup_extendi :
-  forall {Σ name A obb obe i},
-    let Σ' := extendi i Σ name (obb ++ (A :: obe)) in
+  forall {Σ name ob i j},
+    let Σ' := extendi i Σ name ob in
     allfresh Σ' ->
-    lookup_glob Σ' (name @ string_of_nat (i + #|obb|)) = Some A.
+    j < #|ob| ->
+    lookup_glob Σ' (name @ string_of_nat (i + j)) = nth_error ob j.
 Proof.
-  intros Σ name A obb obe i Σ' h.
-  revert obb Σ A i Σ' h. induction obe as [| B obe ih ].
-  - induction obb as [| B obb ih ].
-    + intros Σ A i Σ' h.
-      cbn. replace (i + 0) with i by myomega.
+  intros Σ name ob i j Σ' hf hj.
+  revert Σ i j Σ' hf hj. induction ob as [| A ob ih ].
+  - intros Σ i j Σ' hf hj. cbn in *. inversion hj.
+  - intros Σ i j Σ' hf hj. cbn. destruct j.
+    + subst Σ'. rewrite extendi_comp.
+      rewrite extendi_comp in hf. rewrite rev_mapi_cons in hf.
+      replace (i + 0) with i by myomega.
       match goal with
-      | |- context [ident_eq ?x ?y] => destruct (ident_eq_spec x y)
+      | |- lookup_glob (?ob ++ ?d' :: _) ?na' = _ =>
+        set (l := ob) in * ;
+        set (d := d') in * ;
+        set (na := na') in *
       end.
-      * reflexivity.
-      * exfalso. auto.
-    + intros Σ A i Σ' h.
-      unfold Σ'. rewrite <- app_comm_cons. rewrite extendi_cons.
-      cbn. replace (i + S #|obb|) with (S i + #|obb|) by myomega.
-      eapply ih. assumption.
-  - intros obb Σ A i Σ' h.
-
-
-
-
-  (* revert Σ A obe i Σ' h. induction obb as [| B obb ih ]. *)
-  (* - intros Σ A obe i Σ' h. cbn in Σ'. cbn. *)
-  (*   replace (i + 0) with i by myomega. *)
-  (*   induction obe as [| B l ih ]. *)
-  (*   + cbn. *)
-  (*     match goal with *)
-  (*     | |- context [ident_eq ?x ?y] => destruct (ident_eq_spec x y) *)
-  (*     end. *)
-  (*     * reflexivity. *)
-  (*     * exfalso. auto. *)
-  (*   + admit. *)
-  (* - intros Σ A obe i Σ' h. *)
-  (*   unfold Σ'. rewrite <- app_comm_cons. rewrite extendi_cons. *)
-  (*   cbn. replace (i + S #|obb|) with (S i + #|obb|) by myomega. *)
-  (*   eapply ih. assumption. *)
+      clear - hf.
+      (* This looks like something we can pull off.
+         First we need to extract the lemma inlined in extendi_comp.
+         Then we write a lemma corresponding to the current state.
+       *)
+      admit.
+    + cbn. replace (i + S j) with (S i + j) by myomega.
+      eapply ih.
+      * assumption.
+      * cbn in hj. myomega.
 Admitted.
 
 Lemma lookup_extend :
   forall {Σ name A obb obe},
     let Σ' := extend Σ name (obb ++ (A :: obe)) in
+    allfresh Σ' ->
     lookup_glob Σ' (name @ string_of_nat #|obb|) = Some A.
 Proof.
-  intros Σ name A obb obe Σ'.
-  eapply (lookup_extendi (i := 0)).
+  intros Σ name A obb obe Σ' hf.
+  rewrite (lookup_extendi (i := 0)).
 Defined.
 
 Lemma _ettcheck_sound :
