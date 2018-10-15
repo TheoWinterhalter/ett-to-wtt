@@ -494,6 +494,31 @@ Proof.
     + assumption.
 Defined.
 
+Lemma fresh_glob_skip :
+  forall {id Σ Ξ},
+    fresh_glob id (Ξ ++ Σ) ->
+    fresh_glob id Σ.
+Proof.
+  intros id Σ Ξ h. revert id Σ h.
+  induction Ξ as [| d Ξ ih ] ; intros id Σ h.
+  - assumption.
+  - eapply ih. dependent destruction h. assumption.
+Defined.
+
+Lemma lookup_skip_eq :
+  forall {Ξ Σ id A},
+    lookup_glob Σ id = Some A ->
+    allfresh (Ξ ++ Σ) ->
+    lookup_glob (Ξ ++ Σ) id = Some A.
+Proof.
+  intro Ξ. induction Ξ as [| d Ξ ih ] ; intros Σ id A h hf.
+  - cbn. assumption.
+  - cbn. dependent destruction hf. apply fresh_glob_skip in f.
+    erewrite ih ; try eassumption.
+    erewrite ident_neq_fresh ; try eassumption.
+    reflexivity.
+Defined.
+
 Ltac reset H :=
   let v := (eval unfold H in H) in
   subst H ; set (H := v) in *.
@@ -941,4 +966,28 @@ Proof with discharge.
         eapply type_Ax. rewrite lookup_extend.
         -- reflexivity.
         -- apply xtype_glob_allfresh. assumption.
-Admitted.
+  - simpl in h. revert h.
+    case_eq (lookup_glob Σ id) ...
+    intros B eq h. inversion h. clear h.
+    eapply type_conv.
+    + eapply type_Ax. revert Σ' hg hw hA.
+      rewrite extendi_comp. intros Σ' hg hw hA.
+      match goal with
+      | _ := ?x ++ _ |- _ => set (Ξ := x) in *
+      end. erewrite lookup_skip_eq ; try eassumption.
+      * reflexivity.
+      * apply xtype_glob_allfresh. assumption.
+    + eassumption.
+    + unfold ettconv in *.
+      case_eq (eq_term B A).
+      * intro e. eapply eq_symmetry. eapply eq_alpha.
+        -- symmetry. eapply eq_term_spec. assumption.
+        -- assumption.
+      * intro neq. clear hA hw. revert H0 Σ' hg.
+        rewrite neq. cbn.
+        intros h hg.
+        eapply reflection. eapply close_goal ; try eassumption.
+        eapply type_Ax. subst. rewrite lookup_extend.
+        -- reflexivity.
+        -- apply xtype_glob_allfresh. assumption.
+Defined.
