@@ -346,21 +346,65 @@ Fixpoint extendi i (Σ : sglobal_context) name l : sglobal_context :=
   | [] => Σ
   end.
 
-Definition extend := extendi 0.
+Lemma extendi_cons :
+  forall {i Σ name A l},
+    extendi i Σ name (A :: l) =
+    extendi (S i) (decl (name ++ string_of_nat i) A :: Σ) name l.
+Proof.
+  reflexivity.
+Defined.
+
+Notation extend := (extendi 0).
+
+Lemma lookup_extendi :
+  forall {Σ name A obb obe},
+    let Σ' := extendi #|obe| Σ name ((A :: obb) ,,, obe) in
+    xtype_glob Σ' ->
+    lookup_glob Σ' (name ++ string_of_nat #|obb|) = Some A.
+Proof.
+  intros Σ name A obb obe Σ' h.
+  revert Σ name A obe Σ' h. induction obb as [| B obb ih ].
+  - intros Σ name A obe Σ' h. cbn.
+    induction obe as [| B obe ih ].
+    + cbn in Σ'. cbn.
+      destruct (ident_eq_spec (name ++ "0") (name ++ "0")).
+      * reflexivity.
+      * exfalso. auto.
+    + unfold Σ'. change ([A] ,,, (B :: obe)) with (B :: ([A] ,,, obe)).
+      rewrite extendi_cons.
+Abort.
+
+Lemma lookup_extend :
+  forall {Σ name A obb obe},
+    let Σ' := extend Σ name ((A :: obb) ,,, obe) in
+    xtype_glob Σ' ->
+    lookup_glob Σ' (name ++ string_of_nat #|obb|) = Some A.
+Proof.
+  intros Σ name A obb obe Σ' h.
+  revert Σ name A obe Σ' h. induction obb as [| B obb ih ].
+  - intros Σ name A obe Σ' h. cbn.
+    induction obe as [| B obe ih ].
+    + cbn in Σ'. cbn.
+      destruct (ident_eq_spec (name ++ "0") (name ++ "0")).
+      * reflexivity.
+      * exfalso. auto.
+    + cbn. cbn in *.
+Abort.
+
 
 
 Lemma _ettcheck_sound :
-  forall Σ Γ t A ob name,
+  forall Σ Γ t A ob name obb obe,
     _ettcheck Σ Γ t A = Some ob ->
-    let Σ' := extend Σ name ob in
+    let Σ' := extend Σ name (obb ,,, ob ,,, obe) in
     xtype_glob Σ' ->
     wf Σ' Γ ->
     Σ' ;;; Γ |-x A : Ty ->
     Σ' ;;; Γ |-x t : A.
 Proof.
-  intros Σ Γ t A ob name h Σ' hg hw hA.
-  revert Σ Γ A ob name h Σ' hg hw hA.
-  induction t ; intros Σ Γ A ob name h Σ' hg hw hA.
+  intros Σ Γ t A ob name obb obe h Σ' hg hw hA.
+  revert Σ Γ A ob name obb obe h Σ' hg hw hA.
+  induction t ; intros Σ Γ A ob name obb obe h Σ' hg hw hA.
   all: try discriminate h.
   - cbn in h. revert h. case_eq (nth_error Γ n).
     + intros B eq.
@@ -377,6 +421,7 @@ Proof.
         -- eassumption.
         -- erewrite nth_error_Some_safe_nth with (e := eq).
            eapply reflection. eapply close_goal ; try eassumption.
+           (* Now we need to pick the right number and prove some lemma *)
            instantiate (1 := sAx (name ++ "0")).
            eapply type_Ax. cbn.
            destruct (ident_eq_spec (name ++ "0") (name ++ "0")).
