@@ -494,6 +494,10 @@ Proof.
     + assumption.
 Defined.
 
+Ltac reset H :=
+  let v := (eval unfold H in H) in
+  subst H ; set (H := v) in *.
+
 Lemma _ettcheck_sound :
   forall Σ Γ t A ob name obb obe,
     _ettcheck Σ Γ t A = Some ob ->
@@ -536,24 +540,42 @@ Proof.
         -- eapply eq_term_spec. assumption.
         -- constructor.
       * intros _ h. inversion h. subst. clear h. cbn in Σ'.
-        set (na := name ++ "0") in *.
         eapply reflection. eapply close_goal ; try eassumption.
-        instantiate (1 := sAx na).
-        eapply type_Ax. cbn.
-        destruct (ident_eq_spec na na).
+        eapply type_Ax. rewrite lookup_extend.
         -- reflexivity.
-        -- exfalso. auto.
+        -- apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t1 Ty).
     + intros ob1 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty).
-      * intros ob2 eq2 h.
+      * intros ob2 eq2 h. inversion h. subst. clear h.
+        specialize (IHt1 _ _ _ _ name obb (ob2 ++ ettconv Γ Ty A ++ obe) eq1).
+        specialize (IHt2 _ _ _ _ name (obb ++ ob1) (ettconv Γ Ty A ++ obe) eq2).
+        rewrite <- app_assoc in IHt2.
+        revert Σ' hg hA hw. rewrite <- 2!app_assoc. intros Σ' hg hA hw.
+        specialize (IHt1 hg).
+        specialize (IHt2 hg).
+        reset Σ'.
         eapply type_conv.
         -- eapply xtype_Prod'.
            ++ assumption.
-           ++ eapply IHt1.
-              (* Either we need to change the theorem slightly,
-                 or we need to use some weakening properties regarding
-                 global context. Problem: it needs to take into account
-                 interleaving.
-               *)
-Abort.
+           ++ eapply IHt1 ; try assumption.
+              eapply xtype_Sort'.
+           ++ intro hw'. eapply IHt2 ; try assumption.
+              eapply xtype_Sort'.
+        -- eassumption.
+        -- unfold ettconv in *.
+           case_eq (eq_term Ty A).
+           ++ intro eq. eapply eq_alpha.
+              ** eapply eq_term_spec. assumption.
+              ** eapply xtype_Sort'.
+           ++ intro neq. clear IHt1 IHt2 hA hw. revert Σ' hg.
+              rewrite neq. cbn.
+              rewrite 2!app_assoc.
+              intros hg.
+              eapply reflection. eapply close_goal ; try eassumption.
+              eapply type_Ax. rewrite lookup_extend.
+              ** reflexivity.
+              ** apply xtype_glob_allfresh. assumption.
+      * intros _ bot. discriminate bot.
+    + intros _ bot. discriminate bot.
+Admitted.
