@@ -264,6 +264,8 @@ Proof.
   econstructor. assumption.
 Qed.
 
+Open Scope list_scope.
+
 (*
   For ETT we want to be able to build the derivation constructively
   and we should be able to get a set of obligations from it.
@@ -288,52 +290,54 @@ Fixpoint _ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm)
   | sProd n A B =>
     ob1 <- _ettcheck Σ Γ A Ty ;;
     ob2 <- _ettcheck Σ (Γ,, A) B Ty ;;
-    ret (ob1 ,,, ob2 ,,, ettconv Γ Ty T)
+    ret (ob1 ++ ob2 ++ ettconv Γ Ty T)
   | sLambda n A B t =>
     ob1 <- _ettcheck Σ (Γ,, A) t B ;;
     ob2 <- _ettcheck Σ Γ A Ty ;;
     ob3 <- _ettcheck Σ (Γ,, A) B Ty ;;
-    ret (ob1 ,,, ob2 ,,, ob3 ,,, ettconv Γ (sProd n A B) T)
+    ret (ob1 ++ ob2 ++ ob3 ++ ettconv Γ (sProd n A B) T)
   | sApp u A B v =>
     ob1 <- _ettcheck Σ Γ u (sProd nAnon A B) ;;
     ob2 <- _ettcheck Σ Γ v A ;;
     ob3 <- _ettcheck Σ Γ A Ty ;;
     ob4 <- _ettcheck Σ (Γ,, A) B Ty ;;
-    ret (ob1 ,,, ob2 ,,, ob3 ,,, ob4 ,,, ettconv Γ (B{0 := v}) T)
+    ret (ob1 ++ ob2 ++ ob3 ++ ob4 ++ ettconv Γ (B{0 := v}) T)
   | sSum n A B =>
     ob1 <- _ettcheck Σ Γ A Ty ;;
     ob2 <- _ettcheck Σ (Γ,, A) B Ty ;;
-    ret (ob1 ,,, ob2 ,,, ettconv Γ Ty T)
+    ret (ob1 ++ ob2 ++ ettconv Γ Ty T)
   | sPair A B u v =>
     ob1 <- _ettcheck Σ Γ u A ;;
     ob2 <- _ettcheck Σ Γ v (B{0 := u}) ;;
     ob3 <- _ettcheck Σ Γ A Ty ;;
     ob4 <- _ettcheck Σ (Γ,,A) B Ty ;;
-    ret (ob1 ,,, ob2 ,,, ob3 ,,, ob4 ,,, ettconv Γ (sSum nAnon A B) T)
+    ret (ob1 ++ ob2 ++ ob3 ++ ob4 ++ ettconv Γ (sSum nAnon A B) T)
   | sPi1 A B p =>
     ob1 <- _ettcheck Σ Γ p (sSum nAnon A B) ;;
     ob2 <- _ettcheck Σ Γ A Ty ;;
     ob3 <- _ettcheck Σ (Γ,,A) B Ty ;;
-    ret (ob1 ,,, ob2 ,,, ob3 ,,, ettconv Γ A T)
+    ret (ob1 ++ ob2 ++ ob3 ++ ettconv Γ A T)
   | sPi2 A B p =>
     ob1 <- _ettcheck Σ Γ p (sSum nAnon A B) ;;
     ob2 <- _ettcheck Σ Γ A Ty ;;
     ob3 <- _ettcheck Σ (Γ,,A) B Ty ;;
-    ret (ob1 ,,, ob2 ,,, ob3 ,,, ettconv Γ (B{0 := sPi1 A B p}) T)
+    ret (ob1 ++ ob2 ++ ob3 ++ ettconv Γ (B{0 := sPi1 A B p}) T)
   | sEq A u v =>
     ob1 <- _ettcheck Σ Γ u A ;;
     ob2 <- _ettcheck Σ Γ v A ;;
     ob3 <- _ettcheck Σ Γ A Ty ;;
-    ret (ob1 ,,, ob2 ,,, ob3 ,,, ettconv Γ Ty T)
+    ret (ob1 ++ ob2 ++ ob3 ++ ettconv Γ Ty T)
   | sRefl A u =>
     ob1 <- _ettcheck Σ Γ u A ;;
     ob2 <- _ettcheck Σ Γ A Ty ;;
-    ret (ob1 ,,, ob2 ,,, ettconv Γ (sEq A u u) T)
+    ret (ob1 ++ ob2 ++ ettconv Γ (sEq A u u) T)
   | sAx id =>
     A <- lookup_glob Σ id ;;
     ret (ettconv Γ A T)
   | _ => None
   end.
+
+Notation "s @ t" := (s ++ t)%string (right associativity, at level 60).
 
 (* For the soundness lemma, we need to write an extend function that takes
    a global context and a list of obligations and put them together using a
@@ -342,56 +346,44 @@ Fixpoint _ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm)
 Fixpoint extendi i (Σ : sglobal_context) name l : sglobal_context :=
   match l with
   | A :: l =>
-    extendi (S i) (decl (name ++ string_of_nat i) A :: Σ) name l
+    extendi (S i) (decl (name @ string_of_nat i) A :: Σ) name l
   | [] => Σ
   end.
 
 Lemma extendi_cons :
   forall {i Σ name A l},
     extendi i Σ name (A :: l) =
-    extendi (S i) (decl (name ++ string_of_nat i) A :: Σ) name l.
+    extendi (S i) (decl (name @ string_of_nat i) A :: Σ) name l.
 Proof.
   reflexivity.
 Defined.
 
 Notation extend := (extendi 0).
 
+Open Scope nat_scope.
+
 Lemma lookup_extendi :
-  forall {Σ name A obb obe},
-    let Σ' := extendi #|obe| Σ name ((A :: obb) ,,, obe) in
-    xtype_glob Σ' ->
-    lookup_glob Σ' (name ++ string_of_nat #|obb|) = Some A.
+  forall {Σ name A obb obe i},
+    let Σ' := extendi i Σ name (obb ++ (A :: obe)) in
+    lookup_glob Σ' (name @ string_of_nat (i + #|obb|)) = Some A.
 Proof.
-  intros Σ name A obb obe Σ' h.
-  revert Σ name A obe Σ' h. induction obb as [| B obb ih ].
-  - intros Σ name A obe Σ' h. cbn.
-    induction obe as [| B obe ih ].
-    + cbn in Σ'. cbn.
-      destruct (ident_eq_spec (name ++ "0") (name ++ "0")).
-      * reflexivity.
-      * exfalso. auto.
-    + unfold Σ'. change ([A] ,,, (B :: obe)) with (B :: ([A] ,,, obe)).
-      rewrite extendi_cons.
-Abort.
+  intros Σ name A obb obe i Σ'.
+  revert Σ A obe i Σ'. induction obb as [| B obb ih ].
+  - intros Σ A obe i Σ'. cbn in Σ'. cbn. admit.
+  - intros Σ A obe i Σ'.
+    unfold Σ'. rewrite <- app_comm_cons. rewrite extendi_cons.
+    cbn. replace (i + S #|obb|) with (S i + #|obb|) by myomega.
+    eapply ih.
+Admitted.
 
 Lemma lookup_extend :
   forall {Σ name A obb obe},
-    let Σ' := extend Σ name ((A :: obb) ,,, obe) in
-    xtype_glob Σ' ->
-    lookup_glob Σ' (name ++ string_of_nat #|obb|) = Some A.
+    let Σ' := extend Σ name (obb ++ (A :: obe)) in
+    lookup_glob Σ' (name @ string_of_nat #|obb|) = Some A.
 Proof.
-  intros Σ name A obb obe Σ' h.
-  revert Σ name A obe Σ' h. induction obb as [| B obb ih ].
-  - intros Σ name A obe Σ' h. cbn.
-    induction obe as [| B obe ih ].
-    + cbn in Σ'. cbn.
-      destruct (ident_eq_spec (name ++ "0") (name ++ "0")).
-      * reflexivity.
-      * exfalso. auto.
-    + cbn. cbn in *.
-Abort.
-
-
+  intros Σ name A obb obe Σ'.
+  eapply (lookup_extendi (i := 0)).
+Defined.
 
 Lemma _ettcheck_sound :
   forall Σ Γ t A ob name obb obe,
