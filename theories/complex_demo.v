@@ -373,21 +373,39 @@ Lemma lookup_extendi :
     lookup_glob Σ' (name @ string_of_nat (i + #|obb|)) = Some A.
 Proof.
   intros Σ name A obb obe i Σ' h.
-  revert Σ A obe i Σ' h. induction obb as [| B obb ih ].
-  - intros Σ A obe i Σ' h. cbn in Σ'. cbn.
-    replace (i + 0) with i by myomega.
-    induction obe as [| B l ih ].
-    + cbn.
+  revert obb Σ A i Σ' h. induction obe as [| B obe ih ].
+  - induction obb as [| B obb ih ].
+    + intros Σ A i Σ' h.
+      cbn. replace (i + 0) with i by myomega.
       match goal with
       | |- context [ident_eq ?x ?y] => destruct (ident_eq_spec x y)
       end.
       * reflexivity.
       * exfalso. auto.
-    + admit.
-  - intros Σ A obe i Σ' h.
-    unfold Σ'. rewrite <- app_comm_cons. rewrite extendi_cons.
-    cbn. replace (i + S #|obb|) with (S i + #|obb|) by myomega.
-    eapply ih. assumption.
+    + intros Σ A i Σ' h.
+      unfold Σ'. rewrite <- app_comm_cons. rewrite extendi_cons.
+      cbn. replace (i + S #|obb|) with (S i + #|obb|) by myomega.
+      eapply ih. assumption.
+  - intros obb Σ A i Σ' h.
+
+
+
+
+  (* revert Σ A obe i Σ' h. induction obb as [| B obb ih ]. *)
+  (* - intros Σ A obe i Σ' h. cbn in Σ'. cbn. *)
+  (*   replace (i + 0) with i by myomega. *)
+  (*   induction obe as [| B l ih ]. *)
+  (*   + cbn. *)
+  (*     match goal with *)
+  (*     | |- context [ident_eq ?x ?y] => destruct (ident_eq_spec x y) *)
+  (*     end. *)
+  (*     * reflexivity. *)
+  (*     * exfalso. auto. *)
+  (*   + admit. *)
+  (* - intros Σ A obe i Σ' h. *)
+  (*   unfold Σ'. rewrite <- app_comm_cons. rewrite extendi_cons. *)
+  (*   cbn. replace (i + S #|obb|) with (S i + #|obb|) by myomega. *)
+  (*   eapply ih. assumption. *)
 Admitted.
 
 Lemma lookup_extend :
