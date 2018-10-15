@@ -864,4 +864,81 @@ Proof with discharge.
         eapply type_Ax. rewrite lookup_extend.
         -- reflexivity.
         -- apply xtype_glob_allfresh. assumption.
+  - simpl in h. revert h.
+    case_eq (_ettcheck Σ Γ t2 t1) ...
+    intros ob1 eq2. case_eq (_ettcheck Σ Γ t3 t1) ...
+    intros ob2 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ...
+    intros ob3 eq1 h. inversion h. subst. clear h.
+    match goal with
+    | _ := context [ ettconv ?Γ ?A ?B ] |- _ => set (obeq := ettconv Γ A B) in *
+    end.
+    specialize (IHt1 _ _ _ _ name (obb ++ ob1 ++ ob2) (obeq ++ obe) eq1).
+    specialize (IHt2 _ _ _ _ name obb (ob2 ++ ob3 ++ obeq ++ obe) eq2).
+    specialize (IHt3 _ _ _ _ name (obb ++ ob1) (ob3 ++ obeq ++ obe) eq3).
+    rewrite <- 2!app_assoc in IHt1.
+    rewrite <- app_assoc in IHt3.
+    revert Σ' hg hA hw. rewrite <- 3!app_assoc. intros Σ' hg hA hw.
+    specialize (IHt1 hg).
+    specialize (IHt2 hg).
+    specialize (IHt3 hg).
+    reset Σ'.
+    eapply type_conv.
+    + eapply xtype_Eq' ; try assumption.
+      * eapply IHt2 ; try assumption.
+        eapply IHt1 ; try assumption.
+        eapply xtype_Sort'.
+      * eapply IHt3 ; try assumption.
+        eapply IHt1 ; try assumption.
+        eapply xtype_Sort'.
+    + eassumption.
+    + unfold ettconv in *.
+      match goal with
+      | _ := context [ eq_term ?A ?B ] |- _ => case_eq (eq_term A B)
+      end.
+      * intro eq. eapply eq_symmetry. eapply eq_alpha.
+        -- symmetry. eapply eq_term_spec. assumption.
+        -- assumption.
+      * intro neq. clear IHt1 IHt2 IHt3 hA hw. revert obeq Σ' hg.
+        rewrite neq. cbn.
+        rewrite 3!app_assoc.
+        intros hg.
+        eapply reflection. eapply close_goal ; try eassumption.
+        eapply type_Ax. rewrite lookup_extend.
+        -- reflexivity.
+        -- apply xtype_glob_allfresh. assumption.
+  - simpl in h. revert h.
+    case_eq (_ettcheck Σ Γ t2 t1) ...
+    intros ob1 eq2. case_eq (_ettcheck Σ Γ t1 Ty) ...
+    intros ob2 eq1 h. inversion h. subst. clear h.
+    match goal with
+    | _ := context [ ettconv ?Γ ?A ?B ] |- _ => set (obeq := ettconv Γ A B) in *
+    end.
+    specialize (IHt1 _ _ _ _ name (obb ++ ob1) (obeq ++ obe) eq1).
+    specialize (IHt2 _ _ _ _ name obb (ob2 ++ obeq ++ obe) eq2).
+    rewrite <- app_assoc in IHt1.
+    revert Σ' hg hA hw. rewrite <- 2!app_assoc. intros Σ' hg hA hw.
+    specialize (IHt1 hg).
+    specialize (IHt2 hg).
+    reset Σ'.
+    eapply type_conv.
+    + eapply xtype_Refl' ; try assumption.
+      eapply IHt2 ; try assumption.
+      eapply IHt1 ; try assumption.
+      eapply xtype_Sort'.
+    + eassumption.
+    + unfold ettconv in *.
+      match goal with
+      | _ := context [ eq_term ?A ?B ] |- _ => case_eq (eq_term A B)
+      end.
+      * intro eq. eapply eq_symmetry. eapply eq_alpha.
+        -- symmetry. eapply eq_term_spec. assumption.
+        -- assumption.
+      * intro neq. clear IHt1 IHt2 hA hw. revert obeq Σ' hg.
+        rewrite neq. cbn.
+        rewrite 2!app_assoc.
+        intros hg.
+        eapply reflection. eapply close_goal ; try eassumption.
+        eapply type_Ax. rewrite lookup_extend.
+        -- reflexivity.
+        -- apply xtype_glob_allfresh. assumption.
 Admitted.
