@@ -386,6 +386,15 @@ Proof.
   apply h.
 Defined.
 
+Lemma app_cons_app :
+  forall {A} {l1 : list A} {a l2},
+    l1 ++ a :: l2 = (l1 ++ [a]) ++ l2.
+Proof.
+  intros A l1. induction l1 as [| b l1 ih ].
+  - reflexivity.
+  - intros a l2. cbn. rewrite ih. reflexivity.
+Defined.
+
 Lemma extendi_comp :
   forall {i Σ name l},
     extendi i Σ name l =
@@ -395,11 +404,7 @@ Proof.
   induction l as [| A l ih ] ; intros i Σ.
   - reflexivity.
   - rewrite extendi_cons. rewrite ih. rewrite rev_mapi_cons.
-    match goal with
-    | |- ?x ++ ?y :: _ = _ => set (L := x) ; set (X := y)
-    end. clearbody L X. clear. revert X. induction L ; intros X.
-    + reflexivity.
-    + cbn. rewrite IHL. reflexivity.
+    apply app_cons_app.
 Defined.
 
 Notation extend := (extendi 0).
@@ -430,7 +435,7 @@ Proof.
         set (d := d') in * ;
         set (na := na') in *
       end.
-      clear - hf.
+      clear - hf. rewrite <- app_cons_app in hf.
       (* This looks like something we can pull off.
          First we need to extract the lemma inlined in extendi_comp.
          Then we write a lemma corresponding to the current state.
