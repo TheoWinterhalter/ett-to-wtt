@@ -482,10 +482,22 @@ Proof.
   - rewrite app_length. cbn. myomega.
 Defined.
 
+Lemma xtype_glob_allfresh :
+  forall {Σ},
+    xtype_glob Σ ->
+    allfresh Σ.
+Proof.
+  intros Σ h. induction h.
+  - constructor.
+  - constructor.
+    + assumption.
+    + assumption.
+Defined.
+
 Lemma _ettcheck_sound :
   forall Σ Γ t A ob name obb obe,
     _ettcheck Σ Γ t A = Some ob ->
-    let Σ' := extend Σ name (obb ,,, ob ,,, obe) in
+    let Σ' := extend Σ name (obb ++ ob ++ obe) in
     xtype_glob Σ' ->
     wf Σ' Γ ->
     Σ' ;;; Γ |-x A : Ty ->
@@ -510,12 +522,9 @@ Proof.
         -- eassumption.
         -- erewrite nth_error_Some_safe_nth with (e := eq).
            eapply reflection. eapply close_goal ; try eassumption.
-           (* Now we need to pick the right number and prove some lemma *)
-           instantiate (1 := sAx (name ++ "0")).
-           eapply type_Ax. cbn.
-           destruct (ident_eq_spec (name ++ "0") (name ++ "0")).
+           eapply type_Ax. rewrite lookup_extend.
            ++ reflexivity.
-           ++ exfalso. auto.
+           ++ apply xtype_glob_allfresh. assumption.
     + intros _ bot. discriminate bot.
   - simpl in h. destruct s.
     eapply type_conv.
