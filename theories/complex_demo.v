@@ -741,10 +741,15 @@ Proof with discharge.
         eapply xtype_Sort'.
       * eapply IHt4 ; try assumption.
         change Ty with (Ty{0 := t3}).
-        (* TODO We don't have substitution lemma for ETT
-           and as such we have to give up on pairs.
-         *)
-        admit.
+        eapply typing_subst ; try assumption.
+        -- eapply IHt2 ; try assumption.
+           ++ econstructor ; try assumption.
+              eapply IHt1 ; try assumption.
+              eapply xtype_Sort'.
+           ++ eapply xtype_Sort'.
+        -- eapply IHt3 ; try assumption.
+           eapply IHt1 ; try assumption.
+           eapply xtype_Sort'.
     + eassumption.
     + unfold ettconv in *.
       match goal with
