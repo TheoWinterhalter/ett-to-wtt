@@ -415,6 +415,28 @@ Inductive allfresh : sglobal_context -> Type :=
 | allfresh_nil : allfresh []
 | allfresh_cons Σ d : allfresh Σ -> fresh_glob d.(dname) Σ -> allfresh (d :: Σ).
 
+Derive Signature for allfresh.
+
+Lemma lookup_skip :
+  forall {Σ na A l},
+    let d := decl na A in
+    let Σ' := l ++ d :: Σ in
+    allfresh Σ' ->
+    lookup_glob Σ' na = Some A.
+Proof.
+  intros Σ na A l d Σ' hf.
+  revert Σ na A d Σ' hf. induction l as [| B l ih ].
+  - intros Σ na A d Σ' hf. cbn.
+    destruct (ident_eq_spec na na).
+    + reflexivity.
+    + exfalso. auto.
+  - intros Σ na A d Σ' hf. cbn.
+    subst Σ'. cbn in hf. dependent destruction hf.
+    specialize (ih _ _ _ hf). rewrite ih.
+    erewrite ident_neq_fresh ; try eassumption.
+    reflexivity.
+Defined.
+
 Lemma lookup_extendi :
   forall {Σ name ob i j},
     let Σ' := extendi i Σ name ob in
@@ -435,17 +457,13 @@ Proof.
         set (d := d') in * ;
         set (na := na') in *
       end.
-      clear - hf. rewrite <- app_cons_app in hf.
-      (* This looks like something we can pull off.
-         First we need to extract the lemma inlined in extendi_comp.
-         Then we write a lemma corresponding to the current state.
-       *)
-      admit.
+      clear - hf. rewrite <- app_cons_app in hf. cbn.
+      eapply lookup_skip. assumption.
     + cbn. replace (i + S j) with (S i + j) by myomega.
       eapply ih.
       * assumption.
       * cbn in hj. myomega.
-Admitted.
+Defined.
 
 Lemma lookup_extend :
   forall {Σ name A obb obe},
@@ -454,7 +472,14 @@ Lemma lookup_extend :
     lookup_glob Σ' (name @ string_of_nat #|obb|) = Some A.
 Proof.
   intros Σ name A obb obe Σ' hf.
-  rewrite (lookup_extendi (i := 0)).
+  Opaque length.
+  erewrite (lookup_extendi (i := 0)).
+  Transparent length.
+  - rewrite nth_error_app2 by reflexivity.
+    replace (#|obb| - #|obb|) with 0 by myomega.
+    reflexivity.
+  - assumption.
+  - rewrite app_length. cbn. myomega.
 Defined.
 
 Lemma _ettcheck_sound :
