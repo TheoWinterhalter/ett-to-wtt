@@ -362,18 +362,32 @@ Notation extend := (extendi 0).
 
 Open Scope nat_scope.
 
+Inductive allfresh : sglobal_context -> Type :=
+| allfresh_nil : allfresh []
+| allfresh_cons Σ d : allfresh Σ -> fresh_glob d.(dname) Σ -> allfresh (d :: Σ).
+
 Lemma lookup_extendi :
   forall {Σ name A obb obe i},
     let Σ' := extendi i Σ name (obb ++ (A :: obe)) in
+    allfresh Σ' ->
     lookup_glob Σ' (name @ string_of_nat (i + #|obb|)) = Some A.
 Proof.
-  intros Σ name A obb obe i Σ'.
-  revert Σ A obe i Σ'. induction obb as [| B obb ih ].
-  - intros Σ A obe i Σ'. cbn in Σ'. cbn. admit.
-  - intros Σ A obe i Σ'.
+  intros Σ name A obb obe i Σ' h.
+  revert Σ A obe i Σ' h. induction obb as [| B obb ih ].
+  - intros Σ A obe i Σ' h. cbn in Σ'. cbn.
+    replace (i + 0) with i by myomega.
+    induction obe as [| B l ih ].
+    + cbn.
+      match goal with
+      | |- context [ident_eq ?x ?y] => destruct (ident_eq_spec x y)
+      end.
+      * reflexivity.
+      * exfalso. auto.
+    + admit.
+  - intros Σ A obe i Σ' h.
     unfold Σ'. rewrite <- app_comm_cons. rewrite extendi_cons.
     cbn. replace (i + S #|obb|) with (S i + #|obb|) by myomega.
-    eapply ih.
+    eapply ih. assumption.
 Admitted.
 
 Lemma lookup_extend :
