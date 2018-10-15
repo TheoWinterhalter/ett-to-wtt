@@ -498,6 +498,12 @@ Ltac reset H :=
   let v := (eval unfold H in H) in
   subst H ; set (H := v) in *.
 
+Ltac discharge :=
+  try (intros ;
+  match goal with
+  | H : None = Some _ |- _ => discriminate H
+  end).
+
 Lemma _ettcheck_sound :
   forall Σ Γ t A ob name obb obe,
     _ettcheck Σ Γ t A = Some ob ->
@@ -506,7 +512,7 @@ Lemma _ettcheck_sound :
     wf Σ' Γ ->
     Σ' ;;; Γ |-x A : Ty ->
     Σ' ;;; Γ |-x t : A.
-Proof.
+Proof with discharge.
   intros Σ Γ t A ob name obb obe h Σ' hg hw hA.
   revert Σ Γ A ob name obb obe h Σ' hg hw hA.
   induction t ; intros Σ Γ A ob name obb obe h Σ' hg hw hA.
@@ -545,37 +551,36 @@ Proof.
         -- reflexivity.
         -- apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
-    case_eq (_ettcheck Σ Γ t1 Ty).
-    + intros ob1 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty).
-      * intros ob2 eq2 h. inversion h. subst. clear h.
-        specialize (IHt1 _ _ _ _ name obb (ob2 ++ ettconv Γ Ty A ++ obe) eq1).
-        specialize (IHt2 _ _ _ _ name (obb ++ ob1) (ettconv Γ Ty A ++ obe) eq2).
-        rewrite <- app_assoc in IHt2.
-        revert Σ' hg hA hw. rewrite <- 2!app_assoc. intros Σ' hg hA hw.
-        specialize (IHt1 hg).
-        specialize (IHt2 hg).
-        reset Σ'.
-        eapply type_conv.
-        -- eapply xtype_Prod'.
-           ++ assumption.
-           ++ eapply IHt1 ; try assumption.
-              eapply xtype_Sort'.
-           ++ intro hw'. eapply IHt2 ; try assumption.
-              eapply xtype_Sort'.
-        -- eassumption.
-        -- unfold ettconv in *.
-           case_eq (eq_term Ty A).
-           ++ intro eq. eapply eq_alpha.
-              ** eapply eq_term_spec. assumption.
-              ** eapply xtype_Sort'.
-           ++ intro neq. clear IHt1 IHt2 hA hw. revert Σ' hg.
-              rewrite neq. cbn.
-              rewrite 2!app_assoc.
-              intros hg.
-              eapply reflection. eapply close_goal ; try eassumption.
-              eapply type_Ax. rewrite lookup_extend.
-              ** reflexivity.
-              ** apply xtype_glob_allfresh. assumption.
-      * intros _ bot. discriminate bot.
-    + intros _ bot. discriminate bot.
+    case_eq (_ettcheck Σ Γ t1 Ty) ...
+    intros ob1 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
+    intros ob2 eq2 h. inversion h. subst. clear h.
+    specialize (IHt1 _ _ _ _ name obb (ob2 ++ ettconv Γ Ty A ++ obe) eq1).
+    specialize (IHt2 _ _ _ _ name (obb ++ ob1) (ettconv Γ Ty A ++ obe) eq2).
+    rewrite <- app_assoc in IHt2.
+    revert Σ' hg hA hw. rewrite <- 2!app_assoc. intros Σ' hg hA hw.
+    specialize (IHt1 hg).
+    specialize (IHt2 hg).
+    reset Σ'.
+    eapply type_conv.
+    + eapply xtype_Prod'.
+      * assumption.
+      * eapply IHt1 ; try assumption.
+        eapply xtype_Sort'.
+      * intro hw'. eapply IHt2 ; try assumption.
+        eapply xtype_Sort'.
+    + eassumption.
+    + unfold ettconv in *.
+      case_eq (eq_term Ty A).
+      * intro eq. eapply eq_alpha.
+        -- eapply eq_term_spec. assumption.
+        -- eapply xtype_Sort'.
+      * intro neq. clear IHt1 IHt2 hA hw. revert Σ' hg.
+        rewrite neq. cbn.
+        rewrite 2!app_assoc.
+        intros hg.
+        eapply reflection. eapply close_goal ; try eassumption.
+        eapply type_Ax. rewrite lookup_extend.
+        -- reflexivity.
+        -- apply xtype_glob_allfresh. assumption.
+  -
 Admitted.
