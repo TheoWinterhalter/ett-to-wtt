@@ -1067,6 +1067,7 @@ Fixpoint map_lemma (name : ident) (l : list term) : TemplateMonad () :=
   match l with
   | t :: l =>
     ty <- tmUnquoteTyped Type t ;;
+    name <- tmFreshName name ;;
     tmLemma name (ty : Type) ;;
     map_lemma name l
   | [] => ret tt
@@ -1087,25 +1088,20 @@ Definition Translate ident : TemplateMonad () :=
     match pretm, prety with
     | Success tm, Success ty =>
       (* We pick the name framework of obligations *)
-      ident <- tmEval all (ident @ "_der") ;;
-      ident <- tmFreshName ident ;;
-      nameob <- tmEval all (ident @ "_obligation_") ;;
-      (* name <- tmFreshName name ;; *)
+      name <- tmEval all (ident @ "_obligation_0") ;;
       (* We then typecheck the term in ETT *)
       (* TODO We need a sglobal_context *)
       match ettcheck [] [] tm ty with
       | Some obl =>
         obl <- tmEval all obl ;;
-        (* tmPrint obl *)
         (* We now have the list of obligations *)
         (* TODO Check the extended global context is well formed (at least in ITT) *)
         (* We push them into TC *)
         obl <- map_tsl obl ;;
         obl <- tmEval lazy obl ;;
-        (* tmPrint obl *)
         (* TODO We then turn them into a list of definitions *)
         (* We ask the user to prove the obligations in Coq *)
-        map_lemma ident obl ;;
+        map_lemma name obl ;;
         tmPrint "Yay!"
       | None => tmFail "ETT typechecking failed"
       end
@@ -1117,3 +1113,8 @@ Definition Translate ident : TemplateMonad () :=
 Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 
 Run TemplateProgram (Translate "pseudoid").
+
+Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C :=
+  {! f {! x !} !}.
+
+Run TemplateProgram (Translate "test").
