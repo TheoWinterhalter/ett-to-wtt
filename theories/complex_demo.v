@@ -991,3 +991,44 @@ Proof with discharge.
         -- reflexivity.
         -- apply xtype_glob_allfresh. assumption.
 Defined.
+
+Definition ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm) (T : sterm)
+  : option (list sterm) :=
+  ob1 <- _ettcheck Σ Γ T Ty ;;
+  ob2 <- _ettcheck Σ Γ t T ;;
+  ret (ob1 ++ ob2).
+
+Ltac discharge ::=
+  try (
+    intros ; cbn in * ;
+    match goal with
+    | H : None = Some _ |- _ => discriminate H
+    end
+  ).
+
+Lemma ettcheck_sound :
+  forall Σ Γ t A ob name,
+    ettcheck Σ Γ t A = Some ob ->
+    let Σ' := extend Σ name ob in
+    xtype_glob Σ' ->
+    wf Σ' Γ ->
+    Σ' ;;; Γ |-x t : A.
+Proof with discharge.
+  intros Σ Γ t A ob name eq Σ' hg hw.
+  revert eq. unfold ettcheck.
+  case_eq (_ettcheck Σ Γ A Ty) ... intros ob1 eq1.
+  case_eq (_ettcheck Σ Γ t A) ... intros ob2 eq2.
+  cbn. intro eq. inversion eq. clear eq. subst.
+  revert Σ' hw hg.
+  replace (ob1 ++ ob2) with (ob1 ++ ob2 ++ [])
+    by (now rewrite app_nil_r).
+  intros Σ' hw hg.
+  eapply _ettcheck_sound ; try assumption.
+  reset Σ'.
+  revert Σ' hw hg.
+  replace (ob1 ++ ob2 ++ []) with ([] ++ ob1 ++ ob2)
+    by (now rewrite app_nil_r, app_nil_l).
+  intros Σ' hw hg.
+  eapply _ettcheck_sound ; try assumption.
+  reset Σ'. eapply xtype_Sort'.
+Defined.
