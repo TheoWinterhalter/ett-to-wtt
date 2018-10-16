@@ -1091,8 +1091,11 @@ Definition Translate ident : TemplateMonad () :=
       name <- tmEval all (ident @ "_obligation_0") ;;
       (* We then typecheck the term in ETT *)
       (* TODO We need a sglobal_context *)
-      match ettcheck [] [] tm ty with
-      | Some obl =>
+      let ch := ettcheck [] [] tm ty in
+      match ch as o
+      return (ch = o -> TemplateMonad ())
+      with
+      | Some obl => fun (eq : ch = Some obl) =>
         obl <- tmEval all obl ;;
         (* We now have the list of obligations *)
         (* TODO Check the extended global context is well formed (at least in ITT) *)
@@ -1103,8 +1106,8 @@ Definition Translate ident : TemplateMonad () :=
         (* We ask the user to prove the obligations in Coq *)
         map_lemma name obl ;;
         tmPrint "Yay!"
-      | None => tmFail "ETT typechecking failed"
-      end
+      | None => fun (_ : ch = None) => tmFail "ETT typechecking failed"
+      end eq_refl
     | _,_ => tmFail "Cannot elaborate Coq term to an ETT term"
     end
   | _ => tmFail "Expected definition of a Coq constant"
@@ -1118,3 +1121,12 @@ Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C 
   {! f {! x !} !}.
 
 Run TemplateProgram (Translate "test").
+
+
+Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
+           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
+           n v m acc.
+
+(* For now the sglobal_context is empty so it cannot typecheck *)
+(* Run TemplateProgram (Translate "vrev"). *)
