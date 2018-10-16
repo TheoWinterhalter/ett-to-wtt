@@ -1034,7 +1034,7 @@ Proof with discharge.
 Defined.
 
 Corollary ettcheck_nil_sound :
-  forall {Σ t A ob name},
+  forall {Σ t A ob} name,
     ettcheck Σ [] t A = Some ob ->
     let Σ' := extend Σ name ob in
     xtype_glob Σ' ->
@@ -1088,7 +1088,8 @@ Definition Translate ident : TemplateMonad () :=
     match pretm, prety with
     | Success tm, Success ty =>
       (* We pick the name framework of obligations *)
-      name <- tmEval all (ident @ "_obligation_0") ;;
+      obname <- tmEval all (ident @ "_obligation_") ;;
+      name <- tmEval all (obname @ "0") ;;
       (* We then typecheck the term in ETT *)
       (* TODO We need a sglobal_context *)
       let ch := ettcheck [] [] tm ty in
@@ -1105,7 +1106,10 @@ Definition Translate ident : TemplateMonad () :=
         (* TODO We then turn them into a list of definitions *)
         (* We ask the user to prove the obligations in Coq *)
         map_lemma name obl ;;
-        tmPrint "Yay!"
+        (* Once they are proven we can safely apply soundness to get an ETT
+           derivation *)
+        let almost_der := ettcheck_nil_sound obname eq in
+        tmPrint almost_der
       | None => fun (_ : ch = None) => tmFail "ETT typechecking failed"
       end eq_refl
     | _,_ => tmFail "Cannot elaborate Coq term to an ETT term"
