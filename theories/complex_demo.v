@@ -1007,7 +1007,7 @@ Ltac discharge ::=
   ).
 
 Lemma ettcheck_sound :
-  forall Σ Γ t A ob name,
+  forall {Σ Γ t A ob name},
     ettcheck Σ Γ t A = Some ob ->
     let Σ' := extend Σ name ob in
     xtype_glob Σ' ->
@@ -1031,4 +1031,16 @@ Proof with discharge.
   intros Σ' hw hg.
   eapply _ettcheck_sound ; try assumption.
   reset Σ'. eapply xtype_Sort'.
+Defined.
+
+Corollary ettcheck_nil_sound :
+  forall {Σ t A ob name},
+    ettcheck Σ [] t A = Some ob ->
+    let Σ' := extend Σ name ob in
+    xtype_glob Σ' ->
+    Σ' ;;; [] |-x t : A.
+Proof.
+  intros Σ t A ob name eq Σ' hg.
+  eapply ettcheck_sound ; try assumption.
+  constructor.
 Defined.
