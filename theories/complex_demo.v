@@ -1045,6 +1045,43 @@ Proof.
   constructor.
 Defined.
 
+(* Global context should be typable in ITT and as such
+   we only check it ETT under no obligations.
+ *)
+Fixpoint ettcheck_ctx Σ :=
+  match Σ with
+  | d :: Σ =>
+    match ettcheck Σ [] (dtype d) Ty with
+    | Some [] => ettcheck_ctx Σ
+    | _ => false
+    end
+  | [] => true
+  end.
+
+Ltac discharge ::=
+  try (intros ; discriminate).
+
+Lemma ettcheck_ctx_sound :
+  forall {Σ},
+    ettcheck_ctx Σ = true ->
+    allfresh Σ ->
+    xtype_glob Σ.
+Proof with discharge.
+  intro Σ. induction Σ as [| d Σ ih ] ; intros eq hf.
+  - constructor.
+  - dependent destruction hf.
+    rename Σ0 into Σ, d0 into d.
+    revert eq. unfold ettcheck_ctx.
+    case_eq (ettcheck Σ [] (dtype d) Ty) ... intros ob eq.
+    destruct ob ... intro h.
+    econstructor.
+    + eapply ih ; assumption.
+    + assumption.
+    + change Σ with (extend Σ "foo" []).
+      eapply ettcheck_nil_sound.
+      * assumption.
+      * cbn. eapply ih ; assumption.
+Defined.
 
 (* We now attempt a complete translation procedure *)
 
@@ -1101,14 +1138,16 @@ Definition Translate ident : TemplateMonad () :=
         (* We now have the list of obligations *)
         (* TODO Check the extended global context is well formed (at least in ITT) *)
         (* We push them into TC *)
-        obl <- map_tsl obl ;;
-        obl <- tmEval lazy obl ;;
+        tc_obl <- map_tsl obl ;;
+        tc_obl <- tmEval lazy tc_obl ;;
         (* TODO We then turn them into a list of definitions *)
         (* We ask the user to prove the obligations in Coq *)
-        map_lemma name obl ;;
+        map_lemma name tc_obl ;;
         (* Once they are proven we can safely apply soundness to get an ETT
-           derivation *)
+           derivation, but first we need to check the whole global context *)
+        Σ' <- tmEval lazy (extend [] obname obl) ;;
         let almost_der := ettcheck_nil_sound obname eq in
+        tmPrint Σ' ;;
         tmPrint almost_der
       | None => fun (_ : ch = None) => tmFail "ETT typechecking failed"
       end eq_refl
