@@ -1083,6 +1083,46 @@ Proof with discharge.
       * cbn. eapply ih ; assumption.
 Defined.
 
+Fixpoint isfresh id Σ :=
+  match Σ with
+  | d :: Σ => negb (ident_eq (dname d) id) && isfresh id Σ
+  | [] => true
+  end.
+
+Lemma isfresh_sound :
+  forall {id Σ},
+    isfresh id Σ = true ->
+    fresh_glob id Σ.
+Proof.
+  intros id Σ. induction Σ as [| d Σ ih ] ; intro h.
+  - constructor.
+  - cbn in h. destruct_andb.
+    econstructor.
+    + eapply ih. assumption.
+    + destruct (ident_eq_spec (dname d) id).
+      * cbn in *. discriminate.
+      * assumption.
+Defined.
+
+Fixpoint isallfresh Σ :=
+  match Σ with
+  | d :: Σ => isfresh (dname d) Σ && isallfresh Σ
+  | [] => true
+  end.
+
+Lemma isallfresh_sound :
+  forall {Σ},
+    isallfresh Σ = true ->
+    allfresh Σ.
+Proof.
+  intro Σ. induction Σ as [| d Σ ih ] ; intro h.
+  - constructor.
+  - cbn in h. destruct_andb.
+    econstructor.
+    + eapply ih. assumption.
+    + eapply isfresh_sound. assumption.
+Defined.
+
 (* We now attempt a complete translation procedure *)
 
 (* Not Tail-recursive for the tile being *)
