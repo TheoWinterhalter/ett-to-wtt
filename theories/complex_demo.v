@@ -1044,3 +1044,39 @@ Proof.
   eapply ettcheck_sound ; try assumption.
   constructor.
 Defined.
+
+
+(* We now attempt a complete translation procedure *)
+Definition Translate ident : TemplateMonad () :=
+  (* First we quote the term to its TC representation *)
+  (* TODO We should get the TC global context as well! *)
+  entry <- tmQuoteConstant ident false ;;
+  match entry with
+  | DefinitionEntry {| definition_entry_body := tm ; definition_entry_type := ty |} =>
+    (* We get its type and body and elaborate them to ETT terms *)
+    (* TODO We should get the correspondence between axioms and Coq constants
+       somehow.
+     *)
+    pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm indt constt cot) ;;
+    prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty indt constt cot) ;;
+    match pretm, prety with
+    | Success tm, Success ty =>
+      (* We pick the name framework of obligations *)
+      name <- tmEval all (ident @ "_obligation_") ;;
+      (* name <- tmFreshName name ;; *)
+      (* We then typecheck the term in ETT *)
+      (* TODO We need a sglobal_context *)
+      match ettcheck [] [] tm ty with
+      | Some obl =>
+        obl <- tmEval all obl ;;
+        tmPrint obl
+      | None => tmFail "ETT typechecking failed"
+      end
+    | _,_ => tmFail "Cannot elaborate Coq term to an ETT term"
+    end
+  | _ => tmFail "Expected definition of a Coq constant"
+  end.
+
+Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
+
+Run TemplateProgram (Translate "pseudoid").
