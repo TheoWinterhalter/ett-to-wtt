@@ -1083,6 +1083,65 @@ Proof with discharge.
       * cbn. eapply ih ; assumption.
 Defined.
 
+Fixpoint isxcomp t :=
+  match t with
+  | sRel n => true
+  | sSort s => true
+  | sProd _ A B => isxcomp A && isxcomp B
+  | sLambda _ A B t => isxcomp A && isxcomp B && isxcomp t
+  | sApp u A B v => isxcomp A && isxcomp B && isxcomp u && isxcomp v
+  | sSum _ A B => isxcomp A && isxcomp B
+  | sPair A B u v => isxcomp A && isxcomp B && isxcomp u && isxcomp v
+  | sPi1 A B p => isxcomp A && isxcomp B && isxcomp p
+  | sPi2 A B p => isxcomp A && isxcomp B && isxcomp p
+  | sEq A u v => isxcomp A && isxcomp u && isxcomp v
+  | sRefl A u => isxcomp A && isxcomp u
+  | sAx _ => true
+  | _ => false
+  end.
+
+Lemma isxcomp_sound :
+  forall {t},
+    isxcomp t = true ->
+    Xcomp t.
+Proof.
+  intro t. induction t ; intro eq.
+  all: try discriminate eq.
+  all: try solve [constructor].
+  all: cbn in eq ; repeat destruct_andb ; econstructor ; easy.
+Defined.
+
+Fixpoint ittcheck_ctx fuel Σ :=
+  match Σ with
+  | d :: Σ =>
+    isxcomp (dtype d) && ittcheck fuel Σ [] (dtype d) Ty && ittcheck_ctx fuel Σ
+  | [] => true
+  end.
+
+Lemma ittcheck_ctx_sound :
+  forall {fuel Σ},
+    ittcheck_ctx fuel Σ = true ->
+    allfresh Σ ->
+    type_glob Σ.
+Proof with discharge.
+  intros fuel Σ. induction Σ as [| d Σ ih ] ; intros eq hf.
+  - constructor.
+  - dependent destruction hf.
+    rename Σ0 into Σ, d0 into d.
+    revert eq. unfold ittcheck_ctx.
+    case_eq (isxcomp (dtype d)) ... intro e. cbn.
+    case_eq (ittcheck fuel Σ [] (dtype d) Ty) ... cbn.
+    intros eq h.
+    econstructor.
+    + eapply ih ; assumption.
+    + assumption.
+    + eexists. eapply ittcheck_sound.
+      * eassumption.
+      * eapply ih ; assumption.
+      * constructor.
+    + eapply isxcomp_sound. assumption.
+Defined.
+
 Fixpoint isfresh id Σ :=
   match Σ with
   | d :: Σ => negb (ident_eq (dname d) id) && isfresh id Σ
@@ -1197,11 +1256,18 @@ Definition Translate ident : TemplateMonad () :=
           return (ettcheck_ctx Σ' = b -> TemplateMonad ())
           with
           | true => fun eqcx =>
+            (* We now have a derivation of our term in ETT *)
             let hf := isallfresh_sound eqf in
             let xhg : xtype_glob (extend [] obname obl) := ettcheck_ctx_sound eqcx hf in
             let der := ettcheck_nil_sound obname eq xhg in
-            tmPrint Σ' ;;
-            tmPrint der
+            (* Next we check the global context makes sense in ITT *)
+            match ittcheck_ctx (2 ^ 18) Σ' as b
+            return (ittcheck_ctx (2 ^ 18) Σ' = b -> TemplateMonad ())
+            with
+            | true => fun eqc =>
+              tmPrint "ok"
+            | false => fun _ => tmFail "Generated global context doesn't typecheck in ITT"
+            end eq_refl
           | false => fun _ => tmFail "Generated global context doesn't typecheck in ETT"
           end eq_refl
         | false => fun _ => tmFail "Generated global context has naming conflicts"
