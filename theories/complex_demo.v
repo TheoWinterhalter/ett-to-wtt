@@ -1209,6 +1209,17 @@ Fixpoint map_lemma (name : ident) (l : list term) : TemplateMonad () :=
   | [] => ret tt
   end.
 
+Fact istrans_nil {Σ} :
+  ctxtrans Σ nil nil.
+Proof.
+  split.
+  - constructor.
+  - constructor.
+Defined.
+
+Definition type_translation {Σ} hg {Γ t A} h {Γ'} hΓ :=
+  fst (@complete_translation _ Σ hg) Γ t A h Γ' hΓ.
+
 Definition Translate ident : TemplateMonad () :=
   (* First we quote the term to its TC representation *)
   (* TODO We should get the TC global context as well! *)
@@ -1258,13 +1269,15 @@ Definition Translate ident : TemplateMonad () :=
           | true => fun eqcx =>
             (* We now have a derivation of our term in ETT *)
             let hf := isallfresh_sound eqf in
-            let xhg : xtype_glob (extend [] obname obl) := ettcheck_ctx_sound eqcx hf in
+            let xhg := ettcheck_ctx_sound eqcx hf in
             let der := ettcheck_nil_sound obname eq xhg in
             (* Next we check the global context makes sense in ITT *)
             match ittcheck_ctx (2 ^ 18) Σ' as b
             return (ittcheck_ctx (2 ^ 18) Σ' = b -> TemplateMonad ())
             with
             | true => fun eqc =>
+              let hg := ittcheck_ctx_sound eqc hf in
+              let '(_ ; itt_tm ; _) := type_translation hg der istrans_nil in
               tmPrint "ok"
             | false => fun _ => tmFail "Generated global context doesn't typecheck in ITT"
             end eq_refl
