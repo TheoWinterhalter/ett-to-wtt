@@ -1047,6 +1047,20 @@ Defined.
 
 
 (* We now attempt a complete translation procedure *)
+
+(* Not Tail-recursive for the tile being *)
+Fixpoint map_tsl l : TemplateMonad (list term) :=
+  match l with
+  | t :: l =>
+    match tsl_rec (2 ^ 18) Σ [] t axoc with
+    | FinalTranslation.Success _ t =>
+      l <- map_tsl l ;;
+      ret (t :: l)
+    | _ => tmFail "Cannot refine obligation into a Coq term"
+    end
+  | [] => ret []
+  end.
+
 Definition Translate ident : TemplateMonad () :=
   (* First we quote the term to its TC representation *)
   (* TODO We should get the TC global context as well! *)
@@ -1069,6 +1083,12 @@ Definition Translate ident : TemplateMonad () :=
       match ettcheck [] [] tm ty with
       | Some obl =>
         obl <- tmEval all obl ;;
+        (* tmPrint obl *)
+        (* We now have the list of obligations *)
+        (* TODO Check the extended global context is well formed (at least in ITT) *)
+        (* We push them into TC *)
+        obl <- map_tsl obl ;;
+        obl <- tmEval lazy obl ;;
         tmPrint obl
       | None => tmFail "ETT typechecking failed"
       end
