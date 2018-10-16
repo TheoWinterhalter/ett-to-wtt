@@ -31,3 +31,4 @@ theories/IChecking.v
 theories/XChecking.v
 theories/ExamplesUtil.v
 theories/Example.v
+theories/complex_demo.v

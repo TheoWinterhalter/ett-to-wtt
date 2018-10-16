@@ -1278,7 +1278,12 @@ Definition Translate ident : TemplateMonad () :=
             | true => fun eqc =>
               let hg := ittcheck_ctx_sound eqc hf in
               let '(_ ; itt_tm ; _) := type_translation hg der istrans_nil in
-              tmPrint "ok"
+              t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm axoc) ;;
+              match t with
+              | FinalTranslation.Success _ t =>
+                tmMkDefinition (ident @ "ᵗ") t
+              | _ => tmFail "Cannot translate from ITT to TemplateCoq"
+              end
             | false => fun _ => tmFail "Generated global context doesn't typecheck in ITT"
             end eq_refl
           | false => fun _ => tmFail "Generated global context doesn't typecheck in ETT"
@@ -1296,16 +1301,16 @@ Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 
 Run TemplateProgram (Translate "pseudoid").
 
-Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C :=
-  {! f {! x !} !}.
+(* Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C := *)
+(*   {! f {! x !} !}. *)
 
-Run TemplateProgram (Translate "test").
+(* Run TemplateProgram (Translate "test"). *)
 
 
-Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
-  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
-           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
-           n v m acc.
+(* Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) := *)
+(*   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) *)
+(*            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !}) *)
+(*            n v m acc. *)
 
-(* For now the sglobal_context is empty so it cannot typecheck *)
-(* Run TemplateProgram (Translate "vrev"). *)
+(* (* For now the sglobal_context is empty so it cannot typecheck *) *)
+(* (* Run TemplateProgram (Translate "vrev"). *) *)
