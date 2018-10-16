@@ -1068,7 +1068,7 @@ Fixpoint map_lemma (name : ident) (l : list term) : TemplateMonad () :=
   | t :: l =>
     ty <- tmUnquoteTyped Type t ;;
     tmLemma name (ty : Type) ;;
-    ret tt
+    map_lemma name l
   | [] => ret tt
   end.
 
