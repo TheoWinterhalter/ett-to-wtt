@@ -1174,7 +1174,7 @@ Definition Translate ident : TemplateMonad () :=
       return (ch = o -> TemplateMonad ())
       with
       | Some obl => fun (eq : ch = Some obl) =>
-        obl <- tmEval all obl ;;
+        (* obl <- tmEval all obl ;; *)
         (* We now have the list of obligations *)
         (* TODO Check the extended global context is well formed (at least in ITT) *)
         (* We push them into TC *)
@@ -1185,10 +1185,27 @@ Definition Translate ident : TemplateMonad () :=
         map_lemma name tc_obl ;;
         (* Once they are proven we can safely apply soundness to get an ETT
            derivation, but first we need to check the whole global context *)
-        Σ' <- tmEval lazy (extend [] obname obl) ;;
-        let almost_der := ettcheck_nil_sound obname eq in
-        tmPrint Σ' ;;
-        tmPrint almost_der
+        (* Σ' <- tmEval lazy (extend [] obname obl) ;; *)
+        let Σ' := extend [] obname obl in
+        (* First we check freshness of Σ' *)
+        match isallfresh Σ' as b
+        return (isallfresh Σ' = b -> TemplateMonad ())
+        with
+        | true => fun eqf =>
+          (* Then we check Σ' in ETT *)
+          match ettcheck_ctx Σ' as b
+          return (ettcheck_ctx Σ' = b -> TemplateMonad ())
+          with
+          | true => fun eqcx =>
+            let hf := isallfresh_sound eqf in
+            let xhg : xtype_glob (extend [] obname obl) := ettcheck_ctx_sound eqcx hf in
+            let der := ettcheck_nil_sound obname eq xhg in
+            tmPrint Σ' ;;
+            tmPrint der
+          | false => fun _ => tmFail "Generated global context doesn't typecheck in ETT"
+          end eq_refl
+        | false => fun _ => tmFail "Generated global context has naming conflicts"
+        end eq_refl
       | None => fun (_ : ch = None) => tmFail "ETT typechecking failed"
       end eq_refl
     | _,_ => tmFail "Cannot elaborate Coq term to an ETT term"
