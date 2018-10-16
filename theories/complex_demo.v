@@ -1067,19 +1067,8 @@ Fixpoint map_lemma (name : ident) (l : list term) : TemplateMonad () :=
   match l with
   | t :: l =>
     ty <- tmUnquoteTyped Type t ;;
-    (* ty <- tmUnquote t ;; *)
-    (* ty <- tmEval lazy (my_projT2 ty) ;; *)
-    (* tmLemma name ty ;; *)
-    tmBind (tmLemma name (ty : Type)) (fun _ => ret tt)
-    (* match tmLemma name ty with *)
-    (* | tmReturn _ => map_lemma name l *)
-    (* | _ => tmFail "uh oh" *)
-    (* end *)
-    (* map_lemma name l *)
-    (* l <- map_lemma name l ;; *)
-    (* ret (der :: l) *)
-    (* ret tt *)
-  (* | [] => ret [] *)
+    tmLemma name (ty : Type) ;;
+    ret tt
   | [] => ret tt
   end.
 
@@ -1098,7 +1087,9 @@ Definition Translate ident : TemplateMonad () :=
     match pretm, prety with
     | Success tm, Success ty =>
       (* We pick the name framework of obligations *)
-      name <- tmEval all (ident @ "_obligation_") ;;
+      ident <- tmEval all (ident @ "_der") ;;
+      ident <- tmFreshName ident ;;
+      nameob <- tmEval all (ident @ "_obligation_") ;;
       (* name <- tmFreshName name ;; *)
       (* We then typecheck the term in ETT *)
       (* TODO We need a sglobal_context *)
@@ -1114,7 +1105,7 @@ Definition Translate ident : TemplateMonad () :=
         (* tmPrint obl *)
         (* TODO We then turn them into a list of definitions *)
         (* We ask the user to prove the obligations in Coq *)
-        map_lemma name obl ;;
+        map_lemma ident obl ;;
         tmPrint "Yay!"
       | None => tmFail "ETT typechecking failed"
       end
