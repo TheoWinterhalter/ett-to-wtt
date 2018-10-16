@@ -1049,6 +1049,7 @@ Defined.
 (* We now attempt a complete translation procedure *)
 
 (* Not Tail-recursive for the tile being *)
+(* TODO Use monap_map? *)
 Fixpoint map_tsl l : TemplateMonad (list term) :=
   match l with
   | t :: l =>
@@ -1062,14 +1063,22 @@ Fixpoint map_tsl l : TemplateMonad (list term) :=
   end.
 
 (* For now we don't return the produced theorems *)
-Fail Fixpoint map_lemma name (l : list term) : TemplateMonad () :=
+Fixpoint map_lemma (name : ident) (l : list term) : TemplateMonad () :=
   match l with
   | t :: l =>
     ty <- tmUnquoteTyped Type t ;;
-    der <- tmLemma name ty ;;
-    l <- map_lemma name l ;;
+    (* ty <- tmUnquote t ;; *)
+    (* ty <- tmEval lazy (my_projT2 ty) ;; *)
+    (* tmLemma name ty ;; *)
+    tmBind (tmLemma name (ty : Type)) (fun _ => ret tt)
+    (* match tmLemma name ty with *)
+    (* | tmReturn _ => map_lemma name l *)
+    (* | _ => tmFail "uh oh" *)
+    (* end *)
+    (* map_lemma name l *)
+    (* l <- map_lemma name l ;; *)
     (* ret (der :: l) *)
-    ret tt
+    (* ret tt *)
   (* | [] => ret [] *)
   | [] => ret tt
   end.
@@ -1102,11 +1111,11 @@ Definition Translate ident : TemplateMonad () :=
         (* We push them into TC *)
         obl <- map_tsl obl ;;
         obl <- tmEval lazy obl ;;
-        tmPrint obl
+        (* tmPrint obl *)
         (* TODO We then turn them into a list of definitions *)
         (* We ask the user to prove the obligations in Coq *)
-        (* x <- map_lemma name obl ;; *)
-        (* tmPrint "Yay!" *)
+        map_lemma name obl ;;
+        tmPrint "Yay!"
       | None => tmFail "ETT typechecking failed"
       end
     | _,_ => tmFail "Cannot elaborate Coq term to an ETT term"
