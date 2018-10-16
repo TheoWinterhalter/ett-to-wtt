@@ -366,6 +366,18 @@ Definition rev_mapi (k : nat) {A B} (f : nat -> A -> B) (l : list A) : list B :=
     end
   in aux k l [].
 
+Definition app_assoc :=
+fun (A : Type) (l m n : list A) =>
+list_ind (fun l0 : list A => l0 ++ m ++ n = (l0 ++ m) ++ n)
+  (let H : n = n := eq_refl in
+   (let H0 : m = m := eq_refl in (let H1 : A = A := eq_refl in (fun (_ : A = A) (_ : m = m) (_ : n = n) => eq_refl) H1) H0) H)
+  (fun (a : A) (l0 : list A) (IHl : l0 ++ m ++ n = (l0 ++ m) ++ n) =>
+   let H : l0 ++ m ++ n = (l0 ++ m) ++ n := IHl in
+   (let H0 : a = a := eq_refl in
+    (let H1 : A = A := eq_refl in
+     (fun (_ : A = A) (_ : a = a) (H4 : l0 ++ m ++ n = (l0 ++ m) ++ n) =>
+      eq_trans (f_equal (fun f : list A -> list A => f (l0 ++ m ++ n)) eq_refl) (f_equal (cons a) H4)) H1) H0) H) l.
+
 Lemma rev_mapi_cons :
   forall {A B} {f : nat -> A -> B} {k a l},
     rev_mapi k f (a :: l) = rev_mapi (S k) f l ++ [ f k a ].
@@ -380,7 +392,7 @@ Proof.
     - cbn. reflexivity.
     - cbn. rewrite (IHl [f i a]). rewrite IHl.
       change (f i a :: acc) with ([f i a] ++ acc)%list.
-      auto with datatypes.
+      rewrite app_assoc. reflexivity.
   }
   intros k l a.
   apply h.
@@ -417,6 +429,99 @@ Inductive allfresh : sglobal_context -> Type :=
 
 Derive Signature for allfresh.
 
+Ltac tryone a a' H :=
+  destruct a, a'; simpl in *; try (reflexivity || discriminate).
+
+Lemma ascii_Compare_eq : forall x y, ascii_compare x y = Eq <-> x = y.
+Proof.
+  destruct x as [a b c d e f g h].
+  destruct y as [a' b' c' d' e' f' g' h'].
+  split. intros H.
+  tryone a a' H;
+    tryone b b' H;
+    tryone c c' H;
+    tryone d d' H;
+    tryone e e' H;
+    tryone f f' H;
+    tryone g g' H;
+    tryone h h' H; reflexivity.
+  intros H; injection H. intros; subst.
+  destruct a', b', c', d', e', f', g', h'; reflexivity.
+Defined.
+
+Lemma ascii_compare_Lt x y : ascii_compare x y = Gt <-> ascii_compare y x = Lt.
+Proof.
+  destruct x as [a b c d e f g h].
+  destruct y as [a' b' c' d' e' f' g' h'].
+  split.
+  intros H.
+  tryone a a' H;
+    tryone b b' H;
+    tryone c c' H;
+    tryone d d' H;
+    tryone e e' H;
+    tryone f f' H;
+    tryone g g' H;
+    tryone h h' H; try reflexivity.
+  intros H.
+  tryone a a' H;
+    tryone b b' H;
+    tryone c c' H;
+    tryone d d' H;
+    tryone e e' H;
+    tryone f f' H;
+    tryone g g' H;
+    tryone h h' H; try reflexivity.
+Defined.
+
+Definition ascii_Compare (x y : Ascii.ascii) : OrderedType.Compare ascii_lt eq x y.
+Proof.
+  case_eq (ascii_compare x y).
+  intros.
+  - apply OrderedType.EQ.
+    now apply ascii_Compare_eq.
+  - intros. apply OrderedType.LT.
+    destruct x as [a b c d e f g h].
+    destruct y as [a' b' c' d' e' f' g' h'].
+    unfold ascii_lt. apply H.
+  - intros.
+    apply OrderedType.GT. red. now apply ascii_compare_Lt.
+Defined.
+
+Definition proj2 {A B : Prop} (H : A /\ B) :=
+  match H with
+  | conj _ H1 => H1
+  end.
+
+Lemma string_compare_eq : forall x y : string, string_compare x y = Eq <-> eq x y.
+Proof.
+  split.
+  induction x in y |- *.
+  + destruct y. reflexivity.
+    discriminate.
+  + destruct y. discriminate.
+    simpl. destruct (ascii_Compare a a0). red in a1. rewrite a1. discriminate.
+    subst a0.
+    pose (proj2 (ascii_Compare_eq a a) Logic.eq_refl).
+    rewrite e. intros H. specialize (IHx _ H). rewrite IHx. reflexivity.
+    red in a1. apply ascii_compare_Lt in a1. rewrite a1. discriminate.
+  + intros ->.
+    induction y. reflexivity.
+    simpl. now rewrite (proj2 (ascii_Compare_eq a a) Logic.eq_refl).
+Defined.
+
+Lemma ident_eq_spec x y : reflect (x = y) (ident_eq x y).
+Proof.
+  unfold ident_eq.
+  case_eq (string_compare x y).
+  all: intro e ; constructor.
+  1: apply string_compare_eq ; assumption.
+  all: intro bot.
+  all: apply string_compare_eq in bot.
+  all: rewrite bot in e.
+  all: discriminate e.
+Defined.
+
 Lemma lookup_skip :
   forall {Σ na A l},
     let d := decl na A in
@@ -436,6 +541,41 @@ Proof.
     erewrite ident_neq_fresh ; try eassumption.
     reflexivity.
 Defined.
+
+Definition nth_error_app2 :=
+fun (A : Type) (l l' : list A) (n : nat) =>
+nat_ind (fun n0 : nat => forall l0 : list A, #|l0| <= n0 -> nth_error (l0 ++ l') n0 = nth_error l' (n0 - #|l0|))
+  (fun l0 : list A =>
+   match l0 as l1 return (#|l1| <= 0 -> nth_error (l1 ++ l') 0 = nth_error l' (0 - #|l1|)) with
+   | [] => fun _ : #|[]| <= 0 => eq_refl
+   | a :: l1 =>
+       fun H : #|a :: l1| <= 0 =>
+       let H0 : 0 = 0 -> nth_error ((a :: l1) ++ l') 0 = nth_error l' (0 - #|a :: l1|) :=
+         match H in (_ <= n0) return (n0 = 0 -> nth_error ((a :: l1) ++ l') 0 = nth_error l' (0 - #|a :: l1|)) with
+         | le_n _ =>
+             fun H0 : #|a :: l1| = 0 =>
+             (fun H1 : #|a :: l1| = 0 =>
+              let H2 : False := Logic.eq_ind #|a :: l1| (fun e : nat => match e with
+                                                                        | 0 => False
+                                                                        | S _ => True
+                                                                        end) I 0 H1 in
+              False_ind (nth_error ((a :: l1) ++ l') 0 = nth_error l' (0 - #|a :: l1|)) H2) H0
+         | le_S _ m H0 =>
+             fun H1 : S m = 0 =>
+             (fun H2 : S m = 0 =>
+              let H3 : False := Logic.eq_ind (S m) (fun e : nat => match e with
+                                                                   | 0 => False
+                                                                   | S _ => True
+                                                                   end) I 0 H2 in
+              False_ind (#|a :: l1| <= m -> nth_error ((a :: l1) ++ l') 0 = nth_error l' (0 - #|a :: l1|)) H3) H1 H0
+         end in
+       H0 eq_refl
+   end)
+  (fun (n0 : nat) (IHn : forall l0 : list A, #|l0| <= n0 -> nth_error (l0 ++ l') n0 = nth_error l' (n0 - #|l0|)) (l0 : list A) =>
+   match l0 as l1 return (#|l1| <= S n0 -> nth_error (l1 ++ l') (S n0) = nth_error l' (S n0 - #|l1|)) with
+   | [] => fun _ : #|[]| <= S n0 => eq_refl
+   | a :: l1 => fun H : #|a :: l1| <= S n0 => IHn l1 (gt_S_le #|l1| n0 H)
+   end) n l.
 
 Lemma lookup_extendi :
   forall {Σ name ob i j},
@@ -464,6 +604,12 @@ Proof.
       * assumption.
       * cbn in hj. myomega.
 Defined.
+
+Definition app_length :=
+fun (A : Type) (l : list A) =>
+list_ind (fun l0 : list A => forall l' : list A, #|l0 ++ l'| = #|l0| + #|l'|) (fun l' : list A => eq_refl)
+  (fun (a : A) (l0 : list A) (IHl : forall l' : list A, #|l0 ++ l'| = #|l0| + #|l'|) (l' : list A) =>
+   f_equal_nat nat S #|l0 ++ l'| (#|l0| + #|l'|) (IHl l')) l.
 
 Lemma lookup_extend :
   forall {Σ name A obb obe},
@@ -529,6 +675,34 @@ Ltac discharge :=
   | H : None = Some _ |- _ => discriminate H
   end).
 
+Lemma nth_error_safe_nth {A} n (l : list A) (isdecl : n < Datatypes.length l) :
+  nth_error l n = Some (safe_nth l (exist _ n isdecl)).
+Proof.
+  revert n isdecl; induction l; intros.
+  - inversion isdecl.
+  - destruct n as [| n']; simpl.
+    reflexivity.
+    simpl in IHl.
+    simpl in isdecl.
+    rewrite <- IHl. reflexivity.
+Defined.
+
+Definition some_inj (A : Type) (x y : A) (H : Some x = Some y) : x = y :=
+  f_equal (fun e : option A =>
+             match e with
+             | Some a => a
+             | None => x
+             end) H.
+
+Lemma nth_error_Some_safe_nth A (l : list A) n c :
+  forall e : nth_error l n = Some c, safe_nth l (exist _ n (nth_error_isdecl e)) = c.
+Proof.
+  intros H.
+  pose proof (nth_error_safe_nth _ _ (nth_error_isdecl H)).
+  pose proof (eq_trans (eq_sym H) H0).
+  apply some_inj in H1. exact (eq_sym H1).
+Defined.
+
 Lemma _ettcheck_sound :
   forall Σ Γ t A ob name obb obe,
     _ettcheck Σ Γ t A = Some ob ->
@@ -551,7 +725,7 @@ Proof with discharge.
         -- erewrite nth_error_Some_safe_nth with (e := eq).
            eapply eq_symmetry. eapply eq_alpha ; try assumption.
            symmetry. eapply eq_term_spec. assumption.
-      * intros _ h. inversion h. subst. clear h. cbn in Σ'.
+      * intros _ h. apply some_inj in h. subst. cbn in Σ'.
         eapply type_conv.
         -- eapply type_Rel.
         -- eassumption.
@@ -570,7 +744,7 @@ Proof with discharge.
       * intros eq h. eapply eq_alpha.
         -- eapply eq_term_spec. assumption.
         -- constructor.
-      * intros _ h. inversion h. subst. clear h. cbn in Σ'.
+      * intros _ h. apply some_inj in h. subst. cbn in Σ'.
         eapply reflection. eapply close_goal ; try eassumption.
         eapply type_Ax. rewrite lookup_extend.
         -- reflexivity.
@@ -578,7 +752,7 @@ Proof with discharge.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t1 Ty) ...
     intros ob1 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
-    intros ob2 eq2 h. inversion h. subst. clear h.
+    intros ob2 eq2 h. apply some_inj in h. subst.
     specialize (IHt1 _ _ _ _ name obb (ob2 ++ ettconv Γ Ty A ++ obe) eq1).
     specialize (IHt2 _ _ _ _ name (obb ++ ob1) (ettconv Γ Ty A ++ obe) eq2).
     rewrite <- app_assoc in IHt2.
@@ -611,7 +785,7 @@ Proof with discharge.
     case_eq (_ettcheck Σ (Γ,, t1) t3 t2) ...
     intros ob1 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ...
     intros ob2 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
-    intros ob3 eq2 h. inversion h. subst. clear h.
+    intros ob3 eq2 h. apply some_inj in h. subst.
     specialize (IHt1 _ _ _ _ name (obb ++ ob1) (ob3 ++ ettconv Γ (sProd nx t1 t2) A ++ obe) eq1).
     specialize (IHt2 _ _ _ _ name (obb ++ ob1 ++ ob2) (ettconv Γ (sProd nx t1 t2) A ++ obe) eq2).
     specialize (IHt3 _ _ _ _ name obb (ob2 ++ ob3 ++ ettconv Γ (sProd nx t1 t2) A ++ obe) eq3).
@@ -650,7 +824,7 @@ Proof with discharge.
     intros ob1 eq1. case_eq (_ettcheck Σ Γ t4 t2) ...
     intros ob2 eq4. case_eq (_ettcheck Σ Γ t2 Ty) ...
     intros ob3 eq2. case_eq (_ettcheck Σ (Γ,, t2) t3 Ty) ...
-    intros ob4 eq3 h. inversion h. subst. clear h.
+    intros ob4 eq3 h. apply some_inj in h. subst.
     match goal with
     | _ := context [ ettconv ?Γ ?A ?B ] |- _ => set (obeq := ettconv Γ A B) in *
     end.
@@ -697,7 +871,7 @@ Proof with discharge.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t1 Ty) ...
     intros ob1 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
-    intros ob2 eq2 h. inversion h. subst. clear h.
+    intros ob2 eq2 h. apply some_inj in h. subst.
     match goal with
     | _ := context [ ettconv ?Γ ?A ?B ] |- _ => set (obeq := ettconv Γ A B) in *
     end.
@@ -735,7 +909,7 @@ Proof with discharge.
     intros ob1 eq3. case_eq (_ettcheck Σ Γ t4 (t2 {0 := t3})) ...
     intros ob2 eq4. case_eq (_ettcheck Σ Γ t1 Ty) ...
     intros ob3 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
-    intros ob4 eq2 h. inversion h. subst. clear h.
+    intros ob4 eq2 h. apply some_inj in h. subst.
     match goal with
     | _ := context [ ettconv ?Γ ?A ?B ] |- _ => set (obeq := ettconv Γ A B) in *
     end.
@@ -795,7 +969,7 @@ Proof with discharge.
     case_eq (_ettcheck Σ Γ t3 (sSum nAnon t1 t2)) ...
     intros ob1 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ...
     intros ob2 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
-    intros ob3 eq2 h. inversion h. subst. clear h.
+    intros ob3 eq2 h. apply some_inj in h. subst.
     match goal with
     | _ := context [ ettconv ?Γ ?A ?B ] |- _ => set (obeq := ettconv Γ A B) in *
     end.
@@ -844,7 +1018,7 @@ Proof with discharge.
     case_eq (_ettcheck Σ Γ t3 (sSum nAnon t1 t2)) ...
     intros ob1 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ...
     intros ob2 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
-    intros ob3 eq2 h. inversion h. subst. clear h.
+    intros ob3 eq2 h. apply some_inj in h. subst.
     match goal with
     | _ := context [ ettconv ?Γ ?A ?B ] |- _ => set (obeq := ettconv Γ A B) in *
     end.
@@ -893,7 +1067,7 @@ Proof with discharge.
     case_eq (_ettcheck Σ Γ t2 t1) ...
     intros ob1 eq2. case_eq (_ettcheck Σ Γ t3 t1) ...
     intros ob2 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ...
-    intros ob3 eq1 h. inversion h. subst. clear h.
+    intros ob3 eq1 h. apply some_inj in h. subst.
     match goal with
     | _ := context [ ettconv ?Γ ?A ?B ] |- _ => set (obeq := ettconv Γ A B) in *
     end.
@@ -934,7 +1108,7 @@ Proof with discharge.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t2 t1) ...
     intros ob1 eq2. case_eq (_ettcheck Σ Γ t1 Ty) ...
-    intros ob2 eq1 h. inversion h. subst. clear h.
+    intros ob2 eq1 h. apply some_inj in h. subst.
     match goal with
     | _ := context [ ettconv ?Γ ?A ?B ] |- _ => set (obeq := ettconv Γ A B) in *
     end.
@@ -968,7 +1142,7 @@ Proof with discharge.
         -- apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (lookup_glob Σ id) ...
-    intros B eq h. inversion h. clear h.
+    intros B eq h. apply some_inj in h.
     eapply type_conv.
     + eapply type_Ax. revert Σ' hg hw hA.
       rewrite extendi_comp. intros Σ' hg hw hA.
@@ -983,7 +1157,7 @@ Proof with discharge.
       * intro e. eapply eq_symmetry. eapply eq_alpha.
         -- symmetry. eapply eq_term_spec. assumption.
         -- assumption.
-      * intro neq. clear hA hw. revert H0 Σ' hg.
+      * intro neq. clear hA hw. revert h Σ' hg.
         rewrite neq. cbn.
         intros h hg.
         eapply reflection. eapply close_goal ; try eassumption.
@@ -1006,6 +1180,16 @@ Ltac discharge ::=
     end
   ).
 
+Definition app_nil_r :=
+fun (A : Type) (l : list A) =>
+list_ind (fun l0 : list A => l0 ++ [] = l0) (let H : A = A := eq_refl in (fun _ : A = A => eq_refl) H)
+  (fun (a : A) (l0 : list A) (IHl : l0 ++ [] = l0) =>
+   let H : l0 ++ [] = l0 := IHl in
+   (let H0 : a = a := eq_refl in
+    (let H1 : A = A := eq_refl in
+     (fun (_ : A = A) (_ : a = a) (H4 : l0 ++ [] = l0) =>
+      eq_trans (f_equal (fun f : list A -> list A => f (l0 ++ [])) eq_refl) (f_equal (cons a) H4)) H1) H0) H) l.
+
 Lemma ettcheck_sound :
   forall {Σ Γ t A ob name},
     ettcheck Σ Γ t A = Some ob ->
@@ -1027,7 +1211,7 @@ Proof with discharge.
   reset Σ'.
   revert Σ' hw hg.
   replace (ob1 ++ ob2 ++ []) with ([] ++ ob1 ++ ob2)
-    by (now rewrite app_nil_r, app_nil_l).
+    by (now rewrite app_nil_r).
   intros Σ' hw hg.
   eapply _ettcheck_sound ; try assumption.
   reset Σ'. eapply xtype_Sort'.
@@ -1271,19 +1455,22 @@ Definition Translate ident : TemplateMonad () :=
             let hf := isallfresh_sound eqf in
             let xhg := ettcheck_ctx_sound eqcx hf in
             let der := ettcheck_nil_sound obname eq xhg in
+            der' <- tmEval all der ;;
+            tmPrint der' ;;
             (* Next we check the global context makes sense in ITT *)
             match ittcheck_ctx (2 ^ 18) Σ' as b
             return (ittcheck_ctx (2 ^ 18) Σ' = b -> TemplateMonad ())
             with
             | true => fun eqc =>
               let hg := ittcheck_ctx_sound eqc hf in
-              let '(_ ; itt_tm ; _) := type_translation hg der istrans_nil in
-              t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm axoc) ;;
-              match t with
-              | FinalTranslation.Success _ t =>
-                tmMkDefinition (ident @ "ᵗ") t
-              | _ => tmFail "Cannot translate from ITT to TemplateCoq"
-              end
+              let '(_ ; itt_tm ; _) := type_translation hg der' istrans_nil in
+              (* t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm axoc) ;; *)
+              (* match t with *)
+              (* | FinalTranslation.Success _ t => *)
+              (*   tmMkDefinition (ident @ "ᵗ") t *)
+              (* | _ => tmFail "Cannot translate from ITT to TemplateCoq" *)
+              (* end *)
+              tmPrint "ok"
             | false => fun _ => tmFail "Generated global context doesn't typecheck in ITT"
             end eq_refl
           | false => fun _ => tmFail "Generated global context doesn't typecheck in ETT"
@@ -1297,9 +1484,13 @@ Definition Translate ident : TemplateMonad () :=
   | _ => tmFail "Expected definition of a Coq constant"
   end.
 
-Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
+Definition foo (A : Type) (x : A) := x.
 
-Run TemplateProgram (Translate "pseudoid").
+Run TemplateProgram (Translate "foo").
+
+(* Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}. *)
+
+(* Run TemplateProgram (Translate "pseudoid"). *)
 
 (* Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C := *)
 (*   {! f {! x !} !}. *)
