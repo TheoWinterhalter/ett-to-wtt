@@ -1061,6 +1061,19 @@ Fixpoint map_tsl l : TemplateMonad (list term) :=
   | [] => ret []
   end.
 
+(* For now we don't return the produced theorems *)
+Fail Fixpoint map_lemma name (l : list term) : TemplateMonad () :=
+  match l with
+  | t :: l =>
+    ty <- tmUnquoteTyped Type t ;;
+    der <- tmLemma name ty ;;
+    l <- map_lemma name l ;;
+    (* ret (der :: l) *)
+    ret tt
+  (* | [] => ret [] *)
+  | [] => ret tt
+  end.
+
 Definition Translate ident : TemplateMonad () :=
   (* First we quote the term to its TC representation *)
   (* TODO We should get the TC global context as well! *)
@@ -1090,6 +1103,10 @@ Definition Translate ident : TemplateMonad () :=
         obl <- map_tsl obl ;;
         obl <- tmEval lazy obl ;;
         tmPrint obl
+        (* TODO We then turn them into a list of definitions *)
+        (* We ask the user to prove the obligations in Coq *)
+        (* x <- map_lemma name obl ;; *)
+        (* tmPrint "Yay!" *)
       | None => tmFail "ETT typechecking failed"
       end
     | _,_ => tmFail "Cannot elaborate Coq term to an ETT term"
