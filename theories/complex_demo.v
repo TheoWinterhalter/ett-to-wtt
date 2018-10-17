@@ -1444,12 +1444,33 @@ Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
       end
     | _ => tmFail "Not a constant"
     end
+  | Some (IndRef ({| inductive_mind := kername ; inductive_ind := n |} as ind)) =>
+    mind <- tmQuoteInductive kername ;;
+    match nth_error (ind_bodies mind) n with
+    | Some {| ind_type := ty ; ind_ctors := ctors |} =>
+      (* TODO Deal with constructors *)
+      ety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty indt constt cot) ;;
+      match ety with
+      | Success ety =>
+        ret {|
+            Σi := (decl kername ety) :: Σi ;
+            indt := (kername --> sAx kername) indt ;
+            constt := constt ;
+            cot := cot ;
+            axoc := (kername --> tInd ind []) axoc
+          |}
+      | _ => tmFail "Cannot elaborate to ETT term"
+      end
+    | _ => tmFail "Wrong index of inductive"
+    end
   | _ => tmFail "Not a defined constant"
   end.
 
 Definition AA := Type.
 Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; tmPrint Θ).
 (* Run TemplateProgram (TranslateConstant ε "Init.Nat.add"). *)
+
+Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; tmPrint Θ).
 
 Definition Translate Θ ident : TemplateMonad () :=
   let Σi := Σi Θ in
