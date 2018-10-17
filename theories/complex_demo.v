@@ -390,9 +390,12 @@ Proof.
   assert (h : forall l acc i, aux i l acc = aux i l [] ++ acc).
   { intro l. induction l ; intros acc i.
     - cbn. reflexivity.
-    - cbn. rewrite (IHl [f i a]). rewrite IHl.
-      change (f i a :: acc) with ([f i a] ++ acc)%list.
-      rewrite app_assoc. reflexivity.
+    - cbn.
+      pose proof (IHl [f i a] (S i)) as e1.
+      pose proof (IHl (f i a :: acc) (S i)) as e2.
+      refine (eq_trans e2 _).
+      change (f i a :: acc) with ([f i a] ++ acc).
+      rewrite e1. apply app_assoc.
   }
   intros k l a.
   apply h.
@@ -522,6 +525,26 @@ Proof.
   all: discriminate e.
 Defined.
 
+Fact ident_neq_fresh :
+  forall {Σ id ty d},
+    lookup_glob Σ id = Some ty ->
+    fresh_glob (dname d) Σ ->
+    ident_eq id (dname d) = false.
+Proof.
+  intro Σ. induction Σ ; intros id ty d h hf.
+  - cbn in h. discriminate h.
+  - cbn in h. dependent destruction hf.
+    case_eq (ident_eq id (dname d0)) ;
+    intro e ; rewrite e in h.
+    + inversion h as [ h' ]. subst. clear h.
+      destruct (ident_eq_spec id (dname d)).
+      * subst. destruct (ident_eq_spec (dname d) (dname d0)).
+        -- exfalso. easy.
+        -- easy.
+      * reflexivity.
+    + eapply IHΣ ; eassumption.
+Defined.
+
 Lemma lookup_skip :
   forall {Σ na A l},
     let d := decl na A in
@@ -542,40 +565,15 @@ Proof.
     reflexivity.
 Defined.
 
-Definition nth_error_app2 :=
-fun (A : Type) (l l' : list A) (n : nat) =>
-nat_ind (fun n0 : nat => forall l0 : list A, #|l0| <= n0 -> nth_error (l0 ++ l') n0 = nth_error l' (n0 - #|l0|))
-  (fun l0 : list A =>
-   match l0 as l1 return (#|l1| <= 0 -> nth_error (l1 ++ l') 0 = nth_error l' (0 - #|l1|)) with
-   | [] => fun _ : #|[]| <= 0 => eq_refl
-   | a :: l1 =>
-       fun H : #|a :: l1| <= 0 =>
-       let H0 : 0 = 0 -> nth_error ((a :: l1) ++ l') 0 = nth_error l' (0 - #|a :: l1|) :=
-         match H in (_ <= n0) return (n0 = 0 -> nth_error ((a :: l1) ++ l') 0 = nth_error l' (0 - #|a :: l1|)) with
-         | le_n _ =>
-             fun H0 : #|a :: l1| = 0 =>
-             (fun H1 : #|a :: l1| = 0 =>
-              let H2 : False := Logic.eq_ind #|a :: l1| (fun e : nat => match e with
-                                                                        | 0 => False
-                                                                        | S _ => True
-                                                                        end) I 0 H1 in
-              False_ind (nth_error ((a :: l1) ++ l') 0 = nth_error l' (0 - #|a :: l1|)) H2) H0
-         | le_S _ m H0 =>
-             fun H1 : S m = 0 =>
-             (fun H2 : S m = 0 =>
-              let H3 : False := Logic.eq_ind (S m) (fun e : nat => match e with
-                                                                   | 0 => False
-                                                                   | S _ => True
-                                                                   end) I 0 H2 in
-              False_ind (#|a :: l1| <= m -> nth_error ((a :: l1) ++ l') 0 = nth_error l' (0 - #|a :: l1|)) H3) H1 H0
-         end in
-       H0 eq_refl
-   end)
-  (fun (n0 : nat) (IHn : forall l0 : list A, #|l0| <= n0 -> nth_error (l0 ++ l') n0 = nth_error l' (n0 - #|l0|)) (l0 : list A) =>
-   match l0 as l1 return (#|l1| <= S n0 -> nth_error (l1 ++ l') (S n0) = nth_error l' (S n0 - #|l1|)) with
-   | [] => fun _ : #|[]| <= S n0 => eq_refl
-   | a :: l1 => fun H : #|a :: l1| <= S n0 => IHn l1 (gt_S_le #|l1| n0 H)
-   end) n l.
+Lemma nth_error_app2 A (l : list A) l' n :
+  length l <= n ->
+  nth_error (l++l') n = nth_error l' (n- length l).
+Proof.
+  revert l.
+  induction n; intros [|a l] H; auto.
+  - inversion H.
+  - simpl in *. apply IHn. myomega.
+Defined.
 
 Lemma lookup_extendi :
   forall {Σ name ob i j},
@@ -731,9 +729,8 @@ Proof with discharge.
         -- eassumption.
         -- erewrite nth_error_Some_safe_nth with (e := eq).
            eapply reflection. eapply close_goal ; try eassumption.
-           eapply type_Ax. rewrite lookup_extend.
-           ++ reflexivity.
-           ++ apply xtype_glob_allfresh. assumption.
+           eapply type_Ax. eapply lookup_extend.
+           apply xtype_glob_allfresh. assumption.
     + intros _ bot. discriminate bot.
   - simpl in h. destruct s.
     eapply type_conv.
@@ -746,9 +743,8 @@ Proof with discharge.
         -- constructor.
       * intros _ h. apply some_inj in h. subst. cbn in Σ'.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t1 Ty) ...
     intros ob1 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
@@ -778,9 +774,8 @@ Proof with discharge.
         rewrite 2!app_assoc.
         intros hg.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ (Γ,, t1) t3 t2) ...
     intros ob1 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ...
@@ -816,9 +811,8 @@ Proof with discharge.
         rewrite 3!app_assoc.
         intros hg.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t1 (sProd nAnon t2 t3)) ...
     intros ob1 eq1. case_eq (_ettcheck Σ Γ t4 t2) ...
@@ -865,9 +859,8 @@ Proof with discharge.
         rewrite 4!app_assoc.
         intros hg.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t1 Ty) ...
     intros ob1 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
@@ -901,9 +894,8 @@ Proof with discharge.
         rewrite 2!app_assoc.
         intros hg.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t3 t1) ...
     intros ob1 eq3. case_eq (_ettcheck Σ Γ t4 (t2 {0 := t3})) ...
@@ -962,9 +954,8 @@ Proof with discharge.
         rewrite 4!app_assoc.
         intros hg.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t3 (sSum nAnon t1 t2)) ...
     intros ob1 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ...
@@ -1011,9 +1002,8 @@ Proof with discharge.
         rewrite 3!app_assoc.
         intros hg.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t3 (sSum nAnon t1 t2)) ...
     intros ob1 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ...
@@ -1060,9 +1050,8 @@ Proof with discharge.
         rewrite 3!app_assoc.
         intros hg.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t2 t1) ...
     intros ob1 eq2. case_eq (_ettcheck Σ Γ t3 t1) ...
@@ -1102,9 +1091,8 @@ Proof with discharge.
         rewrite 3!app_assoc.
         intros hg.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t2 t1) ...
     intros ob1 eq2. case_eq (_ettcheck Σ Γ t1 Ty) ...
@@ -1137,9 +1125,8 @@ Proof with discharge.
         rewrite 2!app_assoc.
         intros hg.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
   - simpl in h. revert h.
     case_eq (lookup_glob Σ id) ...
     intros B eq h. apply some_inj in h.
@@ -1161,9 +1148,8 @@ Proof with discharge.
         rewrite neq. cbn.
         intros h hg.
         eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. subst. rewrite lookup_extend.
-        -- reflexivity.
-        -- apply xtype_glob_allfresh. assumption.
+        eapply type_Ax. subst. eapply lookup_extend.
+        apply xtype_glob_allfresh. assumption.
 Defined.
 
 Definition ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm) (T : sterm)
@@ -1205,13 +1191,13 @@ Proof with discharge.
   cbn. intro eq. inversion eq. clear eq. subst.
   revert Σ' hw hg.
   replace (ob1 ++ ob2) with (ob1 ++ ob2 ++ [])
-    by (now rewrite app_nil_r).
+    by (refine (eq_trans _ (app_nil_r _ (ob1 ++ ob2))) ; apply app_assoc).
   intros Σ' hw hg.
   eapply _ettcheck_sound ; try assumption.
   reset Σ'.
   revert Σ' hw hg.
   replace (ob1 ++ ob2 ++ []) with ([] ++ ob1 ++ ob2)
-    by (now rewrite app_nil_r).
+    by (refine (eq_sym _) ; refine (eq_trans _ (app_nil_r _ (ob1 ++ ob2))) ; apply app_assoc).
   intros Σ' hw hg.
   eapply _ettcheck_sound ; try assumption.
   reset Σ'. eapply xtype_Sort'.
@@ -1483,6 +1469,10 @@ Definition Translate ident : TemplateMonad () :=
     end
   | _ => tmFail "Expected definition of a Coq constant"
   end.
+
+Definition bar := Type.
+
+Run TemplateProgram (Translate "bar").
 
 Definition foo (A : Type) (x : A) := x.
 
