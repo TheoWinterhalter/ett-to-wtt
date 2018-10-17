@@ -1484,6 +1484,28 @@ Definition Translate ident : TemplateMonad () :=
   | _ => tmFail "Expected definition of a Coq constant"
   end.
 
+(* Not ok *)
+(* Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C := *)
+(*   {! f {! x !} !}. *)
+
+(* Not ok *)
+(* Definition test (A B : Type) (f : A -> B) (u : B = A) (x : B) : A := *)
+(*   {! f {! x !} !}. *)
+
+(* Not ok *)
+Definition test (A B : Type) (f : A -> B) (u : B = A) (x : A) : A :=
+  {! f x !}.
+
+(* Ok *)
+(* Definition test (A B : Type) (f : A -> B) (x : A) : B := f x. *)
+
+(* Ok *)
+(* Definition test (A B : Type) (f : A -> B) (u : B = A) (x : B) : B := *)
+(*   f {! x !}. *)
+
+(* Run TemplateProgram (Translate "test"). *)
+(* Print testᵗ. *)
+
 Definition bar := Type.
 
 Run TemplateProgram (Translate "bar").
@@ -1499,16 +1521,11 @@ Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 Run TemplateProgram (Translate "pseudoid").
 Print pseudoidᵗ.
 
-(* Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C := *)
-(*   {! f {! x !} !}. *)
 
-(* Run TemplateProgram (Translate "test"). *)
+Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
+           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
+           n v m acc.
 
-
-(* Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) := *)
-(*   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) *)
-(*            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !}) *)
-(*            n v m acc. *)
-
-(* (* For now the sglobal_context is empty so it cannot typecheck *) *)
-(* (* Run TemplateProgram (Translate "vrev"). *) *)
+(* For now the sglobal_context is empty so it cannot typecheck *)
+(* Run TemplateProgram (Translate "vrev"). *)
