@@ -1369,16 +1369,18 @@ Fixpoint map_tsl l : TemplateMonad (list term) :=
   end.
 
 (* Ask the user to prove obligations and returns the corresponding association table *)
-Fixpoint map_lemma (name : ident) (l : list term) : TemplateMonad (assoc term) :=
+(* axoc0 could be used as an accumulator but well... *)
+Fixpoint map_lemma (axoc0 : assoc term) (name : ident) (l : list term)
+  : TemplateMonad (assoc term) :=
   match l with
   | t :: l =>
     ty <- tmUnquoteTyped Type t ;;
     name <- tmFreshName name ;;
     lem <- tmLemma name (ty : Type) ;;
     tlem <- tmQuote lem ;;
-    axoc <- map_lemma name l ;;
+    axoc <- map_lemma axoc0 name l ;;
     ret ((name --> tlem) axoc)
-  | [] => ret [< >]
+  | [] => ret axoc0
   end.
 
 Fact istrans_nil {Σ} :
@@ -1392,7 +1394,69 @@ Defined.
 Definition type_translation {Σ} hg {Γ t A} h {Γ'} hΓ :=
   fst (@complete_translation _ Σ hg) Γ t A h Γ' hΓ.
 
-Definition Translate ident : TemplateMonad () :=
+(* Translation context *)
+Record tsl_ctx := {
+  Σi : sglobal_context ;
+  indt : assoc sterm ;
+  constt : assoc sterm ;
+  cot : string -> nat -> option sterm ;
+  axoc : assoc term
+}.
+
+Definition emptyTC := {|
+  Σi := [] ;
+  indt := [< >] ;
+  constt := [< >] ;
+  cot _ _ := None ;
+  axoc := [< >]
+|}.
+
+Notation ε := emptyTC.
+
+(* Note we could optimise by checking the generated context on the go.
+   Then we would carry around the proof that it is correct and we would only
+   have to check the extension in Translate.
+   Definitely TODO
+ *)
+Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
+  let Σi := Σi Θ in
+  let indt := indt Θ in
+  let constt := constt Θ in
+  let cot := cot Θ in
+  let axoc := axoc Θ in
+  info <- tmAbout ident ;;
+  match info with
+  | Some (ConstRef kername) =>
+    entry <- tmQuoteConstant ident false ;;
+    match entry with
+    | DefinitionEntry {| definition_entry_type := ty |} =>
+      ety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty indt constt cot) ;;
+      match ety with
+      | Success ety =>
+        ret {|
+            Σi := (decl kername ety) :: Σi ;
+            indt := indt ;
+            constt := (kername --> sAx kername) constt ;
+            cot := cot ;
+            axoc := (kername --> tConst kername []) axoc
+          |}
+      | _ => tmFail "Cannot elaborate to ETT term"
+      end
+    | _ => tmFail "Not a constant"
+    end
+  | _ => tmFail "Not a defined constant"
+  end.
+
+Definition AA := Type.
+Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; tmPrint Θ).
+(* Run TemplateProgram (TranslateConstant ε "Init.Nat.add"). *)
+
+Definition Translate Θ ident : TemplateMonad () :=
+  let Σi := Σi Θ in
+  let indt := indt Θ in
+  let constt := constt Θ in
+  let cot := cot Θ in
+  let axoc := axoc Θ in
   (* First we quote the term to its TC representation *)
   (* TODO We should get the TC global context as well! *)
   entry <- tmQuoteConstant ident false ;;
@@ -1411,7 +1475,7 @@ Definition Translate ident : TemplateMonad () :=
       name <- tmEval all (obname @ "0") ;;
       (* We then typecheck the term in ETT *)
       (* TODO We need a sglobal_context *)
-      let ch := ettcheck [] [] tm ty in
+      let ch := ettcheck Σi [] tm ty in
       match ch as o
       return (ch = o -> TemplateMonad ())
       with
@@ -1425,11 +1489,11 @@ Definition Translate ident : TemplateMonad () :=
         (* tmPrint tc_obl ;; *)
         (* TODO We then turn them into a list of definitions *)
         (* We ask the user to prove the obligations in Coq *)
-        axoc <- map_lemma name tc_obl ;;
+        axoc <- map_lemma axoc name tc_obl ;;
         (* Once they are proven we can safely apply soundness to get an ETT
            derivation, but first we need to check the whole global context *)
         (* Σ' <- tmEval lazy (extend [] obname obl) ;; *)
-        let Σ' := extend [] obname obl in
+        let Σ' := extend Σi obname obl in
         (* First we check freshness of Σ' *)
         match isallfresh Σ' as b
         return (isallfresh Σ' = b -> TemplateMonad ())
@@ -1480,32 +1544,37 @@ Definition Translate ident : TemplateMonad () :=
         end eq_refl
       | None => fun (_ : ch = None) => tmFail "ETT typechecking failed"
       end eq_refl
-    | _,_ => tmFail "Cannot elaborate Coq term to an ETT term"
+    | e1,e2 => tmFail "Cannot elaborate Coq term to an ETT term"
     end
   | _ => tmFail "Expected definition of a Coq constant"
   end.
 
 Definition bar := Type.
 
-Run TemplateProgram (Translate "bar").
+Run TemplateProgram (Translate ε "bar").
 Print barᵗ.
 
 Definition foo (A : Type) (x : A) := x.
 
-Run TemplateProgram (Translate "foo").
+Run TemplateProgram (Translate ε "foo").
 Print fooᵗ.
 
 Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 
-Run TemplateProgram (Translate "pseudoid").
+Run TemplateProgram (Translate ε "pseudoid").
 Print pseudoidᵗ.
 
 Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C :=
   {! f {! x !} !}.
 
-Run TemplateProgram (Translate "test").
+Run TemplateProgram (Translate ε "test").
 Print testᵗ.
 
+(* Definition AAmap (x :AA) := x. *)
+Definition AA' := AA.
+Fail Run TemplateProgram (Translate ε "AA'").
+Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; Translate Θ "AA'").
+Print AA'ᵗ.
 
 Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
@@ -1513,4 +1582,4 @@ Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
            n v m acc.
 
 (* For now the sglobal_context is empty so it cannot typecheck *)
-(* Run TemplateProgram (Translate "vrev"). *)
+Fail Run TemplateProgram (Translate ε "vrev").
