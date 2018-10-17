@@ -1413,6 +1413,35 @@ Definition emptyTC := {|
 
 Notation ε := emptyTC.
 
+Fixpoint tc_ctor ind Θ (ctors : list (prod (prod ident term) nat)) : TemplateMonad tsl_ctx :=
+  match ctors with
+  | t :: l =>
+    Θ <- tc_ctor ind Θ l ;;
+    let Σi := Σi Θ in
+    let indt := indt Θ in
+    let constt := constt Θ in
+    let cot := cot Θ in
+    let axoc := axoc Θ in
+    (* let '(id, ty, m) := t in *)
+    let '(pair (pair id ty) m) := t in
+    ety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty indt constt cot) ;;
+    match ety with
+    | Success ety =>
+      ret {|
+          Σi := (decl id ety) :: Σi ;
+          indt := indt ;
+          constt := constt ;
+          cot s n :=
+            if ident_eq s id && Nat.eqb n m then Some (sAx id)
+            else cot s n
+          ;
+          axoc := (id --> tConstruct ind m []) axoc
+        |}
+    | _ => tmFail "Cannot elaborate to ETT term"
+    end
+  | [] => ret Θ
+  end.
+
 (* Note we could optimise by checking the generated context on the go.
    Then we would carry around the proof that it is correct and we would only
    have to check the extension in Translate.
@@ -1452,13 +1481,14 @@ Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
       ety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty indt constt cot) ;;
       match ety with
       | Success ety =>
-        ret {|
+        Θ <- tmEval all {|
             Σi := (decl kername ety) :: Σi ;
             indt := (kername --> sAx kername) indt ;
             constt := constt ;
             cot := cot ;
             axoc := (kername --> tInd ind []) axoc
-          |}
+          |} ;;
+        tc_ctor ind Θ ctors
       | _ => tmFail "Cannot elaborate to ETT term"
       end
     | _ => tmFail "Wrong index of inductive"
@@ -1470,7 +1500,7 @@ Definition AA := Type.
 Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; tmPrint Θ).
 (* Run TemplateProgram (TranslateConstant ε "Init.Nat.add"). *)
 
-Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; tmPrint Θ).
+Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Θ <- tmEval Core.hnf Θ ;; tmPrint Θ).
 
 Definition Translate Θ ident : TemplateMonad () :=
   let Σi := Σi Θ in
@@ -1596,6 +1626,14 @@ Definition AA' := AA.
 Fail Run TemplateProgram (Translate ε "AA'").
 Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; Translate Θ "AA'").
 Print AA'ᵗ.
+
+Definition zero := 0.
+Fail Run TemplateProgram (Translate ε "zero").
+Fail Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "zero").
+
+Definition nat' := nat.
+Fail Run TemplateProgram (Translate ε "nat'").
+Fail Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "nat'").
 
 Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
