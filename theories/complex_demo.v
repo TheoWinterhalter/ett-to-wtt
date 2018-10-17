@@ -1368,15 +1368,17 @@ Fixpoint map_tsl l : TemplateMonad (list term) :=
   | [] => ret []
   end.
 
-(* For now we don't return the produced theorems *)
-Fixpoint map_lemma (name : ident) (l : list term) : TemplateMonad () :=
+(* Ask the user to prove obligations and returns the corresponding association table *)
+Fixpoint map_lemma (name : ident) (l : list term) : TemplateMonad (assoc term) :=
   match l with
   | t :: l =>
     ty <- tmUnquoteTyped Type t ;;
     name <- tmFreshName name ;;
-    tmLemma name (ty : Type) ;;
-    map_lemma name l
-  | [] => ret tt
+    lem <- tmLemma name (ty : Type) ;;
+    tlem <- tmQuote lem ;;
+    axoc <- map_lemma name l ;;
+    ret ((name --> tlem) axoc)
+  | [] => ret [< >]
   end.
 
 Fact istrans_nil {Σ} :
@@ -1422,7 +1424,7 @@ Definition Translate ident : TemplateMonad () :=
         tc_obl <- tmEval lazy tc_obl ;;
         (* TODO We then turn them into a list of definitions *)
         (* We ask the user to prove the obligations in Coq *)
-        map_lemma name tc_obl ;;
+        axoc <- map_lemma name tc_obl ;;
         (* Once they are proven we can safely apply soundness to get an ETT
            derivation, but first we need to check the whole global context *)
         (* Σ' <- tmEval lazy (extend [] obname obl) ;; *)
@@ -1495,6 +1497,7 @@ Print fooᵗ.
 Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 
 Run TemplateProgram (Translate "pseudoid").
+Print pseudoidᵗ.
 
 (* Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C := *)
 (*   {! f {! x !} !}. *)
