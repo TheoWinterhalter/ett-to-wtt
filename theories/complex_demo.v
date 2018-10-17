@@ -1422,6 +1422,7 @@ Definition Translate ident : TemplateMonad () :=
         (* We push them into TC *)
         tc_obl <- map_tsl obl ;;
         tc_obl <- tmEval lazy tc_obl ;;
+        (* tmPrint tc_obl ;; *)
         (* TODO We then turn them into a list of definitions *)
         (* We ask the user to prove the obligations in Coq *)
         axoc <- map_lemma name tc_obl ;;
