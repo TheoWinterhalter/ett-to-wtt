@@ -1424,7 +1424,7 @@ Fixpoint tc_ctor ind Θ (ctors : list (prod (prod ident term) nat)) : TemplateMo
     let axoc := axoc Θ in
     (* let '(id, ty, m) := t in *)
     let '(pair (pair id ty) m) := t in
-    ety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty indt constt cot) ;;
+    ety <- tmEval lazy (fullquote (2 ^ 18) Σ [] (LiftSubst.subst (tInd ind []) 0 ty) indt constt cot) ;;
     match ety with
     | Success ety =>
       ret {|
@@ -1500,7 +1500,7 @@ Definition AA := Type.
 Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; tmPrint Θ).
 (* Run TemplateProgram (TranslateConstant ε "Init.Nat.add"). *)
 
-Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Θ <- tmEval Core.hnf Θ ;; tmPrint Θ).
+Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Θ <- tmEval Core.hnf Θ ;; tmPrint (Σi Θ)).
 
 Definition Translate Θ ident : TemplateMonad () :=
   let Σi := Σi Θ in
@@ -1633,7 +1633,7 @@ Fail Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "zero
 
 Definition nat' := nat.
 Fail Run TemplateProgram (Translate ε "nat'").
-Fail Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "nat'").
+Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "nat'").
 
 Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
