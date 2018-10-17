@@ -1441,22 +1441,34 @@ Definition Translate ident : TemplateMonad () :=
             let hf := isallfresh_sound eqf in
             let xhg := ettcheck_ctx_sound eqcx hf in
             let der := ettcheck_nil_sound obname eq xhg in
-            der' <- tmEval all der ;;
-            tmPrint der' ;;
+            (* der' <- tmEval all der ;; *)
+            (* tmPrint der' ;; *)
             (* Next we check the global context makes sense in ITT *)
             match ittcheck_ctx (2 ^ 18) Σ' as b
             return (ittcheck_ctx (2 ^ 18) Σ' = b -> TemplateMonad ())
             with
             | true => fun eqc =>
               let hg := ittcheck_ctx_sound eqc hf in
-              let '(_ ; itt_tm ; _) := type_translation hg der' istrans_nil in
-              (* t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm axoc) ;; *)
-              (* match t with *)
-              (* | FinalTranslation.Success _ t => *)
-              (*   tmMkDefinition (ident @ "ᵗ") t *)
-              (* | _ => tmFail "Cannot translate from ITT to TemplateCoq" *)
-              (* end *)
-              tmPrint "ok"
+              let '(_ ; itt_tm ; _) := type_translation hg der istrans_nil in
+              t <- tmEval lazy (tsl_rec (2 ^ 18) Σ [] itt_tm axoc) ;;
+              match t with
+              | FinalTranslation.Success _ t =>
+                tname <- tmEval all (ident @ "ᵗ") ;;
+                tmMkDefinition tname t ;;
+                msg <- tmEval all ("Successfully generated " @ tname) ;;
+                tmPrint msg
+              | FinalTranslation.Error _ e =>
+                msg <- tmEval all ("Cannot translate from ITT to TemplateCoq: " @
+                  match e with
+                  | FinalTranslation.NotEnoughFuel => "Not enough fuel"
+                  | FinalTranslation.TranslationNotFound id => "Not found " @ id
+                  | FinalTranslation.TranslationNotHandled => "Translation not handled"
+                  | FinalTranslation.TypingError msg _ => "Typing error - " @ msg
+                  | FinalTranslation.UnexpectedTranslation s _ _ _ => "Unexpected translation " @ s
+                  end) ;;
+                tmFail msg
+              end
+              (* tmPrint "ok" *)
             | false => fun _ => tmFail "Generated global context doesn't typecheck in ITT"
             end eq_refl
           | false => fun _ => tmFail "Generated global context doesn't typecheck in ETT"
@@ -1473,14 +1485,16 @@ Definition Translate ident : TemplateMonad () :=
 Definition bar := Type.
 
 Run TemplateProgram (Translate "bar").
+Print barᵗ.
 
 Definition foo (A : Type) (x : A) := x.
 
 Run TemplateProgram (Translate "foo").
+Print fooᵗ.
 
-(* Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}. *)
+Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 
-(* Run TemplateProgram (Translate "pseudoid"). *)
+Run TemplateProgram (Translate "pseudoid").
 
 (* Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C := *)
 (*   {! f {! x !} !}. *)
