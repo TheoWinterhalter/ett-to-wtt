@@ -1432,7 +1432,7 @@ Fixpoint tc_ctor ind Θ (ctors : list (prod (prod ident term) nat)) : TemplateMo
           indt := indt ;
           constt := constt ;
           cot s n :=
-            if ident_eq s id && Nat.eqb n m then Some (sAx id)
+            if ident_eq s (inductive_mind ind) && Nat.eqb n m then Some (sAx id)
             else cot s n
           ;
           axoc := (id --> tConstruct ind m []) axoc
@@ -1629,11 +1629,13 @@ Print AA'ᵗ.
 
 Definition zero := 0.
 Fail Run TemplateProgram (Translate ε "zero").
-Fail Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "zero").
+Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "zero").
+Print zeroᵗ.
 
 Definition nat' := nat.
 Fail Run TemplateProgram (Translate ε "nat'").
 Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "nat'").
+Print nat'ᵗ.
 
 Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
