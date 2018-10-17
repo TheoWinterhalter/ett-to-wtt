@@ -366,7 +366,7 @@ Definition rev_mapi (k : nat) {A B} (f : nat -> A -> B) (l : list A) : list B :=
     end
   in aux k l [].
 
-Definition app_assoc :=
+Definition app_assoc : forall (A : Type) (l m n : list A), l ++ m ++ n = (l ++ m) ++ n :=
 fun (A : Type) (l m n : list A) =>
 list_ind (fun l0 : list A => l0 ++ m ++ n = (l0 ++ m) ++ n)
   (let H : n = n := eq_refl in
@@ -1504,8 +1504,8 @@ Definition test (A B : Type) (f : A -> B) (u : B = A) (x : A) : A :=
 (* Definition test (A B : Type) (f : A -> B) (u : B = A) (x : B) : B := *)
 (*   f {! x !}. *)
 
-(* Run TemplateProgram (Translate "test"). *)
-(* Print testᵗ. *)
+Run TemplateProgram (Translate "test").
+Print testᵗ.
 
 Definition bar := Type.
 
