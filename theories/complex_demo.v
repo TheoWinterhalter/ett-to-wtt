@@ -1437,7 +1437,7 @@ Fixpoint tc_ctor ind Θ (ctors : list (prod (prod ident term) nat)) : TemplateMo
           ;
           axoc := (id --> tConstruct ind m []) axoc
         |}
-    | _ => tmFail "Cannot elaborate to ETT term"
+    | Error e => tmPrint e ;; tmFail "Cannot elaborate to ETT term"
     end
   | [] => ret Θ
   end.
@@ -1469,9 +1469,9 @@ Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
             cot := cot ;
             axoc := (kername --> tConst kername []) axoc
           |}
-      | _ => tmFail "Cannot elaborate to ETT term"
+      | Error e => tmPrint e ;; tmFail "Cannot elaborate to ETT term"
       end
-    | _ => tmFail "Not a constant"
+    | _ => tmFail ("Not a constant " @ ident)
     end
   | Some (IndRef ({| inductive_mind := kername ; inductive_ind := n |} as ind)) =>
     mind <- tmQuoteInductive kername ;;
@@ -1489,18 +1489,18 @@ Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
             axoc := (kername --> tInd ind []) axoc
           |} ;;
         tc_ctor ind Θ ctors
-      | _ => tmFail "Cannot elaborate to ETT term"
+      | Error e => tmPrint e ;; tmFail "Cannot elaborate to ETT term"
       end
     | _ => tmFail "Wrong index of inductive"
     end
-  | _ => tmFail "Not a defined constant"
+  | _ => tmFail ("Not a defined constant" @ ident)
   end.
 
-Definition AA := Type.
-Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; tmPrint Θ).
+(* Definition AA := Type. *)
+(* Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; tmPrint Θ). *)
 (* Run TemplateProgram (TranslateConstant ε "Init.Nat.add"). *)
 
-Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Θ <- tmEval Core.hnf Θ ;; tmPrint (Σi Θ)).
+(* Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Θ <- tmEval Core.hnf Θ ;; tmPrint (Σi Θ)). *)
 
 Definition Translate Θ ident : TemplateMonad () :=
   let Σi := Σi Θ in
@@ -1595,52 +1595,58 @@ Definition Translate Θ ident : TemplateMonad () :=
         end eq_refl
       | None => fun (_ : ch = None) => tmFail "ETT typechecking failed"
       end eq_refl
-    | e1,e2 => tmFail "Cannot elaborate Coq term to an ETT term"
+    | e1,e2 => tmPrint e1 ;; tmPrint e2 ;; tmFail "Cannot elaborate Coq term to an ETT term"
     end
   | _ => tmFail "Expected definition of a Coq constant"
   end.
 
-Definition bar := Type.
+(* Definition bar := Type. *)
 
-Run TemplateProgram (Translate ε "bar").
-Print barᵗ.
+(* Run TemplateProgram (Translate ε "bar"). *)
+(* Print barᵗ. *)
 
-Definition foo (A : Type) (x : A) := x.
+(* Definition foo (A : Type) (x : A) := x. *)
 
-Run TemplateProgram (Translate ε "foo").
-Print fooᵗ.
+(* Run TemplateProgram (Translate ε "foo"). *)
+(* Print fooᵗ. *)
 
-Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
+(* Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}. *)
 
-Run TemplateProgram (Translate ε "pseudoid").
-Print pseudoidᵗ.
+(* Run TemplateProgram (Translate ε "pseudoid"). *)
+(* Print pseudoidᵗ. *)
 
-Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C :=
-  {! f {! x !} !}.
+(* Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C := *)
+(*   {! f {! x !} !}. *)
 
-Run TemplateProgram (Translate ε "test").
-Print testᵗ.
+(* Run TemplateProgram (Translate ε "test"). *)
+(* Print testᵗ. *)
 
-(* Definition AAmap (x :AA) := x. *)
-Definition AA' := AA.
-Fail Run TemplateProgram (Translate ε "AA'").
-Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; Translate Θ "AA'").
-Print AA'ᵗ.
+(* (* Definition AAmap (x :AA) := x. *) *)
+(* Definition AA' := AA. *)
+(* Fail Run TemplateProgram (Translate ε "AA'"). *)
+(* Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; Translate Θ "AA'"). *)
+(* Print AA'ᵗ. *)
 
-Definition zero := 0.
-Fail Run TemplateProgram (Translate ε "zero").
-Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "zero").
-Print zeroᵗ.
+(* Definition zero := 0. *)
+(* Fail Run TemplateProgram (Translate ε "zero"). *)
+(* Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "zero"). *)
+(* Print zeroᵗ. *)
 
-Definition nat' := nat.
-Fail Run TemplateProgram (Translate ε "nat'").
-Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "nat'").
-Print nat'ᵗ.
+(* Definition nat' := nat. *)
+(* Fail Run TemplateProgram (Translate ε "nat'"). *)
+(* Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "nat'"). *)
+(* Print nat'ᵗ. *)
 
 Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
            n v m acc.
 
-(* For now the sglobal_context is empty so it cannot typecheck *)
-Fail Run TemplateProgram (Translate ε "vrev").
+Run TemplateProgram (
+      Θ <- TranslateConstant ε "nat" ;;
+      Θ <- TranslateConstant Θ "vec" ;;
+      Θ <- TranslateConstant Θ "Nat.add" ;;
+      Θ <- TranslateConstant Θ "vec_rect" ;;
+      Translate Θ "vrev"
+      (* tmPrint Θ *)
+).
