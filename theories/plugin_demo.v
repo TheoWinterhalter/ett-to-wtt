@@ -1,60 +1,82 @@
 (* This file illustrates the use of the plugin from ett to itt on examples. *)
 
-From Translation Require Import complex_demo.
+From Template Require Import All.
+From Translation Require Import Quotes complex_demo.
+Import MonadNotation.
 
-(* Definition AA := Type. *)
-(* Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; tmPrint Θ). *)
-(* Run TemplateProgram (TranslateConstant ε "Init.Nat.add"). *)
+Definition AA := Type.
+Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; tmPrint Θ).
+Fail Run TemplateProgram (TranslateConstant ε "Init.Nat.add").
 
-(* Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Θ <- tmEval Core.hnf Θ ;; tmPrint (Σi Θ)). *)
+Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Θ <- tmEval all Θ ;; tmPrint (Σi Θ)).
 
-(* Definition bar := Type. *)
+Definition bar := Type.
 
-(* Run TemplateProgram (Translate ε "bar"). *)
-(* Print barᵗ. *)
+Run TemplateProgram (Translate ε "bar").
+Print barᵗ.
 
-(* Definition foo (A : Type) (x : A) := x. *)
+Definition foo (A : Type) (x : A) := x.
 
-(* Run TemplateProgram (Translate ε "foo"). *)
-(* Print fooᵗ. *)
+Run TemplateProgram (Translate ε "foo").
+Print fooᵗ.
 
-(* Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}. *)
+Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 
-(* Run TemplateProgram (Translate ε "pseudoid"). *)
-(* Print pseudoidᵗ. *)
+Run TemplateProgram (Translate ε "pseudoid").
+Print pseudoidᵗ.
 
-(* Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C := *)
-(*   {! f {! x !} !}. *)
+Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C :=
+  {! f {! x !} !}.
 
-(* Run TemplateProgram (Translate ε "test"). *)
-(* Print testᵗ. *)
+Run TemplateProgram (Translate ε "test").
+Print testᵗ.
 
-(* (* Definition AAmap (x :AA) := x. *) *)
-(* Definition AA' := AA. *)
-(* Fail Run TemplateProgram (Translate ε "AA'"). *)
-(* Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; Translate Θ "AA'"). *)
-(* Print AA'ᵗ. *)
+Definition AAmap (x :AA) := x.
+Definition AA' := AA.
+Fail Run TemplateProgram (Translate ε "AA'").
+Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; Translate Θ "AA'").
+Print AA'ᵗ.
 
-(* Definition zero := 0. *)
-(* Fail Run TemplateProgram (Translate ε "zero"). *)
-(* Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "zero"). *)
-(* Print zeroᵗ. *)
+Definition zero := 0.
+Fail Run TemplateProgram (Translate ε "zero").
+Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "zero").
+Print zeroᵗ.
 
-(* Definition nat' := nat. *)
-(* Fail Run TemplateProgram (Translate ε "nat'"). *)
-(* Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "nat'"). *)
-(* Print nat'ᵗ. *)
+Definition nat' := nat.
+Fail Run TemplateProgram (Translate ε "nat'").
+Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "nat'").
+Print nat'ᵗ.
 
-Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
-  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
-           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
-           n v m acc.
+Definition two := 2.
+Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "two").
+Print twoᵗ.
 
+Definition vnil' : vec nat 0 := vnil.
 Run TemplateProgram (
       Θ <- TranslateConstant ε "nat" ;;
       Θ <- TranslateConstant Θ "vec" ;;
-      Θ <- TranslateConstant Θ "Nat.add" ;;
-      Θ <- TranslateConstant Θ "vec_rect" ;;
-      Translate Θ "vrev"
-      (* tmPrint Θ *)
+      Translate Θ "vnil'"
 ).
+Print vnil'ᵗ.
+
+Definition vone := vcons 1 _ vnil.
+Fail Run TemplateProgram (
+      Θ <- TranslateConstant ε "nat" ;;
+      Θ <- TranslateConstant Θ "vec" ;;
+      Translate Θ "vone"
+).
+(* Print voneᵗ. *)
+
+(* Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) := *)
+(*   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) *)
+(*            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !}) *)
+(*            n v m acc. *)
+
+(* Fail Run TemplateProgram ( *)
+(*       Θ <- TranslateConstant ε "nat" ;; *)
+(*       Θ <- TranslateConstant Θ "vec" ;; *)
+(*       Θ <- TranslateConstant Θ "Nat.add" ;; *)
+(*       Θ <- TranslateConstant Θ "vec_rect" ;; *)
+(*       Translate Θ "vrev" *)
+(*       (* tmPrint Θ *) *)
+(* ). *)
