@@ -17,7 +17,7 @@ From Template Require Import All.
 From Translation
 Require Import util Sorts SAst SLiftSubst SCommon ITyping ITypingLemmata
 ITypingAdmissible DecideConversion XTyping Quotes Translation FundamentalLemma
-FinalTranslation FullQuote ExampleQuotes ExamplesUtil XTypingLemmata IChecking
+FinalTranslation FullQuote XTypingLemmata IChecking
 XChecking Equality.
 Import MonadNotation.
 
@@ -25,6 +25,8 @@ Open Scope string_scope.
 Open Scope x_scope.
 
 Module I := ITyping.
+
+Open Scope s_scope.
 
 (* First we write an ITT checker that will not generate any obligation.
    It will be proven sound but not complete.
@@ -266,6 +268,130 @@ Qed.
 
 Open Scope list_scope.
 
+Notation "s --> t" := (acons s t) (at level 20).
+Notation "[< a ; b ; .. ; c >]" :=
+  (a (b (.. (c empty) ..))).
+Notation "[< a >]" := (a empty).
+Notation "[< >]" := (empty).
+
+(* Notation "[< a --> x ; b --> y ; .. ; c --> z >]" := *)
+(*   (acons a x (acons b y .. (acons c z empty) ..)). *)
+
+Inductive vec A : nat -> Type :=
+| vnil : vec A 0
+| vcons : A -> forall n, vec A n -> vec A (S n).
+
+Arguments vnil {_}.
+Arguments vcons {_} _ _ _.
+
+Existing Instance Sorts.type_in_type.
+
+Notation Ty := (@sSort Sorts.type_in_type tt).
+
+(* Useful lemmata *)
+Fixpoint Prods (Γ : scontext) (T : sterm) :=
+  match Γ with
+  | A :: Γ => Prods Γ (sProd nAnon A T)
+  | [] => T
+  end.
+
+Lemma lift_rel :
+  forall {t k}, (lift 1 (S k) t) {k := sRel 0} = t.
+Proof.
+  intro t. induction t ; intro k.
+  all: try (cbn ; f_equal ; hyp rewrite ; reflexivity).
+  destruct n.
+  - cbn. case_eq (k ?= 0) ; intro e ; bprop e.
+    + subst. reflexivity.
+    + reflexivity.
+    + reflexivity.
+  - cbn. case_eq (k <=? n) ; intro e ; bprop e.
+    + cbn. case_eq (k ?= S (S n)) ; intro e1 ; bprop e1 ; try myomega.
+      reflexivity.
+    + cbn. case_eq (k ?= S n) ; intro e1 ; bprop e1 ; try myomega.
+      * subst. f_equal. myomega.
+      * reflexivity.
+Defined.
+
+Lemma close_goal_ex :
+  forall {Γ t T},
+    ∑ t', forall {Σ},
+    xtype_glob Σ ->
+    wf Σ Γ ->
+    Σ ;;; [] |-x t : Prods Γ T ->
+    Σ ;;; Γ |-x T : Ty ->
+    Σ ;;; Γ |-x t' : T.
+Proof.
+  intros Γ. induction Γ as [| A Γ].
+  - intros t T. eexists. intros Σ hg hw h hT. eassumption.
+  - intros t T. destruct (IHΓ t (sProd nAnon A T)) as [t' ht'].
+    eexists. intros Σ hg hwA h hT. cbn in h.
+    inversion hwA. subst. rename X into hw, X0 into hA.
+    destruct s. eapply meta_conv.
+    + eapply xtype_App'.
+      * assumption.
+      * assumption.
+      * instantiate (2 := lift0 1 A).
+        instantiate (1 := lift 1 1 T).
+        instantiate (1 := nAnon).
+        change (sProd nAnon (lift0 1 A) (lift 1 1 T))
+          with (lift0 1 (sProd nAnon A T)).
+        eapply typing_lift01.
+        -- assumption.
+        -- eapply ht' ; try assumption.
+           eapply xtype_Prod' ; try assumption.
+           intros _. assumption.
+        -- instantiate (1 := tt). assumption.
+      * instantiate (1 := sRel 0).
+        refine (@type_Rel Sorts.type_in_type _ _ 0 _).
+        cbn. myomega.
+    + eapply lift_rel.
+Defined.
+
+Lemma inversionProds :
+  forall {Σ Γ T},
+    Σ ;;; [] |-x Prods Γ T : Ty ->
+    (wf Σ Γ) *
+    (Σ ;;; Γ |-x T : Ty).
+Proof.
+  intros Σ Γ T h. revert T h.
+  induction Γ as [| A Γ] ; intros T h.
+  - cbn in h. split.
+    + constructor.
+    + assumption.
+  - cbn in h.
+    destruct (IHΓ _ h) as [hw hPi].
+    destruct (XInversions.inversionProd hPi) as [[? ?] ?].
+    split ; try assumption.
+    econstructor ; eassumption.
+Defined.
+
+Lemma close_goal_ex' :
+  forall {Γ t T}, ∑ t', forall {Σ},
+    xtype_glob Σ ->
+    Σ ;;; [] |-x t : Prods Γ T ->
+    Σ ;;; Γ |-x t' : T.
+Proof.
+  intros Γ t T. eexists. intros Σ hg ht.
+  pose proof (istype_type hg (wf_nil _) ht) as hPi.
+  destruct (inversionProds hPi) as [hw hT].
+  eapply close_goal_ex ; eassumption.
+Defined.
+
+Definition closet Γ t T :=
+  let '(t' ; _) := @close_goal_ex' Γ t T in t'.
+
+Definition close_goal :
+  forall {Σ Γ t T}
+    (hg : xtype_glob Σ)
+    (h : Σ ;;; [] |-x t : Prods Γ T),
+    Σ ;;; Γ |-x closet Γ t T : T.
+Proof.
+  intros Σ Γ t T h.
+  eapply close_goal_ex'.
+  assumption.
+Defined.
+
 (*
   For ETT we want to be able to build the derivation constructively
   and we should be able to get a set of obligations from it.
@@ -338,6 +464,8 @@ Fixpoint _ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm)
   end.
 
 Notation "s @ t" := (s ++ t)%string (right associativity, at level 60).
+
+Definition decl := Build_glob_decl.
 
 (* For the soundness lemma, we need to write an extend function that takes
    a global context and a list of obligations and put them together using a
@@ -1355,13 +1483,13 @@ Defined.
 (* We now attempt a complete translation procedure *)
 
 (* Not Tail-recursive for the tile being *)
-(* TODO Use monap_map? *)
-Fixpoint map_tsl l : TemplateMonad (list term) :=
+(* TODO Use monad_map? *)
+Fixpoint map_tsl Σ axoc l {struct l} : TemplateMonad (list term) :=
   match l with
   | t :: l =>
     match tsl_rec (2 ^ 18) Σ [] t axoc with
     | FinalTranslation.Success _ t =>
-      l <- map_tsl l ;;
+      l <- map_tsl Σ axoc l ;;
       ret (t :: l)
     | _ => tmFail "Cannot refine obligation into a Coq term"
     end
@@ -1399,7 +1527,7 @@ Record tsl_ctx := {
   Σi : sglobal_context ;
   indt : assoc sterm ;
   constt : assoc sterm ;
-  cot : string -> nat -> option sterm ;
+  cot : assocn sterm ;
   axoc : assoc term
 }.
 
@@ -1407,16 +1535,16 @@ Definition emptyTC := {|
   Σi := [] ;
   indt := [< >] ;
   constt := [< >] ;
-  cot _ _ := None ;
+  cot := emptyn ;
   axoc := [< >]
 |}.
 
 Notation ε := emptyTC.
 
-Fixpoint tc_ctor ind Θ (ctors : list (prod (prod ident term) nat)) : TemplateMonad tsl_ctx :=
+Fixpoint tc_ctor (Σ : global_context) ind Θ (ctors : list (prod (prod ident term) nat)) : TemplateMonad tsl_ctx :=
   match ctors with
   | t :: l =>
-    Θ <- tc_ctor ind Θ l ;;
+    Θ <- tc_ctor Σ ind Θ l ;;
     let Σi := Σi Θ in
     let indt := indt Θ in
     let constt := constt Θ in
@@ -1431,10 +1559,7 @@ Fixpoint tc_ctor ind Θ (ctors : list (prod (prod ident term) nat)) : TemplateMo
           Σi := (decl id ety) :: Σi ;
           indt := indt ;
           constt := constt ;
-          cot s n :=
-            if ident_eq s (inductive_mind ind) && Nat.eqb n m then Some (sAx id)
-            else cot s n
-          ;
+          cot := aconsn (inductive_mind ind) m (sAx id) cot ;
           axoc := (id --> tConstruct ind m []) axoc
         |}
     | Error e => tmPrint e ;; tmFail "Cannot elaborate to ETT term"
@@ -1442,12 +1567,30 @@ Fixpoint tc_ctor ind Θ (ctors : list (prod (prod ident term) nat)) : TemplateMo
   | [] => ret Θ
   end.
 
+(* Get term from ident *)
+Definition getTm ident : TemplateMonad term :=
+  info <- tmAbout ident ;;
+  match info with
+  | Some (ConstRef kername) => ret (tConst kername [])
+  | Some (IndRef ind) => ret (tInd ind [])
+  | Some (ConstructRef ind n) => ret (tConstruct ind n [])
+  | None => tmFail ("Unknown " @ ident)
+  end.
+
+(* Get the global context from an ident *)
+Definition getCtx (ident : ident) : TemplateMonad global_context :=
+  tm <- getTm ident ;;
+  q  <- tmUnquote tm ;;
+  prog <- tmQuoteRec (my_projT2 q : my_projT1 q) ;;
+  ret (pair (Datatypes.fst prog) init_graph).
+
 (* Note we could optimise by checking the generated context on the go.
    Then we would carry around the proof that it is correct and we would only
    have to check the extension in Translate.
    Definitely TODO
  *)
 Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
+  Σ <- getCtx ident ;;
   let Σi := Σi Θ in
   let indt := indt Θ in
   let constt := constt Θ in
@@ -1488,7 +1631,7 @@ Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
             cot := cot ;
             axoc := (kername --> tInd ind []) axoc
           |} ;;
-        tc_ctor ind Θ ctors
+        tc_ctor Σ ind Θ ctors
       | Error e => tmPrint e ;; tmFail "Cannot elaborate to ETT term"
       end
     | _ => tmFail "Wrong index of inductive"
@@ -1496,13 +1639,8 @@ Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
   | _ => tmFail ("Not a defined constant" @ ident)
   end.
 
-(* Definition AA := Type. *)
-(* Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; tmPrint Θ). *)
-(* Run TemplateProgram (TranslateConstant ε "Init.Nat.add"). *)
-
-(* Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Θ <- tmEval Core.hnf Θ ;; tmPrint (Σi Θ)). *)
-
 Definition Translate Θ ident : TemplateMonad () :=
+  Σ <- getCtx ident ;;
   let Σi := Σi Θ in
   let indt := indt Θ in
   let constt := constt Θ in
@@ -1535,7 +1673,7 @@ Definition Translate Θ ident : TemplateMonad () :=
         (* We now have the list of obligations *)
         (* TODO Check the extended global context is well formed (at least in ITT) *)
         (* We push them into TC *)
-        tc_obl <- map_tsl obl ;;
+        tc_obl <- map_tsl Σ axoc obl ;;
         tc_obl <- tmEval lazy tc_obl ;;
         (* tmPrint tc_obl ;; *)
         (* TODO We then turn them into a list of definitions *)
@@ -1599,54 +1737,3 @@ Definition Translate Θ ident : TemplateMonad () :=
     end
   | _ => tmFail "Expected definition of a Coq constant"
   end.
-
-(* Definition bar := Type. *)
-
-(* Run TemplateProgram (Translate ε "bar"). *)
-(* Print barᵗ. *)
-
-(* Definition foo (A : Type) (x : A) := x. *)
-
-(* Run TemplateProgram (Translate ε "foo"). *)
-(* Print fooᵗ. *)
-
-(* Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}. *)
-
-(* Run TemplateProgram (Translate ε "pseudoid"). *)
-(* Print pseudoidᵗ. *)
-
-(* Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C := *)
-(*   {! f {! x !} !}. *)
-
-(* Run TemplateProgram (Translate ε "test"). *)
-(* Print testᵗ. *)
-
-(* (* Definition AAmap (x :AA) := x. *) *)
-(* Definition AA' := AA. *)
-(* Fail Run TemplateProgram (Translate ε "AA'"). *)
-(* Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; Translate Θ "AA'"). *)
-(* Print AA'ᵗ. *)
-
-(* Definition zero := 0. *)
-(* Fail Run TemplateProgram (Translate ε "zero"). *)
-(* Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "zero"). *)
-(* Print zeroᵗ. *)
-
-(* Definition nat' := nat. *)
-(* Fail Run TemplateProgram (Translate ε "nat'"). *)
-(* Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "nat'"). *)
-(* Print nat'ᵗ. *)
-
-Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
-  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
-           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
-           n v m acc.
-
-Run TemplateProgram (
-      Θ <- TranslateConstant ε "nat" ;;
-      Θ <- TranslateConstant Θ "vec" ;;
-      Θ <- TranslateConstant Θ "Nat.add" ;;
-      Θ <- TranslateConstant Θ "vec_rect" ;;
-      Translate Θ "vrev"
-      (* tmPrint Θ *)
-).
