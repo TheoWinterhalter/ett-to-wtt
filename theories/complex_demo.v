@@ -1534,17 +1534,17 @@ Definition emptyTC := {|
 
 Notation ε := emptyTC.
 
-Fixpoint tc_ctor (Σ : global_context) ind Θ (ctors : list (prod (prod ident term) nat)) : TemplateMonad tsl_ctx :=
+Fixpoint tc_ctor_ m (Σ : global_context) ind Θ (ctors : list (prod (prod ident term) nat)) : TemplateMonad tsl_ctx :=
   match ctors with
   | t :: l =>
-    Θ <- tc_ctor Σ ind Θ l ;;
+    Θ <- tc_ctor_ (S m) Σ ind Θ l ;;
     let Σi := Σi Θ in
     let indt := indt Θ in
     let constt := constt Θ in
     let cot := cot Θ in
     let axoc := axoc Θ in
     (* let '(id, ty, m) := t in *)
-    let '(pair (pair id ty) m) := t in
+    let '(pair (pair id ty) _) := t in
     ety <- tmEval lazy (fullquote (2 ^ 18) Σ [] (LiftSubst.subst (tInd ind []) 0 ty) indt constt cot) ;;
     match ety with
     | Success ety =>
@@ -1559,6 +1559,8 @@ Fixpoint tc_ctor (Σ : global_context) ind Θ (ctors : list (prod (prod ident te
     end
   | [] => ret Θ
   end.
+
+Notation tc_ctor := (tc_ctor_ 0).
 
 (* Get term from ident *)
 Definition getTm ident : TemplateMonad term :=
@@ -1598,7 +1600,7 @@ Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
       ety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty indt constt cot) ;;
       match ety with
       | Success ety =>
-        ret {|
+        tmEval all {|
             Σi := (decl kername ety) :: Σi ;
             indt := indt ;
             constt := (kername --> sAx kername) constt ;
@@ -1624,7 +1626,8 @@ Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
             cot := cot ;
             axoc := (kername --> tInd ind []) axoc
           |} ;;
-        tc_ctor Σ ind Θ ctors
+        Θ <- tc_ctor Σ ind Θ ctors ;;
+        tmEval all Θ
       | Error e => tmPrint e ;; tmFail "Cannot elaborate to ETT term"
       end
     | _ => tmFail "Wrong index of inductive"

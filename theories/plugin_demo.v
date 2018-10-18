@@ -67,23 +67,29 @@ Run TemplateProgram (
 Print vnil'ᵗ.
 
 Definition vone := vcons 1 _ vnil.
-Fail Run TemplateProgram (
+Time Run TemplateProgram (
       Θ <- TranslateConstant ε "nat" ;;
       Θ <- TranslateConstant Θ "vec" ;;
+      (* tmPrint Θ *)
       Translate Θ "vone"
 ).
-(* Print voneᵗ. *)
+Print voneᵗ.
 
-(* Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) := *)
-(*   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m)) *)
-(*            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !}) *)
-(*            n v m acc. *)
+Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
+           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
+           n v m acc.
 
-(* Fail Run TemplateProgram ( *)
-(*       Θ <- TranslateConstant ε "nat" ;; *)
-(*       Θ <- TranslateConstant Θ "vec" ;; *)
-(*       Θ <- TranslateConstant Θ "Nat.add" ;; *)
-(*       Θ <- TranslateConstant Θ "vec_rect" ;; *)
-(*       Translate Θ "vrev" *)
-(*       (* tmPrint Θ *) *)
-(* ). *)
+Opaque vec_rect. Opaque Init.Nat.add.
+Definition vrev' :=
+  Eval cbv in @vrev.
+Transparent vec_rect. Transparent Init.Nat.add.
+
+Time Run TemplateProgram (
+      Θ <- TranslateConstant ε "nat" ;;
+      Θ <- TranslateConstant Θ "vec" ;;
+      Θ <- TranslateConstant Θ "Nat.add" ;;
+      Θ <- TranslateConstant Θ "vec_rect" ;;
+      Translate Θ "vrev'"
+      (* tmPrint Θ *)
+).
