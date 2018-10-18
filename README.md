@@ -22,7 +22,7 @@ ETT differs from ITT by the addition of the **reflection rule**:
   Γ ⊢ u ≡ v
 ```
 
-### Examples
+### Examples (Plugin)
 
 In order to see more clearly what it does, here are a few examples that can be found
 in this repository.
@@ -44,13 +44,18 @@ Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 Using the power of TemplateCoq, we can quote it, translate it using our
 translation, and then unquote it to get back a Coq term:
 ```coq
-fun (A B : Type) (e : A = B) (x : A) => transport e x
+Run TemplateProgram (Translate ε "pseudoid").
+```
+which defines
+```coq
+pseudoidᵗ =
+fun (A B : Type) (e : A = B) (x : A) => transport (pseudoid_obligation_0 A B e x) x
      : forall A B : Type, A = B -> A -> B
 ```
 This is what you would expect, and what you would write by hand:
 **the use of reflection has been replaced by a transport**.
 
-#### Playing with vectors
+#### Reversal of vectors
 
 An already more challenging example involves playing around with
 inductive types and eliminators (we don't handle fixed points and
@@ -62,28 +67,6 @@ Inductive vec A : nat -> Type :=
 | vnil : vec A 0
 | vcons : A -> forall n, vec A n -> vec A (S n).
 ```
-
-Let's say we want to use a vector of length `S n` as a vector of
-length `n + 1`, in ITT you cannot as `S n` and `n + 1` are
-(propositionally) equal but not convertible.
-```coq
-Fail Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
-  := f (vcons a n v).
-```
-In ETT, we can use the equality to type-check it.
-```coq
-Definition vcons_act {A n X} (f : vec A (n + 1) -> X) (a : A) (v : vec A n) : X
-  := f {! vcons a n v !}.
-```
-The translation of this term is again what one would expect (or do
-by hand):
-```coq
-fun (A : Type) (n : nat) (X : Type) (f : vec A (n + 1) -> X) (a : A) (v : vec A n) =>
-f (transport (vcons_act_obligation A n X f a v) (vcons a n v))
-     : forall (A : Type) (n : nat) (X : Type), (vec A (n + 1) -> X) -> A -> vec A n -> X
-```
-
-#### Reversal of vectors
 
 One more *realistic* example would be the reversal of vectors (using an accumulator):
 ```coq
@@ -102,7 +85,18 @@ Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
            (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
            n v m acc.
 ```
-We then obtain the following translation with exactly one transport as expected.
+To translate it we must first put its dependencies in the translation context.
+```coq
+Run TemplateProgram (
+      Θ <- TranslateConstant ε "nat" ;;
+      Θ <- TranslateConstant Θ "vec" ;;
+      Θ <- TranslateConstant Θ "Nat.add" ;;
+      Θ <- TranslateConstant Θ "vec_rect" ;;
+      Translate Θ "vrev'"
+).
+```
+We then obtain the following translation (after the system solves
+automatically 4 equality obligations) with exactly one transport as expected.
 ```coq
 fun (A : Type) (n m : nat) (v : vec A n) (acc : vec A m) =>
 vec_rect A
@@ -110,7 +104,7 @@ vec_rect A
    forall m0 : nat, vec A m0 -> vec A (n0 + m0))
   (fun (m0 : nat) (acc0 : vec A m0) => acc0)
   (fun (a : A) (n0 : nat) (v0 : vec A n0)
-     (rv : forall m0 : nat, vec A m0 -> vec A (n0 + m0)) 
+     (rv : forall m0 : nat, vec A m0 -> vec A (n0 + m0))
      (m0 : nat) (acc0 : vec A m0) =>
    transport (vrev_obligation3 A n m v acc a n0 v0 rv m0 acc0)
      (rv (S m0) (vcons a m0 acc0))) n v m acc
@@ -122,7 +116,7 @@ vec_rect A
 ### Requirements
 
 This project can be compiled with Coq 8.8 and requires
-[Equations](http://mattam82.github.io/Coq-Equations/) 
+[Equations](http://mattam82.github.io/Coq-Equations/)
 and [TemplateCoq](https://github.com/Template-Coq/template-coq/tree/coq-8.8)
 to compile (probably best to `make && make install` before they release).
 

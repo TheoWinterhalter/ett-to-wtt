@@ -91,6 +91,5 @@ Time Run TemplateProgram (
       Θ <- TranslateConstant Θ "Nat.add" ;;
       Θ <- TranslateConstant Θ "vec_rect" ;;
       Translate Θ "vrev'"
-      (* tmPrint Θ *)
 ).
 Print vrev'ᵗ.
