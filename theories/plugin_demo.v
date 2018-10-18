@@ -70,7 +70,6 @@ Definition vone := vcons 1 _ vnil.
 Time Run TemplateProgram (
       Θ <- TranslateConstant ε "nat" ;;
       Θ <- TranslateConstant Θ "vec" ;;
-      (* tmPrint Θ *)
       Translate Θ "vone"
 ).
 Print voneᵗ.
