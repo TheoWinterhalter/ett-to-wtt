@@ -51,6 +51,13 @@ Definition two := 2.
 Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "two").
 Print twoᵗ.
 
+Inductive vec A : nat -> Type :=
+| vnil : vec A 0
+| vcons : A -> forall n, vec A n -> vec A (S n).
+
+Arguments vnil {_}.
+Arguments vcons {_} _ _ _.
+
 Definition vnil' : vec nat 0 := vnil.
 Run TemplateProgram (
       Θ <- TranslateConstant ε "nat" ;;

@@ -277,13 +277,6 @@ Notation "[< >]" := (empty).
 (* Notation "[< a --> x ; b --> y ; .. ; c --> z >]" := *)
 (*   (acons a x (acons b y .. (acons c z empty) ..)). *)
 
-Inductive vec A : nat -> Type :=
-| vnil : vec A 0
-| vcons : A -> forall n, vec A n -> vec A (S n).
-
-Arguments vnil {_}.
-Arguments vcons {_} _ _ _.
-
 Existing Instance Sorts.type_in_type.
 
 Notation Ty := (@sSort Sorts.type_in_type tt).
