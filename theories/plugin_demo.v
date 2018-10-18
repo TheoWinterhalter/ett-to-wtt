@@ -93,3 +93,4 @@ Time Run TemplateProgram (
       Translate Θ "vrev'"
       (* tmPrint Θ *)
 ).
+Print vrev'ᵗ.
