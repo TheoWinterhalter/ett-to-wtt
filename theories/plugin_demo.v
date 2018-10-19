@@ -4,53 +4,30 @@ From Template Require Import All.
 From Translation Require Import Quotes plugin.
 Import MonadNotation.
 
-Definition AA := Type.
-Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; tmPrint Θ).
-Fail Run TemplateProgram (TranslateConstant ε "Init.Nat.add").
-
-Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Θ <- tmEval all Θ ;; tmPrint (Σi Θ)).
-
-Definition bar := Type.
-
-Run TemplateProgram (Translate ε "bar").
-Print barᵗ.
-
-Definition foo (A : Type) (x : A) := x.
-
-Run TemplateProgram (Translate ε "foo").
-Print fooᵗ.
-
+(*! EXAMPLE 1 *)
+(*
+   Our first example is the identity with a coercion.
+   As you can see, the definition fails in ITT/Coq.
+   We thus use the notation {! _ !} that allows a term of type A
+   to be given in place of any other type B.
+   This is ignored by the plugin and as such it allows us to write ETT
+   terms directly in Coq.
+ *)
+Fail Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := x.
 Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
 
 Run TemplateProgram (Translate ε "pseudoid").
 Print pseudoidᵗ.
 
-Definition test (A B C : Type) (f : A -> B) (e : B = C) (u : B = A) (x : B) : C :=
-  {! f {! x !} !}.
 
-Run TemplateProgram (Translate ε "test").
-Print testᵗ.
+(*! EXAMPLE 2 *)
+(*
+   Inductive types.
 
-Definition AAmap (x :AA) := x.
-Definition AA' := AA.
-Fail Run TemplateProgram (Translate ε "AA'").
-Run TemplateProgram (Θ <- TranslateConstant ε "AA" ;; Translate Θ "AA'").
-Print AA'ᵗ.
-
-Definition zero := 0.
-Fail Run TemplateProgram (Translate ε "zero").
-Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "zero").
-Print zeroᵗ.
-
-Definition nat' := nat.
-Fail Run TemplateProgram (Translate ε "nat'").
-Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "nat'").
-Print nat'ᵗ.
-
-Definition two := 2.
-Run TemplateProgram (Θ <- TranslateConstant ε "nat" ;; Translate Θ "two").
-Print twoᵗ.
-
+   For this we take a look at the type of vectors.
+   In order to translate an element of vec A n, we first need to add
+   vec (and nat) to the context.
+ *)
 Inductive vec A : nat -> Type :=
 | vnil : vec A 0
 | vcons : A -> forall n, vec A n -> vec A (S n).
@@ -58,21 +35,29 @@ Inductive vec A : nat -> Type :=
 Arguments vnil {_}.
 Arguments vcons {_} _ _ _.
 
-Definition vnil' : vec nat 0 := vnil.
-Run TemplateProgram (
-      Θ <- TranslateConstant ε "nat" ;;
-      Θ <- TranslateConstant Θ "vec" ;;
-      Translate Θ "vnil'"
-).
-Print vnil'ᵗ.
-
-Definition vone := vcons 1 _ vnil.
+Definition vv := vcons 1 _ vnil.
 Time Run TemplateProgram (
       Θ <- TranslateConstant ε "nat" ;;
       Θ <- TranslateConstant Θ "vec" ;;
-      Translate Θ "vone"
+      Translate Θ "vv"
 ).
-Print voneᵗ.
+Print vvᵗ.
+
+
+(*! EXAMPLE 3 *)
+(*
+   Reversal of vectors.
+
+   Our plugin doesn't handle fixpoint and pattern-matching so we need
+   to write our function with eliminators.
+   Same as before we need to add the eliminator (as well as addition on natural
+   numbers) to the context.
+ *)
+
+Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
+  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
+           (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc))
+           n v m acc.
 
 Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
   vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
