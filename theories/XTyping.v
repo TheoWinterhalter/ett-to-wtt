@@ -1,7 +1,7 @@
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
-From Translation Require Import util Sorts SAst SLiftSubst SCommon.
+From Translation Require Import util Sorts SAst SLiftSubst SCommon Equality.
 
 Reserved Notation " Σ ;;; Γ '|-x' t : T " (at level 50, Γ, t, T at next level).
 Reserved Notation " Σ ;;; Γ '|-x' t = u : T " (at level 50, Γ, t, u, T at next level).
@@ -195,6 +195,11 @@ with eq_term (Σ : sglobal_context) (Γ : scontext) : sterm -> sterm -> sterm ->
 
 | reflection A u v e :
     Σ ;;; Γ |-x e : sEq A u v ->
+    Σ ;;; Γ |-x u = v : A
+
+| eq_alpha u v A :
+    nl u = nl v ->
+    Σ ;;; Γ |-x u : A ->
     Σ ;;; Γ |-x u = v : A
 
 where " Σ ;;; Γ '|-x' t = u : T " := (@eq_term Σ Γ t u T) : x_scope.

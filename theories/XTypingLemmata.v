@@ -136,7 +136,7 @@ Proof.
   intros Σ Γ t T h.
   dependent induction h.
   all: try (cbn in * ; repeat (erewrite_assumption) ; reflexivity).
-  unfold closed_above. 
+  unfold closed_above.
   case_eq (n <? #|Γ|) ; intro e ; bprop e ; try myomega.
   reflexivity.
 Defined.
@@ -301,7 +301,7 @@ Proof.
           with (lift #|Δ| (0 + #|Ξ|) (B { 0 := u })).
         rewrite substP1. reflexivity.
       - cbn. eapply type_Pi1 ; eih.
-      - cbn. 
+      - cbn.
         change (#|Ξ|) with (0 + #|Ξ|)%nat.
         rewrite substP1. cbn.
         eapply type_Pi2 ; eih.
@@ -342,13 +342,16 @@ Proof.
             with (lift #|Δ| (0 + #|Ξ|) (B1 { 0 := u1 })).
           rewrite <- substP1. reflexivity.
       - cbn. eapply cong_Pi1 ; eih.
-      - cbn. 
+      - cbn.
         change (#|Ξ|) with (0 + #|Ξ|)%nat.
         rewrite !substP1. cbn.
         eapply cong_Pi2 ; eih.
       - cbn. eapply cong_Eq with (s0 := s) ; eih.
       - cbn. eapply cong_Refl ; eih.
       - eapply reflection with (e0 := lift #|Δ| #|Ξ| e). eih.
+      - eapply eq_alpha.
+        + eapply Equality.nl_lift. assumption.
+        + eih.
     }
 
   Unshelve.
@@ -556,17 +559,20 @@ Proof.
         + change (#|Δ|) with (0 + #|Δ|)%nat.
           rewrite substP4. reflexivity.
       - cbn. eapply cong_Pi1 ; esh.
-      - cbn. 
+      - cbn.
         change (#|Δ|) with (0 + #|Δ|)%nat.
         rewrite substP4. cbn.
         eapply cong_Pi2 ; esh.
       - cbn. eapply cong_Eq with (s0 := s) ; esh.
       - cbn. eapply cong_Refl ; esh.
       - eapply reflection with (e0 := e{#|Δ| := u}). esh.
+      - eapply eq_alpha.
+        + eapply Equality.nl_subst ; try assumption. reflexivity.
+        + esh.
     }
 
   Unshelve.
-  all: try rewrite !length_cat ; try rewrite !subst_context_length ; 
+  all: try rewrite !length_cat ; try rewrite !subst_context_length ;
        myomega.
 Defined.
 

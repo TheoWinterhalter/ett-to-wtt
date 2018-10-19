@@ -91,7 +91,7 @@ Definition trans_Eq {Σ Γ A u v s Γ' A' u' v'} :
   Σ ;;;; Γ' |--- [A'] : sSort s # ⟦ Γ |--- [A] : sSort s ⟧ ->
   Σ ;;;; Γ' |--- [u'] : A' # ⟦ Γ |--- [u] : A ⟧ ->
   Σ ;;;; Γ' |--- [v'] : A' # ⟦ Γ |--- [v] : A ⟧ ->
-  Σ ;;;; Γ' |--- [sEq A' u' v'] : sSort (Sorts.eq_sort s) 
+  Σ ;;;; Γ' |--- [sEq A' u' v'] : sSort (Sorts.eq_sort s)
   # ⟦ Γ |--- [sEq A u v] : sSort (Sorts.eq_sort s) ⟧.
 Proof.
   intros hΓ hA hu hv.
@@ -155,11 +155,11 @@ Scheme typing_ind := Induction for XTyping.typing Sort Type
 
 Definition typing_all :=
   fun Σ P P0 X X0 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12 X13 X14 X15
-    X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 =>
+    X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 X27 =>
     (typing_ind Sort_notion Σ P P0 X X0 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12
-                X13 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26,
+                X13 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 X27,
      eq_term_ind Sort_notion Σ P P0 X X0 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12
-                 X13 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26).
+                 X13 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 X27).
 
 Definition complete_translation {Σ} :
   type_glob Σ ->
@@ -182,7 +182,7 @@ Proof.
            {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
            ∑ A' A'' u' v' p',
          eqtrans Σ Γ A u v Γ' A' A'' u' v' p')
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
    ) ; intros.
 
   (** type_translation **)
@@ -1132,7 +1132,7 @@ Proof.
          This is where the path between the two types comes into action.
        *)
       assert (hty : ∑ pty,
-        Σ ;;; Γ' |-i pty : sHeq (sSort (Sorts.prod_sort s1 s2)) 
+        Σ ;;; Γ' |-i pty : sHeq (sSort (Sorts.prod_sort s1 s2))
                                (sProd n2 A2' B2')
                                (sSort (Sorts.prod_sort s1 s2))
                                (sProd n1 A1' B1')
@@ -2597,7 +2597,7 @@ Proof.
       destruct hq as [q hq].
       (* We're still not there yet as we need to have two translations of the
          same type. *)
-      assert (pE : ∑ pE, Σ ;;; Γ' |-i pE : 
+      assert (pE : ∑ pE, Σ ;;; Γ' |-i pE :
                          sHeq (sSort (Sorts.eq_sort s)) (sEq tA2 ttu2 ttu2)
                               (sSort (Sorts.eq_sort s)) (sEq tA1 tu1 tu1)).
       { exists (optHeqSym (optCongEq qA q q)).
@@ -2605,7 +2605,7 @@ Proof.
         eapply opt_CongEq ; eassumption.
       }
       destruct pE as [pE hpE].
-      assert (eE : ∑ eE, Σ ;;; Γ' |-i eE : 
+      assert (eE : ∑ eE, Σ ;;; Γ' |-i eE :
                          sEq (sSort (Sorts.eq_sort s)) (sEq tA2 ttu2 ttu2)
                              (sEq tA1 tu1 tu1)).
       { eapply (opt_sort_heq_ex hg hpE). }
@@ -2650,6 +2650,15 @@ Proof.
       ttinv heq.
       eapply opt_EqToHeq ; assumption.
 
+    (* eq_alpha *)
+    + destruct (X _ hΓ) as [A' [u' hu']].
+      destruct hu' as [[[? ?] ?] hu'].
+      exists A', A', u', u', (sHeqRefl A' u').
+      repeat split ; try assumption.
+      * eapply inrel_nl ; eassumption.
+      * destruct (istype_type hg hu') as [s' hA'].
+        eapply type_HeqRefl ; eassumption.
+
   Unshelve. all: try exact 0. exact nAnon.
 
 Defined.
@@ -2670,7 +2679,7 @@ Proof.
     destruct (choose_type hg th hA') as [T' [[A'' hA''] hh]].
     destruct T' ; try (now inversion hh).
     exists (Γ' ,, A''). now eapply trans_snoc.
-Defined. 
+Defined.
 
 End Translation.
 
@@ -2728,4 +2737,3 @@ Proof.
 Defined.
 
 End Consistency.
-

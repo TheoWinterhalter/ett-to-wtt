@@ -5,9 +5,25 @@ From Equations Require Import Equations DepElimDec.
 From Template
 Require Import Ast utils monad_utils Typing Checker.
 From Translation
-Require Import util Sorts SAst SLiftSubst SCommon ITyping Quotes 
+Require Import util Sorts SAst SLiftSubst SCommon ITyping Quotes
                FinalTranslation.
 Import MonadNotation.
+
+
+Inductive assocn (A : Type) :=
+| emptyn
+| aconsn (key : string) (n : nat) (data : A) (t : assocn A).
+
+Arguments emptyn {_}.
+Arguments aconsn {_} _ _ _.
+
+Fixpoint assocn_at {A} (key : string) (n : nat) (t : assocn A) {struct t}
+  : option A :=
+  match t with
+  | emptyn => None
+  | aconsn k m a r =>
+    if (ident_eq key k) && (n =? m) then Some a else assocn_at key n r
+  end.
 
 Inductive fq_error :=
 | NotEnoughFuel
@@ -49,8 +65,8 @@ Close Scope s_scope.
 Local Existing Instance Sorts.type_in_type.
 
 Fixpoint fullquote (fuel : nat) (Σ : global_context) (Γ : context) (t : term)
-         (indt : assoc sterm) (constt : assoc sterm) 
-         (cot : string -> nat -> option sterm) {struct fuel}
+         (indt : assoc sterm) (constt : assoc sterm) (cot : assocn sterm)
+         {struct fuel}
   : fq_result sterm :=
   match fuel with
   | 0 => raise NotEnoughFuel
@@ -84,7 +100,7 @@ Fixpoint fullquote (fuel : nat) (Σ : global_context) (Γ : context) (t : term)
       | None => raise (UnknownConst id)
       end
     | tConstruct {| inductive_mind := id ; inductive_ind := _ |} n [] =>
-      match cot id n with
+      match assocn_at id n cot with
       | Some t => ret t
       | None => raise (UnknownConstruct id n)
       end

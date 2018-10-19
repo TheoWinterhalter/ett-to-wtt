@@ -5,7 +5,7 @@ From Equations Require Import Equations DepElimDec.
 From Template Require Import utils Ast Typing Checker.
 From Translation Require Import util Quotes Sorts SAst SLiftSubst SCommon
      ITyping ITypingInversions ITypingLemmata ITypingAdmissible
-     FundamentalLemma Translation FinalTranslation FullQuote ExampleQuotes.
+     FundamentalLemma Translation FinalTranslation FullQuote.
 
 (* For efficiency reasons we use type in type for examples. *)
 Existing Instance Sorts.type_in_type.
