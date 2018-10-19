@@ -220,7 +220,7 @@ For type checking, we write one tactic for ITT and one for ETT.
 Their respective definitions can be found in
 [IChecking](theories/IChecking.v) and [XChecking](theories/XChecking.v).
 
-### Interaction with (Template)Coq
+### TemplateCoq and Plugin
 
 To realise the sugar of ITT, we define some constants in [Quotes](theories/Quotes.v)
 and then quote them to TemplateCoq's inner representation of terms.
@@ -228,8 +228,11 @@ The translation from ITT to TemplateCoq is done in [FinalTranslation](theories/F
 [FullQuote](theories/FullQuote.v)
 is for the opposite: generating an ITT term from a TemplateCoq (and
 thus Coq) term, it is useful to generate examples.
-[ExampleQuotes](theories/ExampleQuotes.v) is about defining terms that will be useful for
-examples but need quoting.
-The module [ExamplesUtil](theories/ExamplesUtil.v) provides useful lemmata and the proof of
-well-formedness of a global context with `nat` and `vec` as axiomatised constants.
-Finally, some examples can be found in [Example](theories/Example.v).
+
+Finally [plugin](theories/plugin.v) defines a plugin using the
+TemplateMonad.
+It relies on type checkers written in
+[plugin_checkers](theories/checker.v)
+and some extra utility in [plugin_util](theories/util.v).
+
+**To see the plugin in action, just have a look at [plugin_demo](theories/plugin_demo.v)!**
