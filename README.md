@@ -125,7 +125,7 @@ If you want to compile the examples, you also need
 
 ### Building
 
-Once you have the dependencies (at least Equations), simply run
+Once you have the dependencies, simply run
 ```bash
 make
 ```
