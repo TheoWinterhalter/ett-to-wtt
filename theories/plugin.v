@@ -9,7 +9,7 @@ From Translation
 Require Import util Sorts SAst SLiftSubst SCommon ITyping ITypingLemmata
 ITypingAdmissible DecideConversion XTyping Quotes Translation FundamentalLemma
 FinalTranslation FullQuote XTypingLemmata IChecking
-XChecking Equality plugin_util complex_demo.
+XChecking Equality plugin_util plugin_checkers.
 Import MonadNotation.
 
 

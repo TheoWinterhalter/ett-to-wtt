@@ -29,6 +29,6 @@ theories/XInversions.v
 theories/IChecking.v
 theories/XChecking.v
 theories/plugin_util.v
-theories/complex_demo.v
+theories/plugin_checkers.v
 theories/plugin.v
 theories/plugin_demo.v
