@@ -115,10 +115,10 @@ vec_rect A
 
 ### Requirements
 
-This project can be compiled with Coq 8.8 and requires
+This project can be compiled with Coq 8.8.1 and requires
 [Equations](http://mattam82.github.io/Coq-Equations/)
-and [TemplateCoq](https://github.com/Template-Coq/template-coq/tree/coq-8.8)
-to compile (probably best to `make && make install` before they release).
+and
+[TemplateCoq](https://github.com/Template-Coq/template-coq/releases/tag/v2.1-beta3).
 
 If you want to compile the examples, you also need
 [TypingFlags](https://github.com/SimonBoulier/TypingFlags).
