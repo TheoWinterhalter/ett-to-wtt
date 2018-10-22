@@ -413,26 +413,28 @@ Fixpoint _ettcheck (Σ : sglobal_context) (Γ : scontext) (t : sterm)
     ob3 <- _ettcheck Σ Γ A Ty ;;
     ob4 <- _ettcheck Σ (Γ,, A) B Ty ;;
     ettconv Γ (B{0 := v}) T (ob1 ++ ob2 ++ ob3 ++ ob4)
-  | sSum n A B =>
-    ob1 <- _ettcheck Σ Γ A Ty ;;
-    ob2 <- _ettcheck Σ (Γ,, A) B Ty ;;
-    ettconv Γ Ty T (ob1 ++ ob2)
-  | sPair A B u v =>
-    ob1 <- _ettcheck Σ Γ u A ;;
-    ob2 <- _ettcheck Σ Γ v (B{0 := u}) ;;
-    ob3 <- _ettcheck Σ Γ A Ty ;;
-    ob4 <- _ettcheck Σ (Γ,,A) B Ty ;;
-    ettconv Γ (sSum nAnon A B) T (ob1 ++ ob2 ++ ob3 ++ ob4)
-  | sPi1 A B p =>
-    ob1 <- _ettcheck Σ Γ p (sSum nAnon A B) ;;
-    ob2 <- _ettcheck Σ Γ A Ty ;;
-    ob3 <- _ettcheck Σ (Γ,,A) B Ty ;;
-    ettconv Γ A T (ob1 ++ ob2 ++ ob3)
-  | sPi2 A B p =>
-    ob1 <- _ettcheck Σ Γ p (sSum nAnon A B) ;;
-    ob2 <- _ettcheck Σ Γ A Ty ;;
-    ob3 <- _ettcheck Σ (Γ,,A) B Ty ;;
-    ettconv Γ (B{0 := sPi1 A B p}) T (ob1 ++ ob2 ++ ob3)
+  (* We do not deal with Σ-types, they can be handled by the global context
+     instead, as other inductive types are. *)
+  (* | sSum n A B => *)
+  (*   ob1 <- _ettcheck Σ Γ A Ty ;; *)
+  (*   ob2 <- _ettcheck Σ (Γ,, A) B Ty ;; *)
+  (*   ettconv Γ Ty T (ob1 ++ ob2) *)
+  (* | sPair A B u v => *)
+  (*   ob1 <- _ettcheck Σ Γ u A ;; *)
+  (*   ob2 <- _ettcheck Σ Γ v (B{0 := u}) ;; *)
+  (*   ob3 <- _ettcheck Σ Γ A Ty ;; *)
+  (*   ob4 <- _ettcheck Σ (Γ,,A) B Ty ;; *)
+  (*   ettconv Γ (sSum nAnon A B) T (ob1 ++ ob2 ++ ob3 ++ ob4) *)
+  (* | sPi1 A B p => *)
+  (*   ob1 <- _ettcheck Σ Γ p (sSum nAnon A B) ;; *)
+  (*   ob2 <- _ettcheck Σ Γ A Ty ;; *)
+  (*   ob3 <- _ettcheck Σ (Γ,,A) B Ty ;; *)
+  (*   ettconv Γ A T (ob1 ++ ob2 ++ ob3) *)
+  (* | sPi2 A B p => *)
+  (*   ob1 <- _ettcheck Σ Γ p (sSum nAnon A B) ;; *)
+  (*   ob2 <- _ettcheck Σ Γ A Ty ;; *)
+  (*   ob3 <- _ettcheck Σ (Γ,,A) B Ty ;; *)
+  (*   ettconv Γ (B{0 := sPi1 A B p}) T (ob1 ++ ob2 ++ ob3) *)
   | sEq A u v =>
     ob1 <- _ettcheck Σ Γ u A ;;
     ob2 <- _ettcheck Σ Γ v A ;;
@@ -814,280 +816,280 @@ Proof with discharge.
       * eapply reflection. eapply close_goal ; try eassumption.
         eapply type_Ax. eapply lookup_extend.
         apply xtype_glob_allfresh. assumption.
-  - simpl in h. revert h.
-    case_eq (_ettcheck Σ Γ t1 Ty) ...
-    intros ob1 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
-    intros ob2 eq2. unfold ettconv.
-    match goal with
-    | |- context [ eq_term ?u ?v ] => case_eq (eq_term u v)
-    end.
-    + intros eq h. cbn in h. apply some_inj in h. subst.
-      specialize (IHt1 _ _ _ _ name obb (ob2 ++ obe) eq1).
-      specialize (IHt2 _ _ _ _ name (obb ++ ob1) obe eq2).
-      rewenv Σ' IHt1.
-      rewenv Σ' IHt2.
-      specialize (IHt1 hg).
-      specialize (IHt2 hg).
-      eapply type_conv.
-      * eapply xtype_Sum' ; try assumption.
-        -- eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-        -- intro. eapply IHt2 ; try assumption.
-           eapply xtype_Sort'.
-      * eassumption.
-      * eapply eq_symmetry. eapply eq_alpha.
-        -- symmetry. eapply eq_term_spec. assumption.
-        -- assumption.
-    + match goal with
-      | |- context [ Prods ?Γ ?A ] => set (obeq := Prods Γ A)
-      end.
-      intros _ h. cbn in h. apply some_inj in h. subst.
-      specialize (IHt1 _ _ _ _ name (obb ++ [obeq]) (ob2 ++ obe) eq1).
-      specialize (IHt2 _ _ _ _ name (obb ++ obeq :: ob1) obe eq2).
-      rewenv Σ' IHt1.
-      rewenv Σ' IHt2.
-      specialize (IHt1 hg).
-      specialize (IHt2 hg).
-      eapply type_conv.
-      * eapply xtype_Sum' ; try assumption.
-        -- eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-        -- intro. eapply IHt2 ; try assumption.
-           eapply xtype_Sort'.
-      * eassumption.
-      * eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. eapply lookup_extend.
-        apply xtype_glob_allfresh. assumption.
-  - simpl in h. revert h.
-    case_eq (_ettcheck Σ Γ t3 t1) ...
-    intros ob1 eq3. case_eq (_ettcheck Σ Γ t4 (t2 {0 := t3})) ...
-    intros ob2 eq4. case_eq (_ettcheck Σ Γ t1 Ty) ...
-    intros ob3 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
-    intros ob4 eq2. unfold ettconv.
-    match goal with
-    | |- context [ eq_term ?u ?v ] => case_eq (eq_term u v)
-    end.
-    + intros eq h. cbn in h. apply some_inj in h. subst.
-      specialize (IHt1 _ _ _ _ name (obb ++ ob1 ++ ob2) (ob4 ++ obe) eq1).
-      specialize (IHt2 _ _ _ _ name (obb ++ ob1 ++ ob2 ++ ob3) obe eq2).
-      specialize (IHt3 _ _ _ _ name obb (ob2 ++ ob3 ++ ob4 ++ obe) eq3).
-      specialize (IHt4 _ _ _ _ name (obb ++ ob1) (ob3 ++ ob4 ++ obe) eq4).
-      rewenv Σ' IHt1.
-      rewenv Σ' IHt2.
-      rewenv Σ' IHt3.
-      rewenv Σ' IHt4.
-      specialize (IHt1 hg).
-      specialize (IHt2 hg).
-      specialize (IHt3 hg).
-      specialize (IHt4 hg).
-      eapply type_conv.
-      * eapply type_Pair ; try assumption.
-        -- eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-        -- eapply IHt2 ; try assumption.
-           ++ econstructor ; try assumption.
-              eapply IHt1 ; try assumption.
-              eapply xtype_Sort'.
-           ++ eapply xtype_Sort'.
-        -- eapply IHt3 ; try assumption.
-           eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-        -- eapply IHt4 ; try assumption.
-           change Ty with (Ty{0 := t3}).
-           eapply typing_subst ; try assumption.
-           ++ eapply IHt2 ; try assumption.
-              ---- econstructor ; try assumption.
-                   eapply IHt1 ; try assumption.
-                   eapply xtype_Sort'.
-              ---- eapply xtype_Sort'.
-           ++ eapply IHt3 ; try assumption.
-              eapply IHt1 ; try assumption.
-              eapply xtype_Sort'.
-      * eassumption.
-      * eapply eq_symmetry. eapply eq_alpha.
-        -- symmetry. eapply eq_term_spec. assumption.
-        -- assumption.
-    + match goal with
-      | |- context [ Prods ?Γ ?A ] => set (obeq := Prods Γ A)
-      end.
-      intros _ h. cbn in h. apply some_inj in h. subst.
-      specialize (IHt1 _ _ _ _ name (obb ++ obeq :: ob1 ++ ob2) (ob4 ++ obe) eq1).
-      specialize (IHt2 _ _ _ _ name (obb ++ obeq :: ob1 ++ ob2 ++ ob3) obe eq2).
-      specialize (IHt3 _ _ _ _ name (obb ++ [obeq]) (ob2 ++ ob3 ++ ob4 ++ obe) eq3).
-      specialize (IHt4 _ _ _ _ name (obb ++ obeq :: ob1) (ob3 ++ ob4 ++ obe) eq4).
-      rewenv Σ' IHt1.
-      rewenv Σ' IHt2.
-      rewenv Σ' IHt3.
-      rewenv Σ' IHt4.
-      specialize (IHt1 hg).
-      specialize (IHt2 hg).
-      specialize (IHt3 hg).
-      specialize (IHt4 hg).
-      eapply type_conv.
-      * eapply type_Pair ; try assumption.
-        -- eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-        -- eapply IHt2 ; try assumption.
-           ++ econstructor ; try assumption.
-              eapply IHt1 ; try assumption.
-              eapply xtype_Sort'.
-           ++ eapply xtype_Sort'.
-        -- eapply IHt3 ; try assumption.
-           eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-        -- eapply IHt4 ; try assumption.
-           change Ty with (Ty{0 := t3}).
-           eapply typing_subst ; try assumption.
-           ++ eapply IHt2 ; try assumption.
-              ---- econstructor ; try assumption.
-                   eapply IHt1 ; try assumption.
-                   eapply xtype_Sort'.
-              ---- eapply xtype_Sort'.
-           ++ eapply IHt3 ; try assumption.
-              eapply IHt1 ; try assumption.
-              eapply xtype_Sort'.
-      * eassumption.
-      * eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. eapply lookup_extend.
-        apply xtype_glob_allfresh. assumption.
-  - simpl in h. revert h.
-    case_eq (_ettcheck Σ Γ t3 (sSum nAnon t1 t2)) ...
-    intros ob1 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ...
-    intros ob2 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
-    intros ob3 eq2. unfold ettconv.
-    match goal with
-    | |- context [ eq_term ?u ?v ] => case_eq (eq_term u v)
-    end.
-    + intros eq h. cbn in h. apply some_inj in h. subst.
-      specialize (IHt1 _ _ _ _ name (obb ++ ob1) (ob3 ++ obe) eq1).
-      specialize (IHt2 _ _ _ _ name (obb ++ ob1 ++ ob2) obe eq2).
-      specialize (IHt3 _ _ _ _ name obb (ob2 ++ ob3 ++ obe) eq3).
-      rewenv Σ' IHt1.
-      rewenv Σ' IHt2.
-      rewenv Σ' IHt3.
-      specialize (IHt1 hg).
-      specialize (IHt2 hg).
-      specialize (IHt3 hg).
-      eapply type_conv.
-      * eapply type_Pi1 ; try assumption.
-        -- eapply IHt3 ; try assumption.
-           eapply xtype_Sum' ; try assumption.
-           ++ eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-           ++ intro. eapply IHt2 ; try assumption.
-           eapply xtype_Sort'.
-        -- eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-        -- eapply IHt2 ; try assumption.
-           ++ econstructor ; try assumption.
-           eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-           ++ eapply xtype_Sort'.
-      * eassumption.
-      * eapply eq_symmetry. eapply eq_alpha.
-        -- symmetry. eapply eq_term_spec. assumption.
-        -- assumption.
-    + match goal with
-      | |- context [ Prods ?Γ ?A ] => set (obeq := Prods Γ A)
-      end.
-      intros _ h. cbn in h. apply some_inj in h. subst.
-      specialize (IHt1 _ _ _ _ name (obb ++ obeq :: ob1) (ob3 ++ obe) eq1).
-      specialize (IHt2 _ _ _ _ name (obb ++ obeq :: ob1 ++ ob2) obe eq2).
-      specialize (IHt3 _ _ _ _ name (obb ++ [obeq]) (ob2 ++ ob3 ++ obe) eq3).
-      rewenv Σ' IHt1.
-      rewenv Σ' IHt2.
-      rewenv Σ' IHt3.
-      specialize (IHt1 hg).
-      specialize (IHt2 hg).
-      specialize (IHt3 hg).
-      eapply type_conv.
-      * eapply type_Pi1 ; try assumption.
-        -- eapply IHt3 ; try assumption.
-           eapply xtype_Sum' ; try assumption.
-           ++ eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-           ++ intro. eapply IHt2 ; try assumption.
-           eapply xtype_Sort'.
-        -- eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-        -- eapply IHt2 ; try assumption.
-           ++ econstructor ; try assumption.
-           eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-           ++ eapply xtype_Sort'.
-      * eassumption.
-      * eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. eapply lookup_extend.
-        apply xtype_glob_allfresh. assumption.
-  - simpl in h. revert h.
-    case_eq (_ettcheck Σ Γ t3 (sSum nAnon t1 t2)) ...
-    intros ob1 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ...
-    intros ob2 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ...
-    intros ob3 eq2. unfold ettconv.
-    match goal with
-    | |- context [ eq_term ?u ?v ] => case_eq (eq_term u v)
-    end.
-    + intros eq h. cbn in h. apply some_inj in h. subst.
-      specialize (IHt1 _ _ _ _ name (obb ++ ob1) (ob3 ++ obe) eq1).
-      specialize (IHt2 _ _ _ _ name (obb ++ ob1 ++ ob2) obe eq2).
-      specialize (IHt3 _ _ _ _ name obb (ob2 ++ ob3 ++ obe) eq3).
-      rewenv Σ' IHt1.
-      rewenv Σ' IHt2.
-      rewenv Σ' IHt3.
-      specialize (IHt1 hg).
-      specialize (IHt2 hg).
-      specialize (IHt3 hg).
-      eapply type_conv.
-      * eapply type_Pi2 ; try assumption.
-        -- eapply IHt3 ; try assumption.
-           eapply xtype_Sum' ; try assumption.
-           ++ eapply IHt1 ; try assumption.
-              eapply xtype_Sort'.
-           ++ intro. eapply IHt2 ; try assumption.
-              eapply xtype_Sort'.
-        -- eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-        -- eapply IHt2 ; try assumption.
-           ++ econstructor ; try assumption.
-              eapply IHt1 ; try assumption.
-              eapply xtype_Sort'.
-           ++ eapply xtype_Sort'.
-      * eassumption.
-      * eapply eq_symmetry. eapply eq_alpha.
-        -- symmetry. eapply eq_term_spec. assumption.
-        -- assumption.
-    + match goal with
-      | |- context [ Prods ?Γ ?A ] => set (obeq := Prods Γ A)
-      end.
-      intros _ h. cbn in h. apply some_inj in h. subst.
-      specialize (IHt1 _ _ _ _ name (obb ++ obeq :: ob1) (ob3 ++ obe) eq1).
-      specialize (IHt2 _ _ _ _ name (obb ++ obeq :: ob1 ++ ob2) obe eq2).
-      specialize (IHt3 _ _ _ _ name (obb ++ [obeq]) (ob2 ++ ob3 ++ obe) eq3).
-      rewenv Σ' IHt1.
-      rewenv Σ' IHt2.
-      rewenv Σ' IHt3.
-      specialize (IHt1 hg).
-      specialize (IHt2 hg).
-      specialize (IHt3 hg).
-      eapply type_conv.
-      * eapply type_Pi2 ; try assumption.
-        -- eapply IHt3 ; try assumption.
-           eapply xtype_Sum' ; try assumption.
-           ++ eapply IHt1 ; try assumption.
-              eapply xtype_Sort'.
-           ++ intro. eapply IHt2 ; try assumption.
-              eapply xtype_Sort'.
-        -- eapply IHt1 ; try assumption.
-           eapply xtype_Sort'.
-        -- eapply IHt2 ; try assumption.
-           ++ econstructor ; try assumption.
-              eapply IHt1 ; try assumption.
-              eapply xtype_Sort'.
-           ++ eapply xtype_Sort'.
-      * eassumption.
-      * eapply reflection. eapply close_goal ; try eassumption.
-        eapply type_Ax. eapply lookup_extend.
-        apply xtype_glob_allfresh. assumption.
+  (* - simpl in h. revert h. *)
+  (*   case_eq (_ettcheck Σ Γ t1 Ty) ... *)
+  (*   intros ob1 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ... *)
+  (*   intros ob2 eq2. unfold ettconv. *)
+  (*   match goal with *)
+  (*   | |- context [ eq_term ?u ?v ] => case_eq (eq_term u v) *)
+  (*   end. *)
+  (*   + intros eq h. cbn in h. apply some_inj in h. subst. *)
+  (*     specialize (IHt1 _ _ _ _ name obb (ob2 ++ obe) eq1). *)
+  (*     specialize (IHt2 _ _ _ _ name (obb ++ ob1) obe eq2). *)
+  (*     rewenv Σ' IHt1. *)
+  (*     rewenv Σ' IHt2. *)
+  (*     specialize (IHt1 hg). *)
+  (*     specialize (IHt2 hg). *)
+  (*     eapply type_conv. *)
+  (*     * eapply xtype_Sum' ; try assumption. *)
+  (*       -- eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- intro. eapply IHt2 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*     * eassumption. *)
+  (*     * eapply eq_symmetry. eapply eq_alpha. *)
+  (*       -- symmetry. eapply eq_term_spec. assumption. *)
+  (*       -- assumption. *)
+  (*   + match goal with *)
+  (*     | |- context [ Prods ?Γ ?A ] => set (obeq := Prods Γ A) *)
+  (*     end. *)
+  (*     intros _ h. cbn in h. apply some_inj in h. subst. *)
+  (*     specialize (IHt1 _ _ _ _ name (obb ++ [obeq]) (ob2 ++ obe) eq1). *)
+  (*     specialize (IHt2 _ _ _ _ name (obb ++ obeq :: ob1) obe eq2). *)
+  (*     rewenv Σ' IHt1. *)
+  (*     rewenv Σ' IHt2. *)
+  (*     specialize (IHt1 hg). *)
+  (*     specialize (IHt2 hg). *)
+  (*     eapply type_conv. *)
+  (*     * eapply xtype_Sum' ; try assumption. *)
+  (*       -- eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- intro. eapply IHt2 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*     * eassumption. *)
+  (*     * eapply reflection. eapply close_goal ; try eassumption. *)
+  (*       eapply type_Ax. eapply lookup_extend. *)
+  (*       apply xtype_glob_allfresh. assumption. *)
+  (* - simpl in h. revert h. *)
+  (*   case_eq (_ettcheck Σ Γ t3 t1) ... *)
+  (*   intros ob1 eq3. case_eq (_ettcheck Σ Γ t4 (t2 {0 := t3})) ... *)
+  (*   intros ob2 eq4. case_eq (_ettcheck Σ Γ t1 Ty) ... *)
+  (*   intros ob3 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ... *)
+  (*   intros ob4 eq2. unfold ettconv. *)
+  (*   match goal with *)
+  (*   | |- context [ eq_term ?u ?v ] => case_eq (eq_term u v) *)
+  (*   end. *)
+  (*   + intros eq h. cbn in h. apply some_inj in h. subst. *)
+  (*     specialize (IHt1 _ _ _ _ name (obb ++ ob1 ++ ob2) (ob4 ++ obe) eq1). *)
+  (*     specialize (IHt2 _ _ _ _ name (obb ++ ob1 ++ ob2 ++ ob3) obe eq2). *)
+  (*     specialize (IHt3 _ _ _ _ name obb (ob2 ++ ob3 ++ ob4 ++ obe) eq3). *)
+  (*     specialize (IHt4 _ _ _ _ name (obb ++ ob1) (ob3 ++ ob4 ++ obe) eq4). *)
+  (*     rewenv Σ' IHt1. *)
+  (*     rewenv Σ' IHt2. *)
+  (*     rewenv Σ' IHt3. *)
+  (*     rewenv Σ' IHt4. *)
+  (*     specialize (IHt1 hg). *)
+  (*     specialize (IHt2 hg). *)
+  (*     specialize (IHt3 hg). *)
+  (*     specialize (IHt4 hg). *)
+  (*     eapply type_conv. *)
+  (*     * eapply type_Pair ; try assumption. *)
+  (*       -- eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- eapply IHt2 ; try assumption. *)
+  (*          ++ econstructor ; try assumption. *)
+  (*             eapply IHt1 ; try assumption. *)
+  (*             eapply xtype_Sort'. *)
+  (*          ++ eapply xtype_Sort'. *)
+  (*       -- eapply IHt3 ; try assumption. *)
+  (*          eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- eapply IHt4 ; try assumption. *)
+  (*          change Ty with (Ty{0 := t3}). *)
+  (*          eapply typing_subst ; try assumption. *)
+  (*          ++ eapply IHt2 ; try assumption. *)
+  (*             ---- econstructor ; try assumption. *)
+  (*                  eapply IHt1 ; try assumption. *)
+  (*                  eapply xtype_Sort'. *)
+  (*             ---- eapply xtype_Sort'. *)
+  (*          ++ eapply IHt3 ; try assumption. *)
+  (*             eapply IHt1 ; try assumption. *)
+  (*             eapply xtype_Sort'. *)
+  (*     * eassumption. *)
+  (*     * eapply eq_symmetry. eapply eq_alpha. *)
+  (*       -- symmetry. eapply eq_term_spec. assumption. *)
+  (*       -- assumption. *)
+  (*   + match goal with *)
+  (*     | |- context [ Prods ?Γ ?A ] => set (obeq := Prods Γ A) *)
+  (*     end. *)
+  (*     intros _ h. cbn in h. apply some_inj in h. subst. *)
+  (*     specialize (IHt1 _ _ _ _ name (obb ++ obeq :: ob1 ++ ob2) (ob4 ++ obe) eq1). *)
+  (*     specialize (IHt2 _ _ _ _ name (obb ++ obeq :: ob1 ++ ob2 ++ ob3) obe eq2). *)
+  (*     specialize (IHt3 _ _ _ _ name (obb ++ [obeq]) (ob2 ++ ob3 ++ ob4 ++ obe) eq3). *)
+  (*     specialize (IHt4 _ _ _ _ name (obb ++ obeq :: ob1) (ob3 ++ ob4 ++ obe) eq4). *)
+  (*     rewenv Σ' IHt1. *)
+  (*     rewenv Σ' IHt2. *)
+  (*     rewenv Σ' IHt3. *)
+  (*     rewenv Σ' IHt4. *)
+  (*     specialize (IHt1 hg). *)
+  (*     specialize (IHt2 hg). *)
+  (*     specialize (IHt3 hg). *)
+  (*     specialize (IHt4 hg). *)
+  (*     eapply type_conv. *)
+  (*     * eapply type_Pair ; try assumption. *)
+  (*       -- eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- eapply IHt2 ; try assumption. *)
+  (*          ++ econstructor ; try assumption. *)
+  (*             eapply IHt1 ; try assumption. *)
+  (*             eapply xtype_Sort'. *)
+  (*          ++ eapply xtype_Sort'. *)
+  (*       -- eapply IHt3 ; try assumption. *)
+  (*          eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- eapply IHt4 ; try assumption. *)
+  (*          change Ty with (Ty{0 := t3}). *)
+  (*          eapply typing_subst ; try assumption. *)
+  (*          ++ eapply IHt2 ; try assumption. *)
+  (*             ---- econstructor ; try assumption. *)
+  (*                  eapply IHt1 ; try assumption. *)
+  (*                  eapply xtype_Sort'. *)
+  (*             ---- eapply xtype_Sort'. *)
+  (*          ++ eapply IHt3 ; try assumption. *)
+  (*             eapply IHt1 ; try assumption. *)
+  (*             eapply xtype_Sort'. *)
+  (*     * eassumption. *)
+  (*     * eapply reflection. eapply close_goal ; try eassumption. *)
+  (*       eapply type_Ax. eapply lookup_extend. *)
+  (*       apply xtype_glob_allfresh. assumption. *)
+  (* - simpl in h. revert h. *)
+  (*   case_eq (_ettcheck Σ Γ t3 (sSum nAnon t1 t2)) ... *)
+  (*   intros ob1 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ... *)
+  (*   intros ob2 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ... *)
+  (*   intros ob3 eq2. unfold ettconv. *)
+  (*   match goal with *)
+  (*   | |- context [ eq_term ?u ?v ] => case_eq (eq_term u v) *)
+  (*   end. *)
+  (*   + intros eq h. cbn in h. apply some_inj in h. subst. *)
+  (*     specialize (IHt1 _ _ _ _ name (obb ++ ob1) (ob3 ++ obe) eq1). *)
+  (*     specialize (IHt2 _ _ _ _ name (obb ++ ob1 ++ ob2) obe eq2). *)
+  (*     specialize (IHt3 _ _ _ _ name obb (ob2 ++ ob3 ++ obe) eq3). *)
+  (*     rewenv Σ' IHt1. *)
+  (*     rewenv Σ' IHt2. *)
+  (*     rewenv Σ' IHt3. *)
+  (*     specialize (IHt1 hg). *)
+  (*     specialize (IHt2 hg). *)
+  (*     specialize (IHt3 hg). *)
+  (*     eapply type_conv. *)
+  (*     * eapply type_Pi1 ; try assumption. *)
+  (*       -- eapply IHt3 ; try assumption. *)
+  (*          eapply xtype_Sum' ; try assumption. *)
+  (*          ++ eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*          ++ intro. eapply IHt2 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- eapply IHt2 ; try assumption. *)
+  (*          ++ econstructor ; try assumption. *)
+  (*          eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*          ++ eapply xtype_Sort'. *)
+  (*     * eassumption. *)
+  (*     * eapply eq_symmetry. eapply eq_alpha. *)
+  (*       -- symmetry. eapply eq_term_spec. assumption. *)
+  (*       -- assumption. *)
+  (*   + match goal with *)
+  (*     | |- context [ Prods ?Γ ?A ] => set (obeq := Prods Γ A) *)
+  (*     end. *)
+  (*     intros _ h. cbn in h. apply some_inj in h. subst. *)
+  (*     specialize (IHt1 _ _ _ _ name (obb ++ obeq :: ob1) (ob3 ++ obe) eq1). *)
+  (*     specialize (IHt2 _ _ _ _ name (obb ++ obeq :: ob1 ++ ob2) obe eq2). *)
+  (*     specialize (IHt3 _ _ _ _ name (obb ++ [obeq]) (ob2 ++ ob3 ++ obe) eq3). *)
+  (*     rewenv Σ' IHt1. *)
+  (*     rewenv Σ' IHt2. *)
+  (*     rewenv Σ' IHt3. *)
+  (*     specialize (IHt1 hg). *)
+  (*     specialize (IHt2 hg). *)
+  (*     specialize (IHt3 hg). *)
+  (*     eapply type_conv. *)
+  (*     * eapply type_Pi1 ; try assumption. *)
+  (*       -- eapply IHt3 ; try assumption. *)
+  (*          eapply xtype_Sum' ; try assumption. *)
+  (*          ++ eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*          ++ intro. eapply IHt2 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- eapply IHt2 ; try assumption. *)
+  (*          ++ econstructor ; try assumption. *)
+  (*          eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*          ++ eapply xtype_Sort'. *)
+  (*     * eassumption. *)
+  (*     * eapply reflection. eapply close_goal ; try eassumption. *)
+  (*       eapply type_Ax. eapply lookup_extend. *)
+  (*       apply xtype_glob_allfresh. assumption. *)
+  (* - simpl in h. revert h. *)
+  (*   case_eq (_ettcheck Σ Γ t3 (sSum nAnon t1 t2)) ... *)
+  (*   intros ob1 eq3. case_eq (_ettcheck Σ Γ t1 Ty) ... *)
+  (*   intros ob2 eq1. case_eq (_ettcheck Σ (Γ,, t1) t2 Ty) ... *)
+  (*   intros ob3 eq2. unfold ettconv. *)
+  (*   match goal with *)
+  (*   | |- context [ eq_term ?u ?v ] => case_eq (eq_term u v) *)
+  (*   end. *)
+  (*   + intros eq h. cbn in h. apply some_inj in h. subst. *)
+  (*     specialize (IHt1 _ _ _ _ name (obb ++ ob1) (ob3 ++ obe) eq1). *)
+  (*     specialize (IHt2 _ _ _ _ name (obb ++ ob1 ++ ob2) obe eq2). *)
+  (*     specialize (IHt3 _ _ _ _ name obb (ob2 ++ ob3 ++ obe) eq3). *)
+  (*     rewenv Σ' IHt1. *)
+  (*     rewenv Σ' IHt2. *)
+  (*     rewenv Σ' IHt3. *)
+  (*     specialize (IHt1 hg). *)
+  (*     specialize (IHt2 hg). *)
+  (*     specialize (IHt3 hg). *)
+  (*     eapply type_conv. *)
+  (*     * eapply type_Pi2 ; try assumption. *)
+  (*       -- eapply IHt3 ; try assumption. *)
+  (*          eapply xtype_Sum' ; try assumption. *)
+  (*          ++ eapply IHt1 ; try assumption. *)
+  (*             eapply xtype_Sort'. *)
+  (*          ++ intro. eapply IHt2 ; try assumption. *)
+  (*             eapply xtype_Sort'. *)
+  (*       -- eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- eapply IHt2 ; try assumption. *)
+  (*          ++ econstructor ; try assumption. *)
+  (*             eapply IHt1 ; try assumption. *)
+  (*             eapply xtype_Sort'. *)
+  (*          ++ eapply xtype_Sort'. *)
+  (*     * eassumption. *)
+  (*     * eapply eq_symmetry. eapply eq_alpha. *)
+  (*       -- symmetry. eapply eq_term_spec. assumption. *)
+  (*       -- assumption. *)
+  (*   + match goal with *)
+  (*     | |- context [ Prods ?Γ ?A ] => set (obeq := Prods Γ A) *)
+  (*     end. *)
+  (*     intros _ h. cbn in h. apply some_inj in h. subst. *)
+  (*     specialize (IHt1 _ _ _ _ name (obb ++ obeq :: ob1) (ob3 ++ obe) eq1). *)
+  (*     specialize (IHt2 _ _ _ _ name (obb ++ obeq :: ob1 ++ ob2) obe eq2). *)
+  (*     specialize (IHt3 _ _ _ _ name (obb ++ [obeq]) (ob2 ++ ob3 ++ obe) eq3). *)
+  (*     rewenv Σ' IHt1. *)
+  (*     rewenv Σ' IHt2. *)
+  (*     rewenv Σ' IHt3. *)
+  (*     specialize (IHt1 hg). *)
+  (*     specialize (IHt2 hg). *)
+  (*     specialize (IHt3 hg). *)
+  (*     eapply type_conv. *)
+  (*     * eapply type_Pi2 ; try assumption. *)
+  (*       -- eapply IHt3 ; try assumption. *)
+  (*          eapply xtype_Sum' ; try assumption. *)
+  (*          ++ eapply IHt1 ; try assumption. *)
+  (*             eapply xtype_Sort'. *)
+  (*          ++ intro. eapply IHt2 ; try assumption. *)
+  (*             eapply xtype_Sort'. *)
+  (*       -- eapply IHt1 ; try assumption. *)
+  (*          eapply xtype_Sort'. *)
+  (*       -- eapply IHt2 ; try assumption. *)
+  (*          ++ econstructor ; try assumption. *)
+  (*             eapply IHt1 ; try assumption. *)
+  (*             eapply xtype_Sort'. *)
+  (*          ++ eapply xtype_Sort'. *)
+  (*     * eassumption. *)
+  (*     * eapply reflection. eapply close_goal ; try eassumption. *)
+  (*       eapply type_Ax. eapply lookup_extend. *)
+  (*       apply xtype_glob_allfresh. assumption. *)
   - simpl in h. revert h.
     case_eq (_ettcheck Σ Γ t2 t1) ...
     intros ob1 eq2. case_eq (_ettcheck Σ Γ t3 t1) ...
