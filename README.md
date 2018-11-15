@@ -120,6 +120,8 @@ This project can be compiled with Coq 8.8.1 and requires
 and
 [TemplateCoq](https://github.com/Template-Coq/template-coq/releases/tag/v2.1-beta3).
 
+*Note: If you have trouble installing TemplateCoq v2.1-beta3, have a look at [this fix](https://github.com/Template-Coq/template-coq/issues/77#issuecomment-439006141).*
+
 If you want to compile the examples, you also need
 [TypingFlags](https://github.com/SimonBoulier/TypingFlags).
 
