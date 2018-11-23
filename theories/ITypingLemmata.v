@@ -190,26 +190,6 @@ Proof.
   intro e. apply xcomp_lift. assumption.
 Defined.
 
-Fixpoint weak_glob_red1 {Σ d t1 t2} (h : Σ |-i t1 ▷ t2) :
-  (d::Σ) |-i t1 ▷ t2.
-Proof.
-  induction h ; (econstructor ; eassumption).
-Defined.
-
-Lemma weak_glob_conv :
-  forall {Σ d t1 t2},
-    Σ |-i t1 = t2 ->
-    (d::Σ) |-i t1 = t2.
-Proof.
-  intros Σ d t1 t2 h.
-  induction h.
-  all: try (econstructor ; eassumption).
-  - eapply conv_red_l ; try eassumption.
-    cbn. eapply weak_glob_red1. assumption.
-  - eapply conv_red_r ; try eassumption.
-    cbn. eapply weak_glob_red1. assumption.
-Defined.
-
 Lemma ident_eq_spec x y : reflect (x = y) (ident_eq x y).
 Proof.
   unfold ident_eq.
@@ -256,7 +236,6 @@ Proof.
   - { dependent destruction h ; intros d fd.
       all: try (econstructor ; try apply weak_glob_wf ;
                 try apply weak_glob_type ;
-                try apply weak_glob_conv ;
                 eassumption
                ).
       - eapply type_HeqTrans with (B0 := B) (b0 := b).
@@ -770,7 +749,7 @@ Proof.
       - cbn. eapply type_HeqToEq ; esh.
       - cbn. eapply type_HeqRefl ; esh.
       - cbn. eapply type_HeqSym ; esh.
-      - cbn. 
+      - cbn.
         eapply type_HeqTrans
           with (B1 := B0{ #|Δ| := u }) (b0 := b{ #|Δ| := u }) ; esh.
       - cbn. eapply type_HeqTransport ; esh.

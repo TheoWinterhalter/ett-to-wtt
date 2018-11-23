@@ -796,12 +796,12 @@ Proof.
   - myomega.
 Defined.
 
-Fixpoint llift_red1 {Σ n k t1 t2} (h : Σ |-i t1 ▷ t2) :
-  Σ |-i llift n k t1 ▷ llift n k t2.
+Fixpoint llift_red1 {n k t1 t2} (h : t1 ▷ t2) :
+  llift n k t1 ▷ llift n k t2.
 Proof.
   destruct h ; cbn ;
     try match goal with
-        | h : _ |-i ?t ▷ _ |- _ |-i ?tt ▷ _ =>
+        | h : ?t ▷ _ |- ?tt ▷ _ =>
           match tt with
           | context [t] =>
             econstructor ;
@@ -836,11 +836,11 @@ Proof.
 Defined.
 
 Lemma llift_conv :
-  forall {Σ n k t1 t2},
-    Σ |-i t1 = t2 ->
-    Σ |-i llift n k t1 = llift n k t2.
+  forall {n k t1 t2},
+    t1 ≡ t2 ->
+    llift n k t1 ≡ llift n k t2.
 Proof.
-  intros Σ n k t1 t2 h.
+  intros n k t1 t2 h.
   induction h.
   - apply conv_eq. apply nl_llift. assumption.
   - eapply conv_red_l.
@@ -851,12 +851,12 @@ Proof.
     + eapply llift_red1. eassumption.
 Defined.
 
-Fixpoint rlift_red1 {Σ n k t1 t2} (h : Σ |-i t1 ▷ t2) :
-  Σ |-i rlift n k t1 ▷ rlift n k t2.
+Fixpoint rlift_red1 {n k t1 t2} (h : t1 ▷ t2) :
+  rlift n k t1 ▷ rlift n k t2.
 Proof.
   destruct h ; cbn ;
     try match goal with
-        | h : _ |-i ?t ▷ _ |- _ |-i ?tt ▷ _ =>
+        | h : ?t ▷ _ |- ?tt ▷ _ =>
           match tt with
           | context [t] =>
             econstructor ;
@@ -891,11 +891,11 @@ Proof.
 Defined.
 
 Lemma rlift_conv :
-  forall {Σ n k t1 t2},
-    Σ |-i t1 = t2 ->
-    Σ |-i rlift n k t1 = rlift n k t2.
+  forall {n k t1 t2},
+    t1 ≡ t2 ->
+    rlift n k t1 ≡ rlift n k t2.
 Proof.
-  intros Σ n k t1 t2 h.
+  intros n k t1 t2 h.
   induction h.
   - apply conv_eq. apply nl_rlift. assumption.
   - eapply conv_red_l.

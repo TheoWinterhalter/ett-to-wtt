@@ -323,7 +323,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
 | type_conv Γ t A B s :
     Σ ;;; Γ |-i t : A ->
     Σ ;;; Γ |-i B : sSort s ->
-    Σ |-i A = B ->
+    A ≡ B ->
     Σ ;;; Γ |-i t : B
 
 where " Σ ;;; Γ '|-i' t : T " := (@typing Σ Γ t T) : i_scope
@@ -340,7 +340,7 @@ with wf (Σ : sglobal_context) : scontext -> Prop :=
 
 End ITyping.
 
-Notation " Σ ;;; Γ '|-i' t : T " := 
+Notation " Σ ;;; Γ '|-i' t : T " :=
   (@typing _ Σ Γ t T) (at level 50, Γ, t, T at next level) : i_scope.
 
 Derive Signature for typing.

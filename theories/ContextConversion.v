@@ -11,19 +11,19 @@ Section ContextConversion.
 
 Context `{Sort_notion : Sorts.notion}.
 
-Inductive ctxconv Σ : scontext -> scontext -> Type :=
-| ctxconv_nil : ctxconv Σ [] []
+Inductive ctxconv : scontext -> scontext -> Type :=
+| ctxconv_nil : ctxconv [] []
 | ctxconv_cons Γ Δ A B:
-    ctxconv Σ Γ Δ ->
-    Σ |-i A = B ->
-    ctxconv Σ (Γ,, A) (Δ,, B).
+    ctxconv Γ Δ ->
+    A ≡ B ->
+    ctxconv (Γ,, A) (Δ,, B).
 
 Derive Signature for ctxconv.
 
 Fact ctxconv_refl :
-  forall {Σ Γ}, ctxconv Σ Γ Γ.
+  forall {Γ}, ctxconv Γ Γ.
 Proof.
-  intros Σ Γ. induction Γ.
+  intros Γ. induction Γ.
   - constructor.
   - constructor.
     + assumption.
@@ -31,11 +31,11 @@ Proof.
 Defined.
 
 Fact ctxconv_length :
-  forall {Σ Γ Δ},
-    ctxconv Σ Γ Δ ->
+  forall {Γ Δ},
+    ctxconv Γ Δ ->
     #|Γ| = #|Δ|.
 Proof.
-  intros Σ Γ Δ h. induction h.
+  intros Γ Δ h. induction h.
   - reflexivity.
   - cbn. f_equal. assumption.
 Defined.
@@ -46,13 +46,13 @@ Ltac lift_sort :=
   match goal with
   | |- _ ;;; _ |-i lift ?n ?k ?t : ?S => change S with (lift n k S)
   | |- _ ;;; _ |-i ?t { ?n := ?u } : ?S => change S with (S {n := u})
-  | |- _ |-i sSort ?s = lift ?n ?k ?t =>
+  | |- sSort ?s ≡ lift ?n ?k ?t =>
     change (sSort s) with (lift n k (sSort s))
-  | |- _ |-i sSort ?s = ?t{ ?n := ?u } =>
+  | |- sSort ?s ≡ ?t{ ?n := ?u } =>
     change (sSort s) with ((sSort s){ n := u })
-  | |- _ |-i lift ?n ?k ?t = sSort ?s =>
+  | |- lift ?n ?k ?t ≡ sSort ?s =>
     change (sSort s) with (lift n k (sSort s))
-  | |- _ |-i ?t{ ?n := ?u } = sSort ?s =>
+  | |- ?t{ ?n := ?u } ≡ sSort ?s =>
     change (sSort s) with ((sSort s){ n := u })
   end.
 
@@ -61,12 +61,12 @@ Section ctxconv.
   Context `{Sort_notion : Sorts.notion}.
 
   Fact safe_nth_conv :
-    forall {Σ Γ Δ},
-      ctxconv Σ Γ Δ ->
+    forall {Γ Δ},
+      ctxconv Γ Δ ->
       forall n is1 is2,
-        Σ |-i safe_nth Γ (exist _ n is1) = safe_nth Δ (exist _ n is2).
+        safe_nth Γ (exist _ n is1) ≡ safe_nth Δ (exist _ n is2).
   Proof.
-    intros Σ Γ Δ h. induction h ; intros n is1 is2.
+    intros Γ Δ h. induction h ; intros n is1 is2.
     - cbn. bang.
     - destruct n.
       + cbn. assumption.
@@ -152,7 +152,7 @@ Section ctxconv.
           type_glob Σ ->
           wf Σ Δ ->
           ctxctx Σ Γ Δ ->
-          ctxconv Σ Γ Δ ->
+          ctxconv Γ Δ ->
           Σ;;; Δ |-i t : A
       |- _ => tih type_ctxconv'
     | _ => fail "Cannot find type_ctxconv'"
@@ -162,7 +162,7 @@ Section ctxconv.
     type_glob Σ ->
     wf Σ Δ ->
     ctxctx Σ Γ Δ ->
-    ctxconv Σ Γ Δ ->
+    ctxconv Γ Δ ->
     Σ ;;; Δ |-i t : A.
   Proof.
     intros hg hw hcc hc. destruct ht.
@@ -278,7 +278,7 @@ Section ctxconv.
   Lemma type_ctxconv {Σ Γ Δ t A} (ht : Σ ;;; Γ |-i t : A) :
     type_glob Σ ->
     wf Σ Δ ->
-    ctxconv Σ Γ Δ ->
+    ctxconv Γ Δ ->
     Σ ;;; Δ |-i t : A.
   Proof.
     intros hg hw hc.

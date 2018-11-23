@@ -15,7 +15,7 @@ Section subjred.
     intros Γ ? ht ;
     ttinv ht ; destruct (istype_type hg ht) ;
     specialize (IHhr _ _ ltac:(eassumption)) ;
-    pose proof (conv_red_l _ _ _ _ hr (conv_refl _ _)) as heq ;
+    pose proof (conv_red_l _ _ _ hr (conv_refl _)) as heq ;
     (eapply type_conv ; try eassumption) ;
     eapply type_conv ; [
       (econstructor ; try eassumption) ;
@@ -30,7 +30,7 @@ Section subjred.
   Ltac sr :=
     lazymatch goal with
     | [ hg : type_glob ?Σ,
-        hr : _ |-i _ ▷ _,
+        hr : _ ▷ _,
         ih : forall _ _, _ ;;; _ |-i _ : _ -> _ ;;; _ |-i _ : _
       |- _ ] => sr' hg hr ih
     | _ => fail "Failed to collect assumptions"
@@ -40,7 +40,7 @@ Section subjred.
     intros Γ ? ht ;
     ttinv ht ; destruct (istype_type hg ht) ;
     try specialize (IHhr _ _ ltac:(eassumption)) ;
-    pose proof (conv_red_l _ _ _ _ hr (conv_refl _ _)) as heq ;
+    pose proof (conv_red_l _ _ _ hr (conv_refl _)) as heq ;
     (eapply type_conv ; try eassumption) ;
     eapply type_conv ; [
       try ((econstructor ; try eassumption) ;
@@ -56,7 +56,7 @@ Section subjred.
   Ltac canvas :=
     lazymatch goal with
     | [ hg : type_glob ?Σ,
-        hr : _ |-i _ ▷ _,
+        hr : _ ▷ _,
         ih : forall _ _, _ ;;; _ |-i _ : _ -> _ ;;; _ |-i _ : _
       |- _ ] => canvas' hg hr ih
     | _ => fail "Failed to collect assumptions"
@@ -65,7 +65,7 @@ Section subjred.
   Theorem subj_red :
     forall {Σ Γ t u T},
       type_glob Σ ->
-      Σ |-i t ▷ u ->
+      t ▷ u ->
       Σ ;;; Γ |-i t : T ->
       Σ ;;; Γ |-i u : T.
   Proof.
@@ -106,7 +106,7 @@ Section subjred.
     - intros Γ T ht.
       ttinv ht. destruct (istype_type hg ht).
       specialize (IHhr _ _ ltac:(eassumption)).
-      pose proof (conv_red_l _ _ _ _ hr (conv_refl _ _)).
+      pose proof (conv_red_l _ _ _ hr (conv_refl _)).
       eapply type_conv ; try eassumption.
       eapply type_conv.
       + econstructor ; try eassumption.
@@ -142,7 +142,7 @@ Section subjred.
     - intros Γ ? ht.
       ttinv ht. destruct (istype_type hg ht).
       specialize (IHhr _ _ ltac:(eassumption)).
-      pose proof (conv_red_l _ _ _ _ hr (conv_refl _ _)) as heq.
+      pose proof (conv_red_l _ _ _ hr (conv_refl _)) as heq.
       eapply type_conv ; try eassumption.
       eapply type_conv.
       + econstructor ; try eassumption ;
@@ -1697,7 +1697,7 @@ Ltac resolve2 :=
 
 Ltac disc uu e :=
   match goal with
-  | h : _ |-i _ = _ |- _ => idtac
+  | h : _ ≡ _ |- _ => idtac
   | _ => destruct uu ; cbn in e ; try discriminate e ; inversion e ; clear e
   end.
 
@@ -2435,10 +2435,10 @@ End nltype.
 Theorem subj_conv `{Sort_notion : Sorts.notion} :
   forall {Σ Γ t u T U},
     type_glob Σ ->
-    Σ |-i t = u ->
+    t ≡ u ->
     Σ ;;; Γ |-i t : T ->
     Σ ;;; Γ |-i u : U ->
-    Σ |-i T = U.
+    T ≡ U.
 Proof.
   intros Σ Γ t u T U hg hr ht hu. revert Γ T U ht hu.
   induction hr ; intros Γ T U ht hu.

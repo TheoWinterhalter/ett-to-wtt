@@ -23,7 +23,7 @@ Lemma uniqueness :
     type_glob Σ ->
     Σ ;;; Γ |-i u : A ->
     Σ ;;; Γ |-i u : B ->
-    Σ |-i A = B.
+    A ≡ B.
 Proof.
   intros Σ Γ A B u hg h1 h2.
   revert Γ A B h1 h2.

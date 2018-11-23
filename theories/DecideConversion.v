@@ -17,7 +17,7 @@ Section Decide.
     | None => or
     end.
 
-  Notation "x '>>' a '==>' e '--' b" := 
+  Notation "x '>>' a '==>' e '--' b" :=
     (get_or x (fun a => e) b) (at level 100, e at next level, right associativity).
 
   (* Returns [Some t'] such that [Σ |-i t ▷ t'], or [None] if it cannot be
@@ -127,11 +127,11 @@ Section Decide.
     end.
 
   Lemma reduce1_sound :
-    forall {Σ t u},
+    forall {t u},
       reduce1 t = Some u ->
-      Σ |-i t ▷ u.
+      t ▷ u.
   Proof.
-    intros Σ t u h. revert u h.
+    intros t u h. revert u h.
     induction t ; intros u h.
     all: try (cbn in h ; discriminate h).
     all: try (revert h ; cbn ; repeat one_case ; discriminate).
@@ -165,11 +165,11 @@ Section Decide.
     end.
 
   Lemma isconv_sound :
-    forall {Σ fuel u v},
+    forall {fuel u v},
       isconv fuel u v = true ->
-      Σ |-i u = v.
+      u ≡ v.
   Proof.
-    intros Σ fuel u v h. revert u v h.
+    intros fuel u v h. revert u v h.
     induction fuel ; intros u v h ; try discriminate h.
     cbn in h. apply orb_prop in h. destruct h as [h | h].
     - constructor. unfold eq_term in h.

@@ -15,7 +15,7 @@ Lemma inversionRel :
     Σ ;;; Γ |-i sRel n : T ->
     exists isdecl,
       let A := lift0 (S n) (safe_nth Γ (exist _ n isdecl)) in
-      Σ |-i A = T.
+      A ≡ T.
 Proof.
   intros Σ Γ n T h. dependent induction h.
   - exists isdecl. apply conv_refl.
@@ -26,7 +26,7 @@ Defined.
 Lemma inversionSort :
   forall {Σ Γ s T},
     Σ ;;; Γ |-i sSort s : T ->
-    Σ |-i sSort (Sorts.succ s) = T.
+    sSort (Sorts.succ s) ≡ T.
 Proof.
   intros Σ Γ s T h.
   dependent induction h.
@@ -40,7 +40,7 @@ Lemma inversionProd :
     exists s1 s2,
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (Σ |-i sSort (Sorts.prod_sort s1 s2) = T).
+      (sSort (Sorts.prod_sort s1 s2) ≡ T).
 Proof.
   intros Σ Γ n A B T h.
   dependent induction h.
@@ -57,7 +57,7 @@ Lemma inversionLambda :
         (Σ ;;; Γ |-i A : sSort s1) *
         (Σ ;;; Γ ,, A |-i B : sSort s2) *
         (Σ ;;; Γ ,, A |-i t : B) *
-        (Σ |-i sProd na' A B = T).
+        (sProd na' A B ≡ T).
 Proof.
   intros Σ Γ na A B t T h.
   dependent induction h.
@@ -76,7 +76,7 @@ Lemma inversionApp :
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
       (Σ ;;; Γ |-i t : sProd n A B) *
       (Σ ;;; Γ |-i u : A) *
-      (Σ |-i B{ 0 := u } = T).
+      (B{ 0 := u } ≡ T).
 Proof.
   intros Σ Γ t A B u T h.
   dependent induction h.
@@ -93,7 +93,7 @@ Lemma inversionSum :
     exists s1 s2,
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (Σ |-i sSort (Sorts.sum_sort s1 s2) = T).
+      (sSort (Sorts.sum_sort s1 s2) ≡ T).
 Proof.
   intros Σ Γ n A B T h.
   dependent induction h.
@@ -111,7 +111,7 @@ Lemma inversionPair :
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
       (Σ ;;; Γ |-i u : A) *
       (Σ ;;; Γ |-i v : B{ 0 := u }) *
-      (Σ |-i sSum n A B = T).
+      (sSum n A B ≡ T).
 Proof.
   intros Σ Γ A B u v T h.
   dependent induction h.
@@ -128,7 +128,7 @@ Lemma inversionPi1 :
       (Σ ;;; Γ |-i p : sSum n A B) *
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (Σ |-i A = T).
+      (A ≡ T).
 Proof.
   intros Σ Γ A B p T h.
   dependent induction h.
@@ -145,7 +145,7 @@ Lemma inversionPi2 :
       (Σ ;;; Γ |-i p : sSum n A B) *
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (Σ |-i B{ 0 := sPi1 A B p } = T).
+      (B{ 0 := sPi1 A B p } ≡ T).
 Proof.
   intros Σ Γ A B p T h.
   dependent induction h.
@@ -162,7 +162,7 @@ Lemma inversionEq :
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i u : A) *
       (Σ ;;; Γ |-i v : A) *
-      (Σ |-i sSort (Sorts.eq_sort s) = T).
+      (sSort (Sorts.eq_sort s) ≡ T).
 Proof.
   intros Σ Γ A u v T h.
   dependent induction h.
@@ -179,7 +179,7 @@ Lemma inversionRefl :
     exists s,
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i u : A) *
-      (Σ |-i sEq A u u = T).
+      (sEq A u u ≡ T).
 Proof.
   intros Σ Γ A u T h.
   dependent induction h.
@@ -200,7 +200,7 @@ Lemma inversionJ :
       (Σ ;;; Γ ,, A ,, (sEq (lift0 1 A) (lift0 1 u) (sRel 0)) |-i P : sSort s2) *
       (Σ ;;; Γ |-i p : sEq A u v) *
       (Σ ;;; Γ |-i w : (P {1 := u}){0 := sRefl A u}) *
-      (Σ |-i P{1 := v}{0 := p} = T).
+      (P{1 := v}{0 := p} ≡ T).
 Proof.
   intros Σ Γ A u P w v p T h.
   dependent induction h.
@@ -220,7 +220,7 @@ Lemma inversionTransport :
       (Σ ;;; Γ |-i t : A) *
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i B : sSort s) *
-      (Σ |-i B = T).
+      (B ≡ T).
 Proof.
   intros Σ Γ A B p t T h.
   dependent induction h.
@@ -238,7 +238,7 @@ Lemma inversionHeq :
       (Σ ;;; Γ |-i B : sSort s) *
       (Σ ;;; Γ |-i a : A) *
       (Σ ;;; Γ |-i b : B) *
-      (Σ |-i sSort s = T).
+      (sSort s ≡ T).
 Proof.
   intros Σ Γ A B a b T h.
   dependent induction h.
@@ -254,7 +254,7 @@ Lemma inversionPack :
     exists s,
       (Σ ;;; Γ |-i A1 : sSort s) *
       (Σ ;;; Γ |-i A2 : sSort s) *
-      (Σ |-i sSort s = T).
+      (sSort s ≡ T).
 Proof.
   intros Σ Γ A1 A2 T h.
   dependent induction h.
@@ -272,7 +272,7 @@ Lemma inversionHeqToEq :
      (Σ ;;; Γ |-i A : sSort s) *
      (Σ ;;; Γ |-i u : A) *
      (Σ ;;; Γ |-i v : A) *
-     (Σ |-i sEq A u v = T).
+     (sEq A u v ≡ T).
 Proof.
   intros Σ Γ p T h.
   dependent induction h.
@@ -289,7 +289,7 @@ Lemma inversionHeqRefl :
     exists s,
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i a : A) *
-      (Σ |-i sHeq A a A a = T).
+      (sHeq A a A a ≡ T).
 Proof.
   intros Σ Γ A a T h.
   dependent induction h.
@@ -308,7 +308,7 @@ Lemma inversionHeqSym :
       (Σ ;;; Γ |-i a : A) *
       (Σ ;;; Γ |-i b : B) *
       (Σ ;;; Γ |-i p : sHeq A a B b) *
-      (Σ |-i sHeq B b A a = T).
+      (sHeq B b A a ≡ T).
 Proof.
   intros Σ Γ p T h.
   dependent induction h.
@@ -330,7 +330,7 @@ Lemma inversionHeqTrans :
       (Σ ;;; Γ |-i c : C) *
       (Σ ;;; Γ |-i p : sHeq A a B b) *
       (Σ ;;; Γ |-i q : sHeq B b C c) *
-      (Σ |-i sHeq A a C c = T).
+      (sHeq A a C c ≡ T).
 Proof.
   intros Σ Γ p q T h.
   dependent induction h.
@@ -348,7 +348,7 @@ Lemma inversionHeqTransport :
       (Σ ;;; Γ |-i B : sSort s) *
       (Σ ;;; Γ |-i t : A) *
       (Σ ;;; Γ |-i p : sEq (sSort s) A B) *
-      (Σ |-i sHeq A t B (sTransport A B p t) = T).
+      (sHeq A t B (sTransport A B p t) ≡ T).
 Proof.
   intros Σ Γ p t T h.
   dependent induction h.
@@ -370,9 +370,9 @@ Lemma inversionCongProd :
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ ,, A1 |-i B1 : sSort z) *
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
-      (Σ |-i sHeq (sSort (Sorts.prod_sort s z)) (sProd nx A1 B1)
+      (sHeq (sSort (Sorts.prod_sort s z)) (sProd nx A1 B1)
                  (sSort (Sorts.prod_sort s z)) (sProd ny A2 B2)
-          = T).
+          ≡ T).
 Proof.
   intros Σ Γ B1 B2 pA pB T h.
   dependent induction h.
@@ -403,9 +403,9 @@ Lemma inversionCongLambda :
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
       (Σ ;;; Γ ,, A1 |-i t1 : B1) *
       (Σ ;;; Γ ,, A2 |-i t2 : B2) *
-      (Σ |-i sHeq (sProd nx A1 B1) (sLambda nx A1 B1 t1)
+      (sHeq (sProd nx A1 B1) (sLambda nx A1 B1 t1)
                  (sProd ny A2 B2) (sLambda ny A2 B2 t2)
-          = T).
+          ≡ T).
 Proof.
   intros Σ Γ B1 B2 t1 t2 pA pB pt T h.
   dependent induction h.
@@ -434,9 +434,9 @@ Lemma inversionCongApp :
       (Σ ;;; Γ |-i u2 : sProd ny A2 B2) *
       (Σ ;;; Γ |-i v1 : A1) *
       (Σ ;;; Γ |-i v2 : A2) *
-      (Σ |-i sHeq (B1{0 := v1}) (sApp u1 A1 B1 v1)
+      (sHeq (B1{0 := v1}) (sApp u1 A1 B1 v1)
                  (B2{0 := v2}) (sApp u2 A2 B2 v2)
-          = T).
+          ≡ T).
 Proof.
   intros Σ Γ B1 B2 pu pA pB pv T h.
   dependent induction h.
@@ -460,9 +460,9 @@ Lemma inversionCongSum :
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ ,, A1 |-i B1 : sSort z) *
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
-      (Σ |-i sHeq (sSort (Sorts.sum_sort s z)) (sSum nx A1 B1)
+      (sHeq (sSort (Sorts.sum_sort s z)) (sSum nx A1 B1)
                  (sSort (Sorts.sum_sort s z)) (sSum ny A2 B2)
-          = T).
+          ≡ T).
 Proof.
   intros Σ Γ B1 B2 pA pB T h.
   dependent induction h.
@@ -492,9 +492,9 @@ Lemma inversionCongPair :
       (Σ ;;; Γ |-i u2 : A2) *
       (Σ ;;; Γ |-i v1 : B1{ 0 := u1 }) *
       (Σ ;;; Γ |-i v2 : B2{ 0 := u2 }) *
-      (Σ |-i sHeq (sSum nx A1 B1) (sPair A1 B1 u1 v1)
+      (sHeq (sSum nx A1 B1) (sPair A1 B1 u1 v1)
                  (sSum ny A2 B2) (sPair A2 B2 u2 v2)
-          = T).
+          ≡ T).
 Proof.
   intros Σ Γ B1 B2 pA pB pu pv T h.
   dependent induction h.
@@ -521,7 +521,7 @@ Lemma inversionCongPi1 :
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
       (Σ ;;; Γ |-i p1 : sSum nx A1 B1) *
       (Σ ;;; Γ |-i p2 : sSum ny A2 B2) *
-      (Σ |-i sHeq A1 (sPi1 A1 B1 p1) A2 (sPi1 A2 B2 p2) = T).
+      (sHeq A1 (sPi1 A1 B1 p1) A2 (sPi1 A2 B2 p2) ≡ T).
 Proof.
   intros Σ Γ B1 B2 pA pB pp T h.
   dependent induction h.
@@ -548,9 +548,9 @@ Lemma inversionCongPi2 :
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
       (Σ ;;; Γ |-i p1 : sSum nx A1 B1) *
       (Σ ;;; Γ |-i p2 : sSum ny A2 B2) *
-      (Σ |-i sHeq (B1{ 0 := sPi1 A1 B1 p1}) (sPi2 A1 B1 p1)
+      (sHeq (B1{ 0 := sPi1 A1 B1 p1}) (sPi2 A1 B1 p1)
                   (B2{ 0 := sPi1 A2 B2 p2}) (sPi2 A2 B2 p2)
-          = T).
+          ≡ T).
 Proof.
   intros Σ Γ B1 B2 pA pB pp T h.
   dependent induction h.
@@ -575,8 +575,8 @@ Lemma inversionCongEq :
       (Σ ;;; Γ |-i u2 : A2) *
       (Σ ;;; Γ |-i v1 : A1) *
       (Σ ;;; Γ |-i v2 : A2) *
-      (Σ |-i sHeq (sSort (Sorts.eq_sort s)) (sEq A1 u1 v1)
-            (sSort (Sorts.eq_sort s)) (sEq A2 u2 v2) = T).
+      (sHeq (sSort (Sorts.eq_sort s)) (sEq A1 u1 v1)
+            (sSort (Sorts.eq_sort s)) (sEq A2 u2 v2) ≡ T).
 Proof.
   intros Σ Γ pA pu pv T h.
   dependent induction h.
@@ -597,9 +597,9 @@ Lemma inversionCongRefl :
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ |-i u1 : A1) *
       (Σ ;;; Γ |-i u2 : A2) *
-      (Σ |-i sHeq (sEq A1 u1 u1) (sRefl A1 u1)
+      (sHeq (sEq A1 u1 u1) (sRefl A1 u1)
                  (sEq A2 u2 u2) (sRefl A2 u2)
-          = T).
+          ≡ T).
 Proof.
   intros Σ Γ pA pu T h.
   dependent induction h.
@@ -618,7 +618,7 @@ Lemma inversionEqToHeq :
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i u : A) *
       (Σ ;;; Γ |-i v : A) *
-      (Σ |-i sHeq A u A v = T).
+      (sHeq A u A v ≡ T).
 Proof.
   intros Σ Γ p T h. dependent induction h.
   - exists A, u, v, s. repeat split. all: try assumption. apply conv_refl.
@@ -636,7 +636,7 @@ Lemma inversionHeqTypeEq :
       (Σ ;;; Γ |-i B : sSort s) *
       (Σ ;;; Γ |-i u : A) *
       (Σ ;;; Γ |-i v : B) *
-      (Σ |-i sEq (sSort s) A B = T).
+      (sEq (sSort s) A B ≡ T).
 Proof.
   intros Σ Γ A B p T h.
   dependent induction h.
@@ -653,7 +653,7 @@ Lemma inversionProjT1 :
       (Σ ;;; Γ |-i A1 : sSort s) *
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ |-i p : sPack A1 A2) *
-      (Σ |-i A1 = T).
+      (A1 ≡ T).
 Proof.
   intros Σ Γ p T h.
   dependent induction h.
@@ -670,7 +670,7 @@ Lemma inversionProjT2 :
       (Σ ;;; Γ |-i A1 : sSort s) *
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ |-i p : sPack A1 A2) *
-      (Σ |-i A2 = T).
+      (A2 ≡ T).
 Proof.
   intros Σ Γ p T h.
   dependent induction h.
@@ -687,7 +687,7 @@ Lemma inversionProjTe :
       (Σ ;;; Γ |-i A1 : sSort s) *
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ |-i p : sPack A1 A2) *
-      (Σ |-i sHeq A1 (sProjT1 p) A2 (sProjT2 p) = T).
+      (sHeq A1 (sProjT1 p) A2 (sProjT2 p) ≡ T).
 Proof.
   intros Σ Γ p T h.
   dependent induction h.
@@ -702,7 +702,7 @@ Lemma inversionAx :
     Σ ;;; Γ |-i sAx id : T ->
     exists ty,
       (lookup_glob Σ id = Some ty) *
-      (Σ |-i ty = T).
+      (ty ≡ T).
 Proof.
   intros Σ Γ id T h.
   dependent induction h.

@@ -206,21 +206,21 @@ Ltac lift_sort :=
   | |- _ ;;; _ |-i llift ?n ?k ?t : ?S => change S with (llift n k S)
   | |- _ ;;; _ |-i rlift ?n ?k ?t : ?S => change S with (rlift n k S)
   | |- _ ;;; _ |-i ?t { ?n := ?u } : ?S => change S with (S {n := u})
-  | |- _ |-i sSort ?s = lift ?n ?k ?t =>
+  | |- sSort ?s ≡ lift ?n ?k ?t =>
     change (sSort s) with (lift n k (sSort s))
-  | |- _ |-i sSort ?s = llift ?n ?k ?t =>
+  | |- sSort ?s ≡ llift ?n ?k ?t =>
     change (sSort s) with (llift n k (sSort s))
-  | |- _ |-i sSort ?s = rlift ?n ?k ?t =>
+  | |- sSort ?s ≡ rlift ?n ?k ?t =>
     change (sSort s) with (rlift n k (sSort s))
-  | |- _ |-i sSort ?s = ?t{ ?n := ?u } =>
+  | |- sSort ?s ≡ ?t{ ?n := ?u } =>
     change (sSort s) with ((sSort s){ n := u })
-  | |- _ |-i lift ?n ?k ?t = sSort ?s =>
+  | |- lift ?n ?k ?t ≡ sSort ?s =>
     change (sSort s) with (lift n k (sSort s))
-  | |- _ |-i llift ?n ?k ?t = sSort ?s =>
+  | |- llift ?n ?k ?t ≡ sSort ?s =>
     change (sSort s) with (llift n k (sSort s))
-  | |- _ |-i rlift ?n ?k ?t = sSort ?s =>
+  | |- rlift ?n ?k ?t ≡ sSort ?s =>
     change (sSort s) with (rlift n k (sSort s))
-  | |- _ |-i ?t{ ?n := ?u } = sSort ?s =>
+  | |- ?t{ ?n := ?u } ≡ sSort ?s =>
     change (sSort s) with ((sSort s){ n := u })
   end.
 
@@ -280,7 +280,7 @@ Proof.
            eapply type_conv ; try eassumption.
            ++ econstructor. eapply typing_wf. eassumption.
            ++ eapply subj_conv.
-              ** assumption.
+              ** eassumption.
               ** apply conv_sym. exact hx1.
               ** eassumption.
               ** assumption.
@@ -289,7 +289,7 @@ Proof.
            eapply type_conv ; try eassumption.
            ++ econstructor. eapply typing_wf. eassumption.
            ++ eapply subj_conv.
-              ** assumption.
+              ** eassumption.
               ** apply conv_sym. exact hx2.
               ** eassumption.
               ** assumption.
@@ -475,14 +475,14 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor. eapply typing_wf. eassumption.
       * lift_sort. eapply type_rlift0 ; try eassumption.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor. eapply typing_wf. eassumption.
       * eapply type_llift0 ; eassumption.
@@ -535,14 +535,14 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor. eapply typing_wf. eassumption.
       * lift_sort. eapply type_rlift0 ; try eassumption.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor. eapply typing_wf. eassumption.
       * eapply type_llift0 ; eassumption.
@@ -576,7 +576,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor. eapply typing_wf. eassumption.
       * destruct (istype_type hg h2). lift_sort.
@@ -584,7 +584,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor. eapply typing_wf. eassumption.
       * eapply type_llift0 ; eassumption.
@@ -612,7 +612,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor. eapply typing_wf. eassumption.
       * lift_sort. eapply type_rlift0 ; try eassumption.
@@ -620,7 +620,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor. eapply typing_wf. eassumption.
       * eapply type_llift0 ; eassumption.
@@ -676,7 +676,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor ; eassumption.
       * lift_sort. eapply type_rlift0 ; try eassumption.
@@ -684,14 +684,14 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor ; eassumption.
       * eapply type_llift0 ; eassumption.
       * eapply type_rlift0 ; eassumption.
     + cbn. apply cong_Heq.
       * match goal with
-        | |- _ |-i ?T = _ =>
+        | |- ?T ≡ _ =>
           match T with
           | sProd ?nx _ _ =>
             change T with (llift0 #|Γm| (sProd nx A1 B1))
@@ -700,7 +700,7 @@ Proof.
         apply llift_conv. eassumption.
       * apply conv_eq. cbn. reflexivity.
       * match goal with
-        | |- _ |-i ?T = _ =>
+        | |- ?T ≡ _ =>
           match T with
           | sProd ?ny _ _ =>
             change T with (rlift0 #|Γm| (sProd ny A2 B2))
@@ -757,7 +757,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            lift_sort. eapply typing_subst ; eassumption.
       * lift_sort. eapply type_rlift0 ; try eassumption.
@@ -765,7 +765,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            lift_sort. eapply typing_subst ; eassumption.
       * eapply type_llift0 ; eassumption.
@@ -827,7 +827,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor ; eassumption.
       * lift_sort. eapply type_rlift0 ; try eassumption.
@@ -835,7 +835,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor ; eassumption.
       * eapply type_llift0 ; eassumption.
@@ -843,7 +843,7 @@ Proof.
     + cbn. apply cong_Heq.
       all: try apply conv_refl.
       * match goal with
-        | |- _ |-i ?t = _ =>
+        | |- ?t ≡ _ =>
           match t with
           | sSum ?nx (llift ?n ?k ?A) (llift _ _ ?B) =>
             change t with (llift n k (sSum nx A B))
@@ -851,7 +851,7 @@ Proof.
         end.
         apply llift_conv. eassumption.
       * match goal with
-        | |- _ |-i ?t = _ =>
+        | |- ?t ≡ _ =>
           match t with
           | sSum ?nx (rlift ?n ?k ?A) (rlift _ _ ?B) =>
             change t with (rlift n k (sSum nx A B))
@@ -903,14 +903,14 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            eassumption.
       * lift_sort. eapply type_rlift0 ; try eassumption.
         destruct (istype_type hg h2).
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            eassumption.
       * eapply type_llift0 ; eassumption.
       * eapply type_rlift0 ; eassumption.
@@ -963,7 +963,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            lift_sort. eapply typing_subst ; try eassumption.
            eapply type_Pi1' ; eassumption.
@@ -972,7 +972,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            lift_sort. eapply typing_subst ; try eassumption.
            eapply type_Pi1' ; eassumption.
@@ -981,7 +981,7 @@ Proof.
     + cbn. apply cong_Heq.
       all: try apply conv_refl.
       * match goal with
-        | |- _ |-i _ { 0 := ?t } = _ =>
+        | |- _ { 0 := ?t } ≡ _ =>
           match t with
           | sPi1 (llift ?n ?k ?A) (llift _ _ ?B) (llift _ _ ?p) =>
             change t with (llift n k (sPi1 A B p))
@@ -990,7 +990,7 @@ Proof.
         rewrite <- llift_subst. cbn.
         apply llift_conv. assumption.
       * match goal with
-        | |- _ |-i _ { 0 := ?t } = _ =>
+        | |- _ { 0 := ?t } ≡ _ =>
           match t with
           | sPi1 (rlift ?n ?k ?A) (rlift _ _ ?B) (rlift _ _ ?p) =>
             change t with (rlift n k (sPi1 A B p))
@@ -1020,7 +1020,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor ; eassumption.
       * lift_sort. eapply type_rlift0 ; try eassumption.
@@ -1028,7 +1028,7 @@ Proof.
         eapply type_conv ; try eassumption.
         -- econstructor. eapply typing_wf. eassumption.
         -- apply conv_sym.
-           eapply subj_conv ; [ assumption | .. | eassumption ] ;
+           eapply subj_conv ; [ eassumption | .. | eassumption ] ;
            try eassumption.
            econstructor ; eassumption.
       * eapply type_llift0 ; eassumption.
@@ -1036,12 +1036,12 @@ Proof.
     + apply cong_Heq.
       all: try apply conv_refl.
       * match goal with
-        | |- ?Σ |-i ?u = ?v =>
+        | |- ?u ≡ ?v =>
           change u with (llift0 #|Γm| (sEq A1 u1 u1))
         end.
         apply llift_conv. assumption.
       * match goal with
-        | |- ?Σ |-i ?u = ?v =>
+        | |- ?u ≡ ?v =>
           change u with (rlift0 #|Γm| (sEq A2 u2 u2))
         end.
         apply rlift_conv. assumption.
@@ -1430,7 +1430,7 @@ Proof.
       destruct (istype_type hg h) as [s hs].
       assert (hth' : type_head (head A'')) by (now rewrite hh).
       destruct (inversion_transportType hg hth' hs) as [s' [h' hss']].
-      apply @DecideConversion.isconv_sound with (Σ := Σ) in eq.
+      apply @DecideConversion.isconv_sound in eq.
       rewrite <- heq in h.
       eapply type_conv ; eassumption.
     + intros _.
@@ -1504,7 +1504,7 @@ Proof.
   destruct (trel_to_heq Γ' hg simA) as [p hp].
   case_eq (DecideConversion.isconv (2 ^ 18) A' A'').
   - intro eq. exists t'. repeat split ; try assumption.
-    apply @DecideConversion.isconv_sound with (Σ := Σ) in eq.
+    apply @DecideConversion.isconv_sound in eq.
     eapply type_conv ; eassumption.
   - exists (optTransport A' A'' (optHeqToEq p) t').
     repeat split.

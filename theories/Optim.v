@@ -42,7 +42,7 @@ Proof.
   intros Σ Γ A a B b p hg h.
   case (decHeqRefl p).
   - intros i. destruct i as [C c].
-    simpl. 
+    simpl.
     ttinv h. destruct (heq_conv_inv h2) as [[[eA eu] eA'] ev].
     destruct (istype_type hg h) as [z heq]. ttinv heq.
     eapply type_conv.
@@ -265,7 +265,7 @@ Fixpoint notdepi (t : sterm) (i : nat) {struct t} : bool :=
   | sHeqSym p => notdepi p i
   | sHeqTrans p q => notdepi p i && notdepi q i
   | sHeqTransport p t => notdepi p i && notdepi t i
-  | sCongProd B1 B2 pA pB => 
+  | sCongProd B1 B2 pA pB =>
     notdepi B1 (S i) && notdepi B2 (S i) && notdepi pA i && notdepi pB (S i)
   | sCongLambda B1 B2 t1 t2 pA pB pt =>
     notdepi B1 (S i) && notdepi B2 (S i) &&
@@ -301,7 +301,7 @@ Lemma notdepi_lift :
 Proof.
   intro t. induction t ; intros i h.
   all: try (cbn in h ; discriminate h).
-  all: try (cbn in h ; repeat destruct_andb ; 
+  all: try (cbn in h ; repeat destruct_andb ;
             cbn ; f_equal ;
             rewrite_assumption ; (reflexivity || assumption)).
   revert h. cbn - [Nat.leb]. ncase (i =? n).
@@ -445,16 +445,16 @@ Proof.
   destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
   destruct (heq_conv_inv h4) as [[[es3 eB1] es4] eB2].
   destruct (heq_conv_inv h7) as [[[_ et1] _] et2].
-  assert (Σ |-i sSort s1 = sSort s2).
+  assert (sSort s1 ≡ sSort s2).
   { eapply conv_trans ; try eassumption.
     apply conv_sym. assumption.
   }
-  assert (Σ |-i sSort z1 = sSort z2).
+  assert (sSort z1 ≡ sSort z2).
   { eapply conv_trans ; try eassumption.
     apply conv_sym. assumption.
   }
   repeat match goal with
-  | h : _ |-i sSort _ = sSort _ |- _ =>
+  | h : sSort _ ≡ sSort _ |- _ =>
     pose proof (sort_conv_inv h) ; clear h
   end.
   subst.
@@ -543,16 +543,16 @@ Proof.
   destruct (heq_conv_inv h4) as [[[es3 eB1] es4] eB2].
   destruct (heq_conv_inv h7) as [[[? eu1] ?] eu2].
   destruct (heq_conv_inv h10) as [[[? ev1] ?] ev2].
-  assert (Σ |-i sSort s1 = sSort s2).
+  assert (sSort s1 ≡ sSort s2).
   { eapply conv_trans ; try eassumption.
     apply conv_sym. assumption.
   }
-  assert (Σ |-i sSort z1 = sSort z2).
+  assert (sSort z1 ≡ sSort z2).
   { eapply conv_trans ; try eassumption.
     apply conv_sym. assumption.
   }
   repeat match goal with
-  | h : _ |-i sSort _ = sSort _ |- _ =>
+  | h : sSort _ ≡ sSort _ |- _ =>
     pose proof (sort_conv_inv h) ; clear h
   end.
   subst.
@@ -566,17 +566,17 @@ Proof.
     - econstructor ; try apply ContextConversion.ctxconv_refl.
       apply conv_sym. assumption.
   }
-  assert (Σ |-i B1 = B2).
+  assert (B1 ≡ B2).
   { rewrite notdep_lift, lift_subst in eB1 by assumption.
     rewrite notdep_lift, lift_subst in eB2 by assumption.
     eapply conv_trans ; try eassumption.
     apply conv_sym. assumption.
   }
-  assert (Σ |-i pv1 = pA2).
+  assert (pv1 ≡ pA2).
   { eapply conv_trans ; try eassumption.
     apply conv_sym. assumption.
   }
-  assert (Σ |-i A1 = pA2).
+  assert (A1 ≡ pA2).
   { eapply conv_trans ; try eassumption.
     apply conv_sym. assumption.
   }
@@ -619,7 +619,7 @@ Lemma opt_CongEq :
     Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 ->
     Σ;;; Γ |-i pu : sHeq A1 u1 A2 u2 ->
     Σ;;; Γ |-i pv : sHeq A1 v1 A2 v2 ->
-    Σ;;; Γ |-i optCongEq pA pu pv : 
+    Σ;;; Γ |-i optCongEq pA pu pv :
               sHeq (sSort (eq_sort s1)) (sEq A1 u1 v1)
                    (sSort (eq_sort s2)) (sEq A2 u2 v2).
 Proof.
@@ -641,7 +641,7 @@ Proof.
   destruct (heq_conv_inv h4) as [[[es3 ?] es4] ?].
   destruct (heq_conv_inv h7) as [[[es5 ?] es6] ?].
   repeat match goal with
-  | h : _ |-i sSort _ = sSort _ |- _ =>
+  | h : sSort _ ≡ sSort _ |- _ =>
     pose proof (sort_conv_inv h) ; clear h
   end.
   subst.
@@ -692,7 +692,7 @@ Proof.
   destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
   destruct (heq_conv_inv h4) as [[[es3 ?] es4] ?].
   repeat match goal with
-  | h : _ |-i sSort _ = sSort _ |- _ =>
+  | h : sSort _ ≡ sSort _ |- _ =>
     pose proof (sort_conv_inv h) ; clear h
   end.
   subst.
