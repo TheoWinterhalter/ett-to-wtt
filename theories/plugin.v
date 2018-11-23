@@ -175,20 +175,16 @@ Definition TranslateConstant Θ ident : TemplateMonad tsl_ctx :=
 
 Definition Translate Θ ident : TemplateMonad () :=
   Σ <- getCtx ident ;;
-  let Σi := Σi Θ in
-  let indt := indt Θ in
-  let constt := constt Θ in
-  let cot := cot Θ in
-  let axoc := axoc Θ in
+  Σi <- tmEval all (Σi Θ) ;;
+  indt <- tmEval all (indt Θ) ;;
+  constt <- tmEval all (constt Θ) ;;
+  cot <- tmEval all (cot Θ) ;;
+  axoc <- tmEval all (axoc Θ) ;;
   (* First we quote the term to its TC representation *)
-  (* TODO We should get the TC global context as well! *)
   entry <- tmQuoteConstant ident false ;;
   match entry with
   | DefinitionEntry {| definition_entry_body := tm ; definition_entry_type := ty |} =>
     (* We get its type and body and elaborate them to ETT terms *)
-    (* TODO We should get the correspondence between axioms and Coq constants
-       somehow.
-     *)
     pretm <- tmEval lazy (fullquote (2 ^ 18) Σ [] tm indt constt cot) ;;
     prety <- tmEval lazy (fullquote (2 ^ 18) Σ [] ty indt constt cot) ;;
     match pretm, prety with
@@ -197,25 +193,19 @@ Definition Translate Θ ident : TemplateMonad () :=
       obname <- tmEval all (ident @ "_obligation_") ;;
       name <- tmEval all (obname @ "0") ;;
       (* We then typecheck the term in ETT *)
-      (* TODO We need a sglobal_context *)
       let ch := ettcheck Σi [] tm ty in
       match ch as o
       return (ch = o -> TemplateMonad ())
       with
       | Some obl => fun (eq : ch = Some obl) =>
-        (* obl <- tmEval all obl ;; *)
         (* We now have the list of obligations *)
-        (* TODO Check the extended global context is well formed (at least in ITT) *)
         (* We push them into TC *)
         tc_obl <- map_tsl Σ axoc obl ;;
         tc_obl <- tmEval lazy tc_obl ;;
-        (* tmPrint tc_obl ;; *)
-        (* TODO We then turn them into a list of definitions *)
         (* We ask the user to prove the obligations in Coq *)
         axoc <- map_lemma axoc name tc_obl ;;
         (* Once they are proven we can safely apply soundness to get an ETT
            derivation, but first we need to check the whole global context *)
-        (* Σ' <- tmEval lazy (extend [] obname obl) ;; *)
         let Σ' := extend Σi obname obl in
         (* First we check freshness of Σ' *)
         match isallfresh Σ' as b
@@ -231,8 +221,6 @@ Definition Translate Θ ident : TemplateMonad () :=
             let hf := isallfresh_sound eqf in
             let xhg := ettcheck_ctx_sound eqcx hf in
             let der := ettcheck_nil_sound obname eq xhg in
-            (* der' <- tmEval all der ;; *)
-            (* tmPrint der' ;; *)
             (* Next we check the global context makes sense in ITT *)
             match ittcheck_ctx (2 ^ 18) Σ' as b
             return (ittcheck_ctx (2 ^ 18) Σ' = b -> TemplateMonad ())
@@ -258,7 +246,6 @@ Definition Translate Θ ident : TemplateMonad () :=
                   end) ;;
                 tmFail msg
               end
-              (* tmPrint "ok" *)
             | false => fun _ => tmFail "Generated global context doesn't typecheck in ITT"
             end eq_refl
           | false => fun _ => tmFail "Generated global context doesn't typecheck in ETT"
