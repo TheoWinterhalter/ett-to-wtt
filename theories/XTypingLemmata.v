@@ -42,9 +42,9 @@ Defined.
 
 Lemma meta_eqctx_conv :
   forall {Σ Γ Δ t1 t2 A},
-    Σ ;;; Γ |-x t1 = t2 : A ->
+    Σ ;;; Γ |-x t1 ≡ t2 : A ->
     Γ = Δ ->
-    Σ ;;; Δ |-x t1 = t2 : A.
+    Σ ;;; Δ |-x t1 ≡ t2 : A.
 Proof.
   intros Σ Γ Δ t1 t2 A h e.
   rewrite <- e. exact h.
@@ -62,9 +62,9 @@ Defined.
 
 Lemma meta_eqconv :
   forall {Σ Γ t t' A B},
-    Σ ;;; Γ |-x t = t' : A ->
+    Σ ;;; Γ |-x t ≡ t' : A ->
     A = B ->
-    Σ ;;; Γ |-x t = t' : B.
+    Σ ;;; Γ |-x t ≡ t' : B.
 Proof.
   intros Σ Γ t t' A B h e.
   rewrite <- e. exact h.
@@ -75,10 +75,10 @@ Fixpoint weak_glob_type {Σ Γ t A} (h : Σ ;;; Γ |-x t : A) :
     fresh_glob (dname d) Σ ->
     (d::Σ) ;;; Γ |-x t : A
 
-with weak_glob_eq_term {Σ Γ u v A} (h : Σ ;;; Γ |-x u = v : A) :
+with weak_glob_eq_term {Σ Γ u v A} (h : Σ ;;; Γ |-x u ≡ v : A) :
   forall {d},
     fresh_glob (dname d) Σ ->
-    (d::Σ) ;;; Γ |-x u = v : A.
+    (d::Σ) ;;; Γ |-x u ≡ v : A.
 Proof.
   (* weak_glob_type *)
   - { dependent destruction h ; intros d fd.
@@ -190,10 +190,10 @@ Ltac ih h :=
           |-x lift #|Δ| #|Ξ| t : lift #|Δ| #|Ξ| A,
       cong_lift :
         forall (Σ : sglobal_context) (Γ Δ Ξ : scontext) (t1 t2 A : sterm),
-          Σ;;; Γ ,,, Ξ |-x t1 = t2 : A ->
+          Σ;;; Γ ,,, Ξ |-x t1 ≡ t2 : A ->
           xtype_glob Σ ->
           Σ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ
-          |-x lift #|Δ| #|Ξ| t1 = lift #|Δ| #|Ξ| t2 : lift #|Δ| #|Ξ| A
+          |-x lift #|Δ| #|Ξ| t1 ≡ lift #|Δ| #|Ξ| t2 : lift #|Δ| #|Ξ| A
     |- _ ] =>
     lazymatch type of h with
     | _ ;;; ?Γ' ,,, ?Ξ' |-x _ : ?T' =>
@@ -223,7 +223,7 @@ Ltac ih h :=
           ]
         | .. ]
       | .. ]
-    | _ ;;; ?Γ' ,,, ?Ξ' |-x _ = _ : ?T' =>
+    | _ ;;; ?Γ' ,,, ?Ξ' |-x _ ≡ _ : ?T' =>
       eapply meta_eqconv ; [
         eapply meta_eqctx_conv ; [
           eapply cong_lift with (Γ := Γ') (Ξ := Ξ') (A := T') ; [
@@ -232,7 +232,7 @@ Ltac ih h :=
           ]
         | .. ]
       | .. ]
-    | _ ;;; (?Γ' ,,, ?Ξ'),, ?d' |-x _ = _ : ?T' =>
+    | _ ;;; (?Γ' ,,, ?Ξ'),, ?d' |-x _ ≡ _ : ?T' =>
       eapply meta_eqconv ; [
         eapply meta_eqctx_conv ; [
           eapply cong_lift with (Γ := Γ') (Ξ := Ξ',, d') (A := T') ; [
@@ -241,7 +241,7 @@ Ltac ih h :=
           ]
         | .. ]
       | .. ]
-    | _ ;;; (?Γ' ,,, ?Ξ'),, ?d',, ?d'' |-x _ = _ : ?T' =>
+    | _ ;;; (?Γ' ,,, ?Ξ'),, ?d',, ?d'' |-x _ ≡ _ : ?T' =>
       eapply meta_eqconv ; [
         eapply meta_eqctx_conv ; [
           eapply cong_lift with (Γ := Γ') (Ξ := (Ξ',, d'),, d'') (A := T') ; [
@@ -257,7 +257,7 @@ Ltac ih h :=
 Ltac eih :=
   lazymatch goal with
   | h : _ ;;; _ |-x ?t : _ |- _ ;;; _ |-x lift _ _ ?t : _ => ih h
-  | h : _ ;;; _ |-x ?t = _ : _ |- _ ;;; _ |-x lift _ _ ?t = _ : _ =>
+  | h : _ ;;; _ |-x ?t ≡ _ : _ |- _ ;;; _ |-x lift _ _ ?t ≡ _ : _ =>
     ih h
   | _ => fail "Not handled by eih"
   end.
@@ -266,10 +266,10 @@ Fixpoint type_lift {Σ Γ Δ Ξ t A} (h : Σ ;;; Γ ,,, Ξ |-x t : A) {struct h}
   xtype_glob Σ ->
   Σ ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ |-x lift #|Δ| #|Ξ| t : lift #|Δ| #|Ξ| A
 
-with cong_lift {Σ Γ Δ Ξ t1 t2 A} (h : Σ ;;; Γ ,,, Ξ |-x t1 = t2 : A) {struct h} :
+with cong_lift {Σ Γ Δ Ξ t1 t2 A} (h : Σ ;;; Γ ,,, Ξ |-x t1 ≡ t2 : A) {struct h} :
   xtype_glob Σ ->
   Σ ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ |-x lift #|Δ| #|Ξ| t1
-  = lift #|Δ| #|Ξ| t2 : lift #|Δ| #|Ξ| A
+  ≡ lift #|Δ| #|Ξ| t2 : lift #|Δ| #|Ξ| A
 .
 Proof.
   - { dependent destruction h ; intros hΣ.
@@ -374,10 +374,10 @@ Ltac sh h :=
           t {#|Δ| := u} : A {#|Δ| := u},
      cong_subst :
        forall (Σ : sglobal_context) (Γ Δ : scontext) (t1 t2 A B u : sterm),
-         Σ;;; Γ,, B ,,, Δ |-x t1 = t2 : A ->
+         Σ;;; Γ,, B ,,, Δ |-x t1 ≡ t2 : A ->
          xtype_glob Σ ->
          Σ;;; Γ |-x u : B -> Σ;;; Γ ,,, subst_context u Δ |-x
-         t1 {#|Δ| := u} = t2 {#|Δ| := u} : A {#|Δ| := u}
+         t1 {#|Δ| := u} ≡ t2 {#|Δ| := u} : A {#|Δ| := u}
     |- _ ] =>
     lazymatch type of h with
     | _ ;;; ?Γ' ,, ?B' ,,, ?Δ' |-x _ : ?T' =>
@@ -410,7 +410,7 @@ Ltac sh h :=
           ]
         | .. ]
       | .. ]
-    | _ ;;; ?Γ' ,, ?B' ,,, ?Δ' |-x _ = _ : ?T' =>
+    | _ ;;; ?Γ' ,, ?B' ,,, ?Δ' |-x _ ≡ _ : ?T' =>
       eapply meta_eqconv ; [
         eapply meta_eqctx_conv ; [
           eapply cong_subst with (Γ := Γ') (Δ := Δ') (A := T') ; [
@@ -420,7 +420,7 @@ Ltac sh h :=
           ]
         | .. ]
       | .. ]
-    | _ ;;; (?Γ' ,, ?B' ,,, ?Δ') ,, ?d' |-x _ = _ : ?T' =>
+    | _ ;;; (?Γ' ,, ?B' ,,, ?Δ') ,, ?d' |-x _ ≡ _ : ?T' =>
       eapply meta_eqconv ; [
         eapply meta_eqctx_conv ; [
           eapply cong_subst with (Γ := Γ') (Δ := Δ' ,, d') (A := T') ; [
@@ -430,7 +430,7 @@ Ltac sh h :=
           ]
         | .. ]
       | .. ]
-    | _ ;;; (?Γ' ,, ?B' ,,, ?Δ') ,, ?d',, ?d'' |-x _ = _ : ?T' =>
+    | _ ;;; (?Γ' ,, ?B' ,,, ?Δ') ,, ?d',, ?d'' |-x _ ≡ _ : ?T' =>
       eapply meta_eqconv ; [
         eapply meta_eqctx_conv ; [
           eapply cong_subst with (Γ := Γ') (Δ := (Δ' ,, d') ,, d'') (A := T') ; [
@@ -447,7 +447,7 @@ Ltac sh h :=
 Ltac esh :=
   lazymatch goal with
   | h : _ ;;; _ |-x ?t : _ |- _ ;;; _ |-x ?t{ _ := _ } : _ => sh h
-  | h : _ ;;; _ |-x ?t = _ : _ |- _ ;;; _ |-x ?t{ _ := _ } = _ : _ =>
+  | h : _ ;;; _ |-x ?t ≡ _ : _ |- _ ;;; _ |-x ?t{ _ := _ } ≡ _ : _ =>
     sh h
   | _ => fail "not handled by esh"
   end.
@@ -459,11 +459,11 @@ Fixpoint type_subst {Σ Γ Δ t A B u}
   Σ ;;; Γ ,,, subst_context u Δ |-x t{ #|Δ| := u } : A{ #|Δ| := u }
 
 with cong_subst {Σ Γ Δ t1 t2 A B u}
-  (h : Σ ;;; Γ ,, B ,,, Δ |-x t1 = t2 : A) {struct h} :
+  (h : Σ ;;; Γ ,, B ,,, Δ |-x t1 ≡ t2 : A) {struct h} :
   xtype_glob Σ ->
   Σ ;;; Γ |-x u : B ->
   Σ ;;; Γ ,,, subst_context u Δ |-x t1{ #|Δ| := u }
-  = t2{ #|Δ| := u } : A{ #|Δ| := u }
+  ≡ t2{ #|Δ| := u } : A{ #|Δ| := u }
 .
 Proof.
   (* type_subst *)

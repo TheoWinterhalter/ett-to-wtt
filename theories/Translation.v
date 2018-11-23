@@ -166,7 +166,7 @@ Definition complete_translation {Σ} :
   (forall {Γ t A} (h : Σ ;;; Γ |-x t : A)
      {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
       ∑ A' t', Σ ;;;; Γ' |--- [t'] : A' # ⟦ Γ |--- [t] : A ⟧) *
-  (forall {Γ u v A} (h : Σ ;;; Γ |-x u = v : A)
+  (forall {Γ u v A} (h : Σ ;;; Γ |-x u ≡ v : A)
      {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
       ∑ A' A'' u' v' p',
         eqtrans Σ Γ A u v Γ' A' A'' u' v' p').
@@ -178,7 +178,7 @@ Proof.
       (fun {Γ t A} (h : Σ ;;; Γ |-x t : A) => forall
            {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
            ∑ A' t', Σ ;;;; Γ' |--- [t'] : A' # ⟦ Γ |--- [t] : A ⟧)
-      (fun {Γ u v A} (h : Σ ;;; Γ |-x u = v : A) => forall
+      (fun {Γ u v A} (h : Σ ;;; Γ |-x u ≡ v : A) => forall
            {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
            ∑ A' A'' u' v' p',
          eqtrans Σ Γ A u v Γ' A' A'' u' v' p')

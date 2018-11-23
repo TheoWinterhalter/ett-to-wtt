@@ -20,7 +20,7 @@ Lemma inversionProd :
     Σ ;;; Γ |-x sProd n A B : T ->
     (Σ ;;; Γ |-x A : Ty) *
     (Σ ;;; Γ ,, A |-x B : Ty) *
-    (Σ ;;; Γ |-x Ty = T : Ty).
+    (Σ ;;; Γ |-x Ty ≡ T : Ty).
 Proof.
   intros Σ Γ n A B T h.
   dependent induction h.
