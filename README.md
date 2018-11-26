@@ -161,10 +161,12 @@ First, in [SCommon](theories/SCommon.v) we define common utility to both ETT and
 namely with the definition of contexts (`scontext`) and global
 contexts (`sglobal_context`), the latter containing the declarations of constants.
 [Conversion](theories/Conversion.v) is about the untyped conversion used in ITT
-(conversion `Σ |-i t = u` is derived from one-step reduction `Σ |-i t ▷ u`) and contains
-the **only axiom** of the whole formalisation.
+(conversion `t ≡ u` is derived from one-step reduction `t ▷ u`) and contains
+the **only axiom** of the whole formalisation (stating that conversion
+is transitive, this would require us to prove confluence of the
+rewriting system, which we deem orthogonal to our proof).
 [XTyping](theories/XTyping.v) contains the definition of typing rules of ETT
-(`Σ ;;; Γ |-x t : A`), mutually defined with a typed conversion (`Σ ;;; Γ |-x t = u : A`)
+(`Σ ;;; Γ |-x t : A`), mutually defined with a typed conversion (`Σ ;;; Γ |-x t ≡ u : A`)
 and the well-formedness of contexts (`wf Σ Γ`).
 [ITyping](theories/ITyping.v) is the same for ITT with the difference that the conversion
 isn't mutually defined but instead the one defined in [Conversion](theories/Conversion.v))
@@ -179,7 +181,7 @@ regarding ITT, including the fact that whenever we have `Σ ;;; Γ |-i t : A` th
 well sorted and that lifting and substitution preserve typing.
 Context conversion and the associated typing preservation lemma are found in
 [ContextConversion](theories/ContextConversion.v).
-A uniqueness of typing lemma (if `Σ ;;; Γ |-i t :A` and `Σ ;;; Γ |-i t :B` then `Σ |-i A = B`) is proven in
+A uniqueness of typing lemma (if `Σ ;;; Γ |-i t :A` and `Σ ;;; Γ |-i t :B` then `A ≡ B`) is proven in
 [Uniqueness](theories/Uniqueness.v).
 Subject reduction and the corollary that we call subject conversion (whenever two terms are convertible
 and well-typed, their types are also convertible) are proven in
