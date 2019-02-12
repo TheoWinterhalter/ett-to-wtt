@@ -4,34 +4,32 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util Sorts SAst SLiftSubst Equality SCommon Conversion ITyping.
+Require Import util Sorts SAst SLiftSubst Equality SCommon ITyping.
 
 Section Inversions.
 
 Context `{Sort_notion : Sorts.notion}.
+
+Open Scope i_scope.
 
 Lemma inversionRel :
   forall {Σ Γ n T},
     Σ ;;; Γ |-i sRel n : T ->
     exists isdecl,
       let A := lift0 (S n) (safe_nth Γ (exist _ n isdecl)) in
-      A ≡ T.
+      A = T.
 Proof.
   intros Σ Γ n T h. dependent induction h.
-  - exists isdecl. apply conv_refl.
-  - destruct IHh1 as [isdecl h].
-    exists isdecl. eapply conv_trans ; eassumption.
+  eexists. reflexivity.
 Defined.
 
 Lemma inversionSort :
   forall {Σ Γ s T},
     Σ ;;; Γ |-i sSort s : T ->
-    sSort (Sorts.succ s) ≡ T.
+    sSort (Sorts.succ s) = T.
 Proof.
   intros Σ Γ s T h.
-  dependent induction h.
-  - apply conv_refl.
-  - eapply conv_trans ; eassumption.
+  dependent induction h. reflexivity.
 Defined.
 
 Lemma inversionProd :
@@ -40,14 +38,11 @@ Lemma inversionProd :
     exists s1 s2,
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (sSort (Sorts.prod_sort s1 s2) ≡ T).
+      (sSort (Sorts.prod_sort s1 s2) = T).
 Proof.
   intros Σ Γ n A B T h.
   dependent induction h.
-  - exists s1, s2. split ; [ split | ..] ; try assumption. apply conv_refl.
-  - destruct IHh1 as [s1 [s2 [[? ?] ?]]].
-    exists s1, s2. split ; [ split | ..] ; try assumption.
-    eapply conv_trans ; eassumption.
+  do 2 eexists. repeat split ; assumption.
 Defined.
 
 Lemma inversionLambda :
@@ -57,15 +52,12 @@ Lemma inversionLambda :
         (Σ ;;; Γ |-i A : sSort s1) *
         (Σ ;;; Γ ,, A |-i B : sSort s2) *
         (Σ ;;; Γ ,, A |-i t : B) *
-        (sProd na' A B ≡ T).
+        (sProd na' A B = T).
 Proof.
   intros Σ Γ na A B t T h.
   dependent induction h.
-  - exists s1, s2, n'. split ; [ split ; [ split | .. ] | ..] ; try assumption.
-    apply conv_eq. cbn. reflexivity.
-  - destruct IHh1 as (s1 & s2 & na' & ?). split_hyps.
-    exists s1, s2, na'. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s1, s2, n'. split ; [ split ; [ split | .. ] | ..] ; try assumption.
+  reflexivity.
 Defined.
 
 Lemma inversionApp :
@@ -76,15 +68,12 @@ Lemma inversionApp :
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
       (Σ ;;; Γ |-i t : sProd n A B) *
       (Σ ;;; Γ |-i u : A) *
-      (B{ 0 := u } ≡ T).
+      (B{ 0 := u } = T).
 Proof.
   intros Σ Γ t A B u T h.
   dependent induction h.
-  - exists s1, s2, n. split ; [ split ; [ split ; [ split |] |] |] ; try assumption.
-    apply conv_refl.
-  - destruct IHh1 as (s1 & s2 & n & ?). split_hyps.
-    exists s1, s2, n. split ; [ split ; [ split ; [ split |] |] |] ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists s1, s2, n. split ; [ split ; [ split ; [ split |] |] |] ; try assumption.
+  reflexivity.
 Defined.
 
 Lemma inversionSum :
@@ -93,14 +82,11 @@ Lemma inversionSum :
     exists s1 s2,
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (sSort (Sorts.sum_sort s1 s2) ≡ T).
+      (sSort (Sorts.sum_sort s1 s2) = T).
 Proof.
   intros Σ Γ n A B T h.
   dependent induction h.
-  - exists s1, s2. split ; [ split | ..] ; try assumption. apply conv_refl.
-  - destruct IHh1 as [s1 [s2 [[? ?] ?]]].
-    exists s1, s2. split ; [ split | ..] ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists s1, s2. split ; [ split | ..] ; try assumption. reflexivity.
 Defined.
 
 Lemma inversionPair :
@@ -111,14 +97,11 @@ Lemma inversionPair :
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
       (Σ ;;; Γ |-i u : A) *
       (Σ ;;; Γ |-i v : B{ 0 := u }) *
-      (sSum n A B ≡ T).
+      (sSum n A B = T).
 Proof.
   intros Σ Γ A B u v T h.
   dependent induction h.
-  - exists n, s1, s2. repeat split ; try assumption. apply conv_refl.
-  - destruct IHh1 as (n & s1 & s2 & hh). split_hyps.
-    exists n, s1, s2. repeat split ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists n, s1, s2. repeat split ; try assumption.
 Defined.
 
 Lemma inversionPi1 :
@@ -128,14 +111,11 @@ Lemma inversionPi1 :
       (Σ ;;; Γ |-i p : sSum n A B) *
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (A ≡ T).
+      (A = T).
 Proof.
   intros Σ Γ A B p T h.
   dependent induction h.
-  - exists n, s1, s2. splits 4 ; try assumption. apply conv_refl.
-  - destruct IHh1 as [n [s1 [s2 [[[? ?] ?] ?]]]].
-    exists n, s1, s2. splits 4 ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists n, s1, s2. splits 4 ; try assumption. reflexivity.
 Defined.
 
 Lemma inversionPi2 :
@@ -145,14 +125,11 @@ Lemma inversionPi2 :
       (Σ ;;; Γ |-i p : sSum n A B) *
       (Σ ;;; Γ |-i A : sSort s1) *
       (Σ ;;; Γ ,, A |-i B : sSort s2) *
-      (B{ 0 := sPi1 A B p } ≡ T).
+      (B{ 0 := sPi1 A B p } = T).
 Proof.
   intros Σ Γ A B p T h.
   dependent induction h.
-  - exists n, s1, s2. splits 4 ; try assumption. apply conv_refl.
-  - destruct IHh1 as [n [s1 [s2 [[[? ?] ?] ?]]]].
-    exists n, s1, s2. splits 4 ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists n, s1, s2. splits 4 ; try assumption. reflexivity.
 Defined.
 
 Lemma inversionEq :
@@ -162,15 +139,12 @@ Lemma inversionEq :
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i u : A) *
       (Σ ;;; Γ |-i v : A) *
-      (sSort (Sorts.eq_sort s) ≡ T).
+      (sSort (Sorts.eq_sort s) = T).
 Proof.
   intros Σ Γ A u v T h.
   dependent induction h.
-  - exists s. split ; [ split ; [ split |] |] ; try assumption.
-    apply conv_refl.
-  - destruct IHh1 as [s' [[[? ?] ?] ?]].
-    exists s'. split ; [ split ; [ split |] |] ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists s. split ; [ split ; [ split |] |] ; try assumption.
+    reflexivity.
 Defined.
 
 Lemma inversionRefl :
@@ -179,15 +153,12 @@ Lemma inversionRefl :
     exists s,
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i u : A) *
-      (sEq A u u ≡ T).
+      (sEq A u u = T).
 Proof.
   intros Σ Γ A u T h.
   dependent induction h.
-  - exists s. split ; [ split |] ; try assumption.
-    apply conv_refl.
-  - destruct IHh1 as [s' [[? ?] ?]].
-    exists s'. split ; [ split |] ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists s. split ; [ split |] ; try assumption.
+  reflexivity.
 Defined.
 
 Lemma inversionJ :
@@ -200,16 +171,12 @@ Lemma inversionJ :
       (Σ ;;; Γ ,, A ,, (sEq (lift0 1 A) (lift0 1 u) (sRel 0)) |-i P : sSort s2) *
       (Σ ;;; Γ |-i p : sEq A u v) *
       (Σ ;;; Γ |-i w : (P {1 := u}){0 := sRefl A u}) *
-      (P{1 := v}{0 := p} ≡ T).
+      (P{1 := v}{0 := p} = T).
 Proof.
   intros Σ Γ A u P w v p T h.
   dependent induction h.
-  - exists s1, s2. splits 6 ; try assumption.
-    apply conv_refl.
-  - destruct IHh1 as (s1 & s2 & ?).
-    split_hyps.
-    exists s1, s2. splits 6 ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists s1, s2. splits 6 ; try assumption.
+  reflexivity.
 Defined.
 
 Lemma inversionTransport :
@@ -220,14 +187,11 @@ Lemma inversionTransport :
       (Σ ;;; Γ |-i t : A) *
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i B : sSort s) *
-      (B ≡ T).
+      (B = T).
 Proof.
   intros Σ Γ A B p t T h.
   dependent induction h.
-  - exists s. splits 4 ; try assumption. apply conv_refl.
-  - destruct IHh1 as [s' ?]. split_hyps.
-    exists s'. splits 4 ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists s. splits 4 ; try assumption. reflexivity.
 Defined.
 
 Lemma inversionHeq :
@@ -238,14 +202,11 @@ Lemma inversionHeq :
       (Σ ;;; Γ |-i B : sSort s) *
       (Σ ;;; Γ |-i a : A) *
       (Σ ;;; Γ |-i b : B) *
-      (sSort s ≡ T).
+      (sSort s = T).
 Proof.
   intros Σ Γ A B a b T h.
   dependent induction h.
-  - exists s. splits 4 ; try assumption. apply conv_refl.
-  - destruct IHh1 as [s' ?]. split_hyps.
-    exists s'. splits 4 ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists s. splits 4 ; try assumption. reflexivity.
 Defined.
 
 Lemma inversionPack :
@@ -254,14 +215,11 @@ Lemma inversionPack :
     exists s,
       (Σ ;;; Γ |-i A1 : sSort s) *
       (Σ ;;; Γ |-i A2 : sSort s) *
-      (sSort s ≡ T).
+      (sSort s = T).
 Proof.
   intros Σ Γ A1 A2 T h.
   dependent induction h.
-  - exists s. splits 2 ; try assumption. apply conv_refl.
-  - destruct IHh1 as [s' ?]. split_hyps.
-    exists s'. splits 2 ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists s. splits 2 ; try assumption. reflexivity.
 Defined.
 
 Lemma inversionHeqToEq :
@@ -272,15 +230,12 @@ Lemma inversionHeqToEq :
      (Σ ;;; Γ |-i A : sSort s) *
      (Σ ;;; Γ |-i u : A) *
      (Σ ;;; Γ |-i v : A) *
-     (sEq A u v ≡ T).
+     (sEq A u v = T).
 Proof.
   intros Σ Γ p T h.
   dependent induction h.
-  - exists A, u, v, s. splits 4. all: try assumption.
-    apply conv_refl.
-  - destruct IHh1 as (A' & u & v & s' & ?). split_hyps.
-    exists A', u, v, s'. splits 4. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists A, u, v, s. splits 4. all: try assumption.
+  reflexivity.
 Defined.
 
 Lemma inversionHeqRefl :
@@ -289,14 +244,11 @@ Lemma inversionHeqRefl :
     exists s,
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i a : A) *
-      (sHeq A a A a ≡ T).
+      (sHeq A a A a = T).
 Proof.
   intros Σ Γ A a T h.
   dependent induction h.
-  - exists s. splits 2. all: try assumption. apply conv_refl.
-  - destruct IHh1 as [s' ?]. split_hyps. exists s'.
-    splits 2. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s. splits 2. all: try assumption. reflexivity.
 Defined.
 
 Lemma inversionHeqSym :
@@ -308,14 +260,11 @@ Lemma inversionHeqSym :
       (Σ ;;; Γ |-i a : A) *
       (Σ ;;; Γ |-i b : B) *
       (Σ ;;; Γ |-i p : sHeq A a B b) *
-      (sHeq B b A a ≡ T).
+      (sHeq B b A a = T).
 Proof.
   intros Σ Γ p T h.
   dependent induction h.
-  - exists A, a, B, b, s. splits 5. all: try assumption. apply conv_refl.
-  - destruct IHh1 as (A' & a & B' & b & s' & ?). split_hyps.
-    exists A', a, B', b, s'. splits 5. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists A, a, B, b, s. splits 5. all: try assumption. reflexivity.
 Defined.
 
 Lemma inversionHeqTrans :
@@ -330,14 +279,11 @@ Lemma inversionHeqTrans :
       (Σ ;;; Γ |-i c : C) *
       (Σ ;;; Γ |-i p : sHeq A a B b) *
       (Σ ;;; Γ |-i q : sHeq B b C c) *
-      (sHeq A a C c ≡ T).
+      (sHeq A a C c = T).
 Proof.
   intros Σ Γ p q T h.
   dependent induction h.
-  - exists A, a, B, b, C, c, s. repeat split. all: try assumption. apply conv_refl.
-  - destruct IHh1 as (A' & a & B' & b & C & c' & s' & hh). split_hyps.
-    exists A', a, B', b, C, c', s'. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists A, a, B, b, C, c, s. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionHeqTransport :
@@ -348,14 +294,11 @@ Lemma inversionHeqTransport :
       (Σ ;;; Γ |-i B : sSort s) *
       (Σ ;;; Γ |-i t : A) *
       (Σ ;;; Γ |-i p : sEq (sSort s) A B) *
-      (sHeq A t B (sTransport A B p t) ≡ T).
+      (sHeq A t B (sTransport A B p t) = T).
 Proof.
   intros Σ Γ p t T h.
   dependent induction h.
-  - exists A, B, s. repeat split. all: try assumption. apply conv_refl.
-  - destruct IHh1 as (A' & B' & s' & ?). split_hyps.
-    exists A', B', s'. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists A, B, s. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionCongProd :
@@ -372,16 +315,11 @@ Lemma inversionCongProd :
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
       (sHeq (sSort (Sorts.prod_sort s z)) (sProd nx A1 B1)
                  (sSort (Sorts.prod_sort s z)) (sProd ny A2 B2)
-          ≡ T).
+          = T).
 Proof.
   intros Σ Γ B1 B2 pA pB T h.
   dependent induction h.
-  - exists s, z, nx, ny, A1, A2. repeat split. all: try assumption.
-    apply conv_refl.
-  - destruct IHh1 as (s' & z & nx & ny & A1 & A2 & ?).
-    split_hyps.
-    exists s', z, nx, ny, A1, A2. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s, z, nx, ny, A1, A2. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionCongLambda :
@@ -405,15 +343,11 @@ Lemma inversionCongLambda :
       (Σ ;;; Γ ,, A2 |-i t2 : B2) *
       (sHeq (sProd nx A1 B1) (sLambda nx A1 B1 t1)
                  (sProd ny A2 B2) (sLambda ny A2 B2 t2)
-          ≡ T).
+          = T).
 Proof.
   intros Σ Γ B1 B2 t1 t2 pA pB pt T h.
   dependent induction h.
-  - exists s, z, nx, ny, A1, A2. repeat split. all: try assumption.
-    apply conv_refl.
-  - destruct IHh1 as (s' & z & nx & ny & A1 & A2 & ?). split_hyps.
-    exists s', z, nx, ny, A1, A2. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s, z, nx, ny, A1, A2. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionCongApp :
@@ -436,16 +370,12 @@ Lemma inversionCongApp :
       (Σ ;;; Γ |-i v2 : A2) *
       (sHeq (B1{0 := v1}) (sApp u1 A1 B1 v1)
                  (B2{0 := v2}) (sApp u2 A2 B2 v2)
-          ≡ T).
+          = T).
 Proof.
   intros Σ Γ B1 B2 pu pA pB pv T h.
   dependent induction h.
-  - exists s, z, nx, ny, A1, A2, u1, u2, v1, v2. repeat split.
-    all: try assumption. apply conv_refl.
-  - destruct IHh1 as (s' & z & nx & ny & A1 & A2 & u1 & u2 & v1 & v2 & ?).
-    split_hyps.
-    exists s', z, nx, ny, A1, A2, u1, u2, v1, v2. repeat split.
-    all: try assumption. eapply conv_trans ; eassumption.
+  exists s, z, nx, ny, A1, A2, u1, u2, v1, v2. repeat split.
+  all: try assumption.
 Defined.
 
 Lemma inversionCongSum :
@@ -462,16 +392,11 @@ Lemma inversionCongSum :
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
       (sHeq (sSort (Sorts.sum_sort s z)) (sSum nx A1 B1)
                  (sSort (Sorts.sum_sort s z)) (sSum ny A2 B2)
-          ≡ T).
+          = T).
 Proof.
   intros Σ Γ B1 B2 pA pB T h.
   dependent induction h.
-  - exists s, z, nx, ny, A1, A2. repeat split. all: try assumption.
-    apply conv_refl.
-  - destruct IHh1 as (s' & z & nx & ny & A1 & A2 & ?).
-    split_hyps.
-    exists s', z, nx, ny, A1, A2. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s, z, nx, ny, A1, A2. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionCongPair :
@@ -494,16 +419,11 @@ Lemma inversionCongPair :
       (Σ ;;; Γ |-i v2 : B2{ 0 := u2 }) *
       (sHeq (sSum nx A1 B1) (sPair A1 B1 u1 v1)
                  (sSum ny A2 B2) (sPair A2 B2 u2 v2)
-          ≡ T).
+          = T).
 Proof.
   intros Σ Γ B1 B2 pA pB pu pv T h.
   dependent induction h.
-  - exists s, z, nx, ny, A1, A2, u1, u2, v1, v2. repeat split. all: try assumption.
-    apply conv_refl.
-  - destruct IHh1 as (s' & z & nx & ny & A1 & A2 & u1 & u2 & v1 & v2 & ?).
-    split_hyps.
-    exists s', z, nx, ny, A1, A2, u1, u2, v1, v2. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s, z, nx, ny, A1, A2, u1, u2, v1, v2. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionCongPi1 :
@@ -521,16 +441,11 @@ Lemma inversionCongPi1 :
       (Σ ;;; Γ ,, A2 |-i B2 : sSort z) *
       (Σ ;;; Γ |-i p1 : sSum nx A1 B1) *
       (Σ ;;; Γ |-i p2 : sSum ny A2 B2) *
-      (sHeq A1 (sPi1 A1 B1 p1) A2 (sPi1 A2 B2 p2) ≡ T).
+      (sHeq A1 (sPi1 A1 B1 p1) A2 (sPi1 A2 B2 p2) = T).
 Proof.
   intros Σ Γ B1 B2 pA pB pp T h.
   dependent induction h.
-  - exists s, z, nx, ny, A1, A2, p1, p2. repeat split. all: try assumption.
-    apply conv_refl.
-  - destruct IHh1 as (s' & z & nx & ny & A1 & A2 & p1 & p2 & ?).
-    split_hyps.
-    exists s', z, nx, ny, A1, A2, p1, p2. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s, z, nx, ny, A1, A2, p1, p2. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionCongPi2 :
@@ -550,16 +465,11 @@ Lemma inversionCongPi2 :
       (Σ ;;; Γ |-i p2 : sSum ny A2 B2) *
       (sHeq (B1{ 0 := sPi1 A1 B1 p1}) (sPi2 A1 B1 p1)
                   (B2{ 0 := sPi1 A2 B2 p2}) (sPi2 A2 B2 p2)
-          ≡ T).
+          = T).
 Proof.
   intros Σ Γ B1 B2 pA pB pp T h.
   dependent induction h.
-  - exists s, z, nx, ny, A1, A2, p1, p2. repeat split. all: try assumption.
-    apply conv_refl.
-  - destruct IHh1 as (s' & z & nx & ny & A1 & A2 & p1 & p2 & ?).
-    split_hyps.
-    exists s', z, nx, ny, A1, A2, p1, p2. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s, z, nx, ny, A1, A2, p1, p2. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionCongEq :
@@ -576,15 +486,12 @@ Lemma inversionCongEq :
       (Σ ;;; Γ |-i v1 : A1) *
       (Σ ;;; Γ |-i v2 : A2) *
       (sHeq (sSort (Sorts.eq_sort s)) (sEq A1 u1 v1)
-            (sSort (Sorts.eq_sort s)) (sEq A2 u2 v2) ≡ T).
+            (sSort (Sorts.eq_sort s)) (sEq A2 u2 v2) = T).
 Proof.
   intros Σ Γ pA pu pv T h.
   dependent induction h.
-  - exists s, A1, A2, u1, u2, v1, v2.
-    repeat split. all: try assumption. apply conv_refl.
-  - destruct IHh1 as (s' & A1 & A2 & u1 & u2 & v1 & v2 & ?). split_hyps.
-    exists s', A1, A2, u1, u2, v1, v2.
-    repeat split. all: try assumption. eapply conv_trans ; eassumption.
+  exists s, A1, A2, u1, u2, v1, v2.
+  repeat split. all: try assumption.
 Defined.
 
 Lemma inversionCongRefl :
@@ -599,15 +506,12 @@ Lemma inversionCongRefl :
       (Σ ;;; Γ |-i u2 : A2) *
       (sHeq (sEq A1 u1 u1) (sRefl A1 u1)
                  (sEq A2 u2 u2) (sRefl A2 u2)
-          ≡ T).
+          = T).
 Proof.
   intros Σ Γ pA pu T h.
   dependent induction h.
-  - exists s, A1, A2, u1, u2.
-    repeat split. all: try assumption. apply conv_refl.
-  - destruct IHh1 as (s' & A1 & A2 & u1 & u2 & ?). split_hyps.
-    exists s', A1, A2, u1, u2.
-    repeat split. all: try assumption. eapply conv_trans ; eassumption.
+  exists s, A1, A2, u1, u2.
+  repeat split. all: try assumption.
 Defined.
 
 Lemma inversionEqToHeq :
@@ -618,13 +522,10 @@ Lemma inversionEqToHeq :
       (Σ ;;; Γ |-i A : sSort s) *
       (Σ ;;; Γ |-i u : A) *
       (Σ ;;; Γ |-i v : A) *
-      (sHeq A u A v ≡ T).
+      (sHeq A u A v = T).
 Proof.
   intros Σ Γ p T h. dependent induction h.
-  - exists A, u, v, s. repeat split. all: try assumption. apply conv_refl.
-  - destruct IHh1 as (A' & u & v & s' & ?). split_hyps.
-    exists A', u, v, s'.
-    repeat split. all: try assumption. eapply conv_trans ; eassumption.
+  exists A, u, v, s. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionHeqTypeEq :
@@ -636,14 +537,11 @@ Lemma inversionHeqTypeEq :
       (Σ ;;; Γ |-i B : sSort s) *
       (Σ ;;; Γ |-i u : A) *
       (Σ ;;; Γ |-i v : B) *
-      (sEq (sSort s) A B ≡ T).
+      (sEq (sSort s) A B = T).
 Proof.
   intros Σ Γ A B p T h.
   dependent induction h.
-  - exists u, v, s. repeat split. all: try assumption. apply conv_refl.
-  - destruct IHh1 as (u &  v & s' & ?). split_hyps.
-    exists u, v, s'. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists u, v, s. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionProjT1 :
@@ -653,14 +551,11 @@ Lemma inversionProjT1 :
       (Σ ;;; Γ |-i A1 : sSort s) *
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ |-i p : sPack A1 A2) *
-      (A1 ≡ T).
+      (A1 = T).
 Proof.
   intros Σ Γ p T h.
   dependent induction h.
-  - exists s, A1, A2. repeat split. all: try assumption. apply conv_refl.
-  - destruct IHh1 as (s' & A1 & A2 & ?). split_hyps.
-    exists s', A1, A2. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s, A1, A2. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionProjT2 :
@@ -670,14 +565,11 @@ Lemma inversionProjT2 :
       (Σ ;;; Γ |-i A1 : sSort s) *
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ |-i p : sPack A1 A2) *
-      (A2 ≡ T).
+      (A2 = T).
 Proof.
   intros Σ Γ p T h.
   dependent induction h.
-  - exists s, A1, A2. repeat split. all: try assumption. apply conv_refl.
-  - destruct IHh1 as (s' & A1 & A2 & ?). split_hyps.
-    exists s', A1, A2. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s, A1, A2. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionProjTe :
@@ -687,14 +579,11 @@ Lemma inversionProjTe :
       (Σ ;;; Γ |-i A1 : sSort s) *
       (Σ ;;; Γ |-i A2 : sSort s) *
       (Σ ;;; Γ |-i p : sPack A1 A2) *
-      (sHeq A1 (sProjT1 p) A2 (sProjT2 p) ≡ T).
+      (sHeq A1 (sProjT1 p) A2 (sProjT2 p) = T).
 Proof.
   intros Σ Γ p T h.
   dependent induction h.
-  - exists s, A1, A2. repeat split. all: try assumption. apply conv_refl.
-  - destruct IHh1 as (s' & A1 & A2 & ?). split_hyps.
-    exists s', A1, A2. repeat split. all: try assumption.
-    eapply conv_trans ; eassumption.
+  exists s, A1, A2. repeat split. all: try assumption.
 Defined.
 
 Lemma inversionAx :
@@ -702,19 +591,18 @@ Lemma inversionAx :
     Σ ;;; Γ |-i sAx id : T ->
     exists ty,
       (lookup_glob Σ id = Some ty) *
-      (ty ≡ T).
+      (ty = T).
 Proof.
   intros Σ Γ id T h.
   dependent induction h.
-  - exists ty. split ; try assumption. apply conv_refl.
-  - destruct IHh1 as [ty ?]. split_hyps.
-    exists ty. split ; try assumption.
-    eapply conv_trans ; eassumption.
+  exists ty. split ; try assumption. reflexivity.
 Defined.
 
 End Inversions.
 
 (* Tactic to apply inversion automatically *)
+
+Open Scope i_scope.
 
 Ltac ttinv h :=
   let s := fresh "s" in

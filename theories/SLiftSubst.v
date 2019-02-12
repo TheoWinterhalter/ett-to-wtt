@@ -29,6 +29,7 @@ Fixpoint lift `{Sort_notion : Sorts.notion} n k t : sterm :=
        (lift n k p)
   | sTransport A B p t =>
     sTransport (lift n k A) (lift n k B) (lift n k p) (lift n k t)
+  | sBeta t u => sBeta (lift n (S k) t) (lift n k u)
   | sHeq A a B b =>
     sHeq (lift n k A) (lift n k a) (lift n k B) (lift n k b)
   | sHeqToEq p => sHeqToEq (lift n k p)
@@ -102,6 +103,7 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
        (subst t k p)
   | sTransport A B p u =>
     sTransport (subst t k A) (subst t k B) (subst t k p) (subst t k u)
+  | sBeta f u => sBeta (subst t (S k) f) (subst t k u)
   | sHeq A a B b =>
     sHeq (subst t k A) (subst t k a) (subst t k B) (subst t k b)
   | sHeqToEq p => sHeqToEq (subst t k p)
@@ -191,6 +193,9 @@ Fixpoint closed_above k t :=
     closed_above k A &&
     closed_above k B &&
     closed_above k p &&
+    closed_above k u
+  | sBeta t u =>
+    closed_above (S k) t &&
     closed_above k u
   | sHeq A a B b =>
     closed_above k A &&

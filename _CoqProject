@@ -7,16 +7,11 @@ theories/SAst.v
 theories/Equality.v
 theories/SLiftSubst.v
 theories/SCommon.v
-theories/Conversion.v
 theories/XTyping.v
 theories/ITyping.v
 theories/ITypingInversions.v
 theories/ITypingLemmata.v
-theories/ContextConversion.v
-theories/Uniqueness.v
-theories/SubjectReduction.v
 theories/ITypingAdmissible.v
-theories/DecideConversion.v
 theories/Optim.v
 theories/PackLifts.v
 theories/FundamentalLemma.v

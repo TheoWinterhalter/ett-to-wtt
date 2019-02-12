@@ -2,9 +2,9 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util SAst SLiftSubst Equality SCommon XTyping Conversion ITyping
+Require Import util SAst SLiftSubst Equality SCommon XTyping ITyping
                ITypingInversions ITypingLemmata ITypingAdmissible Optim
-               Uniqueness SubjectReduction PackLifts FundamentalLemma.
+               PackLifts FundamentalLemma.
 
 Section Translation.
 

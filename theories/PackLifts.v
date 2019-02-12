@@ -5,7 +5,7 @@ From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
 Require Import util Sorts SAst SLiftSubst Equality SCommon XTyping
-               Conversion ITyping ITypingLemmata ITypingAdmissible.
+               ITyping ITypingLemmata ITypingAdmissible.
 
 Section Pack.
 

@@ -2,7 +2,7 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util SAst SLiftSubst SCommon Conversion
+Require Import util SAst SLiftSubst SCommon
                ITyping ITypingInversions.
 
 (* Lemmata about typing *)
@@ -429,6 +429,13 @@ Proof.
             with (lift #|Δ| #|Ξ| (sRefl A0 u)).
           rewrite <- substP1. reflexivity.
       - cbn. eapply type_Transport ; eih.
+      - cbn.
+        change (lift #|Δ| #|Ξ| (B {0 := u}))
+          with (lift #|Δ| (0 + #|Ξ|) (B { 0 := u })).
+        change (lift #|Δ| #|Ξ| (t0 {0 := u}))
+          with (lift #|Δ| (0 + #|Ξ|) (t0 { 0 := u })).
+        rewrite 2!substP1.
+        cbn. eapply type_Beta ; eih.
       - cbn. eapply type_Heq ; eih.
       - cbn. eapply type_HeqToEq ; eih.
       - cbn. eapply type_HeqRefl ; eih.
@@ -534,8 +541,6 @@ Proof.
         eapply type_Ax.
         + now apply wf_lift.
         + assumption.
-      - eapply type_conv ; try eih.
-        eapply lift_conv. assumption.
     }
 
   (* wf_lift *)
@@ -745,6 +750,13 @@ Proof.
             with ((sRefl A0 u0){ 0 + #|Δ| := u}).
           rewrite <- substP4. reflexivity.
       - cbn. eapply type_Transport ; esh.
+      - cbn.
+        change ((B0 {0 := u0}) {#|Δ| := u})
+          with ((B0 {0 := u0}) {0 + #|Δ| := u}).
+        change ((t0 {0 := u0}) {#|Δ| := u})
+          with ((t0 {0 := u0}) {0 + #|Δ| := u}).
+        rewrite 2!substP4. cbn.
+        eapply type_Beta ; esh.
       - cbn. eapply type_Heq ; esh.
       - cbn. eapply type_HeqToEq ; esh.
       - cbn. eapply type_HeqRefl ; esh.
@@ -849,8 +861,6 @@ Proof.
         eapply type_Ax.
         + now eapply wf_subst.
         + assumption.
-      - cbn. eapply type_conv ; try esh.
-        eapply subst_conv. eassumption.
     }
 
   (* wf_subst *)
@@ -1016,6 +1026,14 @@ Proof.
     + cbn. rewrite !lift_subst, lift00.
       assumption.
   - eexists. eassumption.
+  - destruct IHtyping1 as [s h].
+    destruct IHtyping2 as [? hA].
+    exists (Sorts.eq_sort s). eapply type_Eq.
+    + change (sSort s) with ((sSort s){ 0 := u }).
+      eapply typing_subst ; eassumption.
+    + eapply type_App ; try eassumption.
+      eapply type_Lambda ; eassumption.
+    + eapply typing_subst ; eassumption.
   - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H).
   - eexists. apply type_Eq ; eassumption.
   - exists s. apply type_Heq ; assumption.
@@ -1099,7 +1117,7 @@ Proof.
       * assumption.
       * rewrite nil_cat. assumption.
     + cbn. apply nil_cat.
-  - exists s. assumption.
+      Unshelve. all: exact nAnon.
 Defined.
 
 End Lemmata.

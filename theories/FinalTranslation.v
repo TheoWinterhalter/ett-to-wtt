@@ -169,6 +169,8 @@ Fixpoint tsl_rec (fuel : nat) (Σ : global_context) (Γ : context) (t : sterm)
         p' <- tsl_rec fuel Σ Γ p axt ;;
         myret Σ Γ (mkTransport T1' T2' p' t')
       end
+    | sBeta t u =>
+      raise TranslationNotHandled
     | sHeq A a B b =>
       A' <- tsl_rec fuel Σ Γ A axt ;;
       B' <- tsl_rec fuel Σ Γ B axt ;;

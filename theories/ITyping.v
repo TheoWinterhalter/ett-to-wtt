@@ -2,7 +2,7 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util Sorts SAst SLiftSubst SCommon Conversion.
+Require Import util Sorts SAst SLiftSubst SCommon.
 
 Open Scope s_scope.
 
@@ -92,6 +92,13 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ |-i p : sEq (sSort s) T1 T2 ->
     Σ ;;; Γ |-i t : T1 ->
     Σ ;;; Γ |-i sTransport T1 T2 p t : T2
+
+| type_Beta Γ A B t u n :
+    Σ ;;; Γ ,, A |-i t : B ->
+    Σ ;;; Γ |-i u : A ->
+    Σ ;;; Γ |-i sBeta t u : sEq (B{ 0 := u })
+                               (sApp (sLambda n A B t) A B u)
+                               (t{ 0 := u })
 
 | type_Heq Γ A a B b s :
     Σ ;;; Γ |-i A : sSort s ->
@@ -320,12 +327,6 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     lookup_glob Σ id = Some ty ->
     Σ ;;; Γ |-i sAx id : ty
 
-| type_conv Γ t A B s :
-    Σ ;;; Γ |-i t : A ->
-    Σ ;;; Γ |-i B : sSort s ->
-    A ≡ B ->
-    Σ ;;; Γ |-i t : B
-
 where " Σ ;;; Γ '|-i' t : T " := (@typing Σ Γ t T) : i_scope
 
 with wf (Σ : sglobal_context) : scontext -> Prop :=
@@ -415,6 +416,8 @@ Derive Signature for Xcomp.
 Section Global.
 
 Context `{Sort_notion : Sorts.notion}.
+
+Open Scope i_scope.
 
 Definition isType (Σ : sglobal_context) (Γ : scontext) (t : sterm) :=
   exists s, Σ ;;; Γ |-i t : sSort s.
