@@ -586,10 +586,10 @@ Proof.
       destruct (X2 _ hΓ) as [A'' [u'' hu'']].
       destruct (change_type hg hu'' hA') as [u' hu'].
       clear hu'' A'' u''.
-      (* Now we conclude using reflexivity *)
+      (* Now we conclude using beta *)
       exists (B'{0 := u'}), (B'{0 := u'}).
       exists (sApp (sLambda n A' B' t') A' B' u'), (t'{0 := u'}).
-      exists (sHeqRefl (B'{0 := u'}) (t'{0 := u'})).
+      exists (sEqToHeq (sBeta t' u')).
       destruct hA' as [[[? ?] ?] ?].
       destruct hB' as [[[? ?] ?] ?].
       destruct ht' as [[[? ?] ?] ?].
@@ -601,23 +601,8 @@ Proof.
       * constructor ; try assumption.
         constructor ; assumption.
       * eapply inrel_subst ; assumption.
-      * eapply type_conv.
-        -- apply @type_HeqRefl with (s := s2).
-           ++ change (sSort s2) with ((sSort s2){0 := u'}).
-              eapply typing_subst ; eassumption.
-           ++ eapply typing_subst ; eassumption.
-        -- apply @type_Heq with (s := s2).
-           ++ change (sSort s2) with ((sSort s2){0 := u'}).
-              eapply typing_subst ; eassumption.
-           ++ change (sSort s2) with ((sSort s2){0 := u'}).
-              eapply typing_subst ; eassumption.
-           ++ eapply type_App. all: try eassumption.
-              eapply type_Lambda. all: eassumption.
-           ++ eapply typing_subst ; eassumption.
-        -- apply cong_Heq.
-           all: try (apply conv_refl).
-           eapply conv_red_r ; [| econstructor ].
-           apply conv_refl.
+      * eapply type_EqToHeq' ; try eassumption.
+        eapply type_Beta ; assumption.
 
     (* eq_conv *)
     + (* Translating the conversion *)
@@ -2659,7 +2644,7 @@ Proof.
       * destruct (istype_type hg hu') as [s' hA'].
         eapply type_HeqRefl ; eassumption.
 
-  Unshelve. all: try exact 0. exact nAnon.
+  Unshelve. all: try exact 0.
 
 Defined.
 
