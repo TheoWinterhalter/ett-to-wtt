@@ -11,6 +11,7 @@ theories/XTyping.v
 theories/ITyping.v
 theories/ITypingInversions.v
 theories/ITypingLemmata.v
+theories/Uniqueness.v
 theories/ITypingAdmissible.v
 theories/Optim.v
 theories/PackLifts.v

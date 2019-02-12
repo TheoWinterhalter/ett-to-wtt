@@ -43,14 +43,10 @@ Proof.
   case (decHeqRefl p).
   - intros i. destruct i as [C c].
     simpl.
-    ttinv h. destruct (heq_conv_inv h2) as [[[eA eu] eA'] ev].
-    destruct (istype_type hg h) as [z heq]. ttinv heq.
-    eapply type_conv.
-    + eapply type_HeqRefl' ; eassumption.
-    + eapply type_Heq ; eassumption.
-    + apply cong_Heq ; assumption.
+    ttinv h. inversion h2. subst.
+    eapply type_HeqRefl' ; eassumption.
   - intros e. destruct p.
-    16: exfalso ; apply e ; constructor.
+    17: exfalso ; apply e ; constructor.
     all: simpl ; apply type_HeqSym' ; assumption.
 Defined.
 
@@ -78,29 +74,18 @@ Proof.
   case (decHeqRefl p) ; case (decHeqRefl q).
   - intros iq ip. destruct ip as [D d], iq as [E e].
     simpl.
-    ttinv hp. destruct (heq_conv_inv h1) as [[[DA da] DB] db].
-    ttinv hq. destruct (heq_conv_inv h4) as [[[EB eb] EC] ec].
-    eapply type_conv.
-    + eapply type_HeqRefl' ; eassumption.
-    + eassumption.
-    + conv rewrite <- EC, ec.
-      conv rewrite EB, eb.
-      conv rewrite <- DA, da.
-      apply cong_Heq ; try apply conv_refl ; assumption.
+    ttinv hp. inversion h1 ; subst.
+    ttinv hq. inversion h4 ; subst.
+    eapply type_HeqRefl' ; eassumption.
   - intros bot ip. destruct ip as [D d].
     replace (optHeqTrans (sHeqRefl D d) q) with q.
-    + ttinv hp. destruct (heq_conv_inv h1) as [[[DA da] DB] db].
-      eapply type_conv ; try eassumption.
-      conv rewrite <- DA, da. apply conv_sym.
-      apply cong_Heq ; try apply conv_refl ; assumption.
+    + ttinv hp. inversion h1 ; subst.
+      assumption.
     + destruct q. all: try reflexivity.
       exfalso. apply bot. constructor.
   - intros iq bot. destruct iq as [E e].
     replace (optHeqTrans p (sHeqRefl E e)) with p.
-    + ttinv hq. destruct (heq_conv_inv h1) as [[[EB eb] EC] ec].
-      eapply type_conv ; try eassumption.
-      conv rewrite <- EB, eb.
-      apply cong_Heq ; try apply conv_refl ; assumption.
+    + ttinv hq. inversion h1 ; subst. assumption.
     + destruct p. all: reflexivity.
   - intros bq bp.
     destruct p ; try (exfalso ; apply bp ; constructor).
@@ -109,8 +94,7 @@ Proof.
 Defined.
 
 Definition optTransport A B p t :=
-  (* if Equality.eq_term A B then t else sTransport A B p t. *)
-  if isconv (2^18) A B then t else sTransport A B p t.
+  if Equality.eq_term A B then t else sTransport A B p t.
 
 Lemma opt_Transport :
   forall {Σ Γ s A B p t},
@@ -121,12 +105,12 @@ Lemma opt_Transport :
 Proof.
   intros Σ Γ s A B p t hg hp ht.
   unfold optTransport.
-  case_eq (isconv (2 ^ 18) A B).
+  case_eq (Equality.eq_term A B).
   - intro h.
     destruct (istype_type hg hp) as [z hT].
     ttinv hT.
-    eapply type_conv ; try eassumption.
-    eapply isconv_sound. eassumption.
+    eapply eq_term_spec in h.
+    eapply type_rename ; eassumption.
   - intros _. eapply type_Transport' ; eassumption.
 Defined.
 
@@ -152,14 +136,10 @@ Proof.
   destruct p.
   all: try (simpl ; eapply type_HeqToEq' ; eassumption).
   - simpl. rename p1 into B, p2 into b.
-    ttinv h. destruct (heq_conv_inv h2) as [[[BA bu] _] bv].
-    eapply type_conv ; try eassumption.
-    + eapply type_Refl' ; eassumption.
-    + apply cong_Eq ; assumption.
+    ttinv h. inversion h2 ; subst.
+    eapply type_Refl' ; eassumption.
   - simpl. ttinv h. rename A0 into B, u0 into a, v0 into b.
-    destruct (heq_conv_inv h2) as [[[BA au] _] bv].
-    eapply type_conv ; try eassumption.
-    apply cong_Eq ; assumption.
+    inversion h2 ; subst. assumption.
 Defined.
 
 Fact opt_sort_heq :
@@ -202,9 +182,10 @@ Proof.
   destruct p.
   all: try (simpl ; eapply type_HeqTransport' ; eassumption).
   simpl.
-  ttinv hp. destruct (eq_conv_inv h1) as [[? eA] eB].
+  ttinv hp. inversion h1 ; subst.
   destruct (istype_type hg hp) as [? hT].
   ttinv hT.
+  eapply type_HeqRefl'.
   eapply type_conv.
   - econstructor.
     + econstructor ; eassumption.

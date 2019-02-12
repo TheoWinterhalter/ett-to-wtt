@@ -2,12 +2,19 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util Sorts SAst SLiftSubst SCommon ITyping
-               ITypingInversions ITypingLemmata.
+Require Import util Sorts SAst SLiftSubst SCommon Equality ITyping
+               ITypingInversions Uniqueness ITypingLemmata.
 
 Section Admissible.
 
 Context `{Sort_notion : Sorts.notion}.
+
+Lemma type_rename :
+  forall {Σ Γ t A B},
+    Σ ;;; Γ |-i t : A ->
+    nl A = nl B ->
+    Σ ;;; Γ |-i t : B.
+Admitted.
 
 Lemma sorts_in_sort :
   forall {Σ Γ s1 s2 s3},
@@ -17,9 +24,8 @@ Lemma sorts_in_sort :
 Proof.
   intros Σ Γ s1 s2 s3 h1 h2.
   ttinv h1. ttinv h2.
-  pose proof (conv_trans h (conv_sym h0)) as eq.
-  pose proof (sort_conv_inv eq).
-  apply succ_inj. assumption.
+  rewrite <- h in h0. inversion h0.
+  apply succ_inj. symmetry. assumption.
 Defined.
 
 (* We state some admissible typing rules *)
@@ -34,11 +40,10 @@ Proof.
   destruct (istype_type hg h) as [? i].
   ttinv i.
   ttinv h0. ttinv h5.
-  pose proof (conv_trans h1 (conv_sym h6)) as eq.
-  pose proof (sort_conv_inv eq).
+  rewrite <- h6 in h1.
+  inversion h1.
   assert (s1 = s2) by (apply succ_inj ; assumption).
-  subst. clear eq H h1 h6.
-  assumption.
+  subst. assumption.
 Defined.
 
 Lemma type_HeqToEq' :
@@ -112,9 +117,8 @@ Proof.
   destruct (istype_type hg h2) as [? i2].
   ttinv i2.
   eapply type_HeqTrans. all: try eassumption.
-  eapply type_conv.
+  eapply type_rename.
   - eassumption.
-  - eapply type_Sort. eapply typing_wf ; eassumption.
   - apply (uniqueness hg h0 h6).
 Defined.
 
@@ -645,8 +649,7 @@ Proof.
   destruct (istype_type hg hp) as [? i]. ttinv i.
   eapply type_HeqTypeEq ; try eassumption.
   pose proof (uniqueness hg h hA).
-  eapply type_conv ; try eassumption.
-  eapply type_Sort. eapply typing_wf. eassumption.
+  eapply type_rename ; try eassumption.
 Defined.
 
 End Admissible.
