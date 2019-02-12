@@ -166,10 +166,11 @@ Proof.
 Defined.
 
 Definition optHeqTransport p t :=
-  match p with
-  | sRefl s A => sHeqRefl A t
-  | _ => sHeqTransport p t
-  end.
+  (* match p with *)
+  (* | sRefl s A => sHeqRefl A t *)
+  (* | _ =>  *)
+  (* end. *)
+  sHeqTransport p t.
 
 Lemma opt_HeqTransport :
   forall {Σ Γ s A B p t},
@@ -179,23 +180,7 @@ Lemma opt_HeqTransport :
     Σ ;;; Γ |-i optHeqTransport p t : sHeq A t B (sTransport A B p t).
 Proof.
   intros Σ Γ s A B p t hg ht hp.
-  destruct p.
-  all: try (simpl ; eapply type_HeqTransport' ; eassumption).
-  simpl.
-  ttinv hp. inversion h1 ; subst.
-  destruct (istype_type hg hp) as [? hT].
-  ttinv hT.
-  eapply type_HeqRefl'.
-  eapply type_conv.
-  - econstructor.
-    + econstructor ; eassumption.
-    + apply conv_sym in eA.
-      econstructor ; try eassumption.
-      econstructor ; eassumption.
-  - econstructor ; try eassumption.
-    econstructor ; eassumption.
-  - apply cong_Heq ; try assumption ; try apply conv_refl.
-    eapply conv_red_r ; econstructor. reflexivity.
+  simpl ; eapply type_HeqTransport' ; eassumption.
 Defined.
 
 Definition optEqToHeq p :=
@@ -214,13 +199,8 @@ Proof.
   destruct p.
   all: try (simpl ; eapply type_EqToHeq' ; eassumption).
   simpl.
-  ttinv h. destruct (eq_conv_inv h2) as [[eA eu] ev].
-  destruct (istype_type hg h) as [? hT].
-  ttinv hT.
-  econstructor.
-  - econstructor ; eassumption.
-  - econstructor ; eassumption.
-  - apply cong_Heq ; assumption.
+  ttinv h. inversion h2 ; subst.
+  eapply type_HeqRefl' ; eassumption.
 Defined.
 
 (* Tests if t does not depend on variable i *)
@@ -240,6 +220,8 @@ Fixpoint notdepi (t : sterm) (i : nat) {struct t} : bool :=
   (* | sJ *)
   | sTransport A B p t =>
     notdepi A i && notdepi B i && notdepi p i && notdepi t i
+  | sBeta t u =>
+    notdepi t (S i) && notdepi u i
   | sHeq A a B b => notdepi A i && notdepi a i && notdepi B i && notdepi b i
   | sHeqToEq p => notdepi p i
   | sHeqRefl A u => notdepi A i && notdepi u i
@@ -341,39 +323,18 @@ Proof.
   ttinv hpA. ttinv hpB.
   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
   destruct (istype_type hg hpB) as [? hTB]. ttinv hTB.
-  destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
-  destruct (heq_conv_inv h4) as [[[es3 eB1] es4] eB2].
-  pose proof (sort_conv_inv h7).
-  pose proof (sort_conv_inv h12).
-  pose proof (sort_conv_inv es1).
-  pose proof (sort_conv_inv es2).
-  pose proof (sort_conv_inv es3).
-  pose proof (sort_conv_inv es4).
+  inversion h1 ; subst.
+  inversion h4 ; subst.
+  repeat match goal with
+  | e : sSort _ = sSort _ |- _ => inversion e ; subst
+  end.
+  rewrite notdep_lift, lift_subst in H3 by assumption.
+  rewrite notdep_lift, lift_subst in H3 by assumption.
   subst.
-  econstructor.
-  - econstructor ; try eassumption.
-    + econstructor ; try eassumption. eapply typing_wf. eassumption.
-    + econstructor ; try eassumption.
-      eapply ContextConversion.type_ctxconv ; try eassumption.
-      * econstructor ; try eassumption.
-        eapply typing_wf. eassumption.
-      * constructor.
-        -- apply ContextConversion.ctxconv_refl.
-        -- apply conv_sym. assumption.
-  - econstructor.
-    + econstructor ; try eassumption.
-      eapply typing_wf. eassumption.
-    + econstructor ; try eassumption.
-      eapply typing_wf. eassumption.
-    + econstructor ; eassumption.
-    + econstructor ; eassumption.
-  - apply cong_Heq ; try apply conv_refl.
-    + apply cong_Prod ; try apply conv_refl. assumption.
-    + apply cong_Prod ; try assumption.
-      rewrite notdep_lift, lift_subst in eB1 by assumption.
-      rewrite notdep_lift, lift_subst in eB2 by assumption.
-      eapply conv_trans ; try eassumption.
-      apply conv_sym. assumption.
+  eapply type_rename.
+  - eapply type_HeqRefl' ; try eassumption.
+    eapply type_Prod ; eassumption.
+  - cbn. reflexivity.
 Defined.
 
 Definition optCongLambda B1 B2 t1 t2 pA pB pt :=
@@ -423,59 +384,23 @@ Proof.
   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
   destruct (istype_type hg hpB) as [? hTB]. ttinv hTB.
   destruct (istype_type hg hpt) as [? hTt]. ttinv hTt.
-  destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
-  destruct (heq_conv_inv h4) as [[[es3 eB1] es4] eB2].
-  destruct (heq_conv_inv h7) as [[[_ et1] _] et2].
-  assert (sSort s1 ≡ sSort s2).
-  { eapply conv_trans ; try eassumption.
-    apply conv_sym. assumption.
-  }
-  assert (sSort z1 ≡ sSort z2).
-  { eapply conv_trans ; try eassumption.
-    apply conv_sym. assumption.
-  }
-  repeat match goal with
-  | h : sSort _ ≡ sSort _ |- _ =>
-    pose proof (sort_conv_inv h) ; clear h
-  end.
+  inversion h1 ; subst.
+  inversion h4 ; subst.
+  rewrite notdep_lift, lift_subst in H4 by assumption.
+  rewrite notdep_lift, lift_subst in H4 by assumption.
   subst.
-  assert (Σ;;; Γ |-i pA2 : sSort s2).
-  { econstructor ; eassumption. }
-  assert (wf Σ Γ).
-  { eapply typing_wf. eassumption. }
-  econstructor.
+  inversion h7.
+  clear H4.
+  rewrite notdep_lift, lift_subst in H5 by assumption.
+  rewrite notdep_lift, lift_subst in H5 by assumption.
+  subst.
+  repeat match goal with
+  | e : sSort _ = sSort _ |- _ => inversion e ; subst
+  end.
+  eapply type_rename.
   - eapply type_HeqRefl' ; try eassumption.
-    eapply type_Lambda ; try eassumption.
-    + eapply ContextConversion.type_ctxconv ; try eassumption.
-      * econstructor ; eassumption.
-      * econstructor ; try apply ContextConversion.ctxconv_refl.
-        apply conv_sym. assumption.
-    + eapply ContextConversion.type_ctxconv ; try eassumption.
-      * econstructor ; eassumption.
-      * econstructor ; try apply ContextConversion.ctxconv_refl.
-        apply conv_sym. assumption.
-  - econstructor.
-    + econstructor ; eassumption.
-    + econstructor ; eassumption.
-    + econstructor ; eassumption.
-    + econstructor ; eassumption.
-  - apply cong_Heq.
-    + apply cong_Prod ; try apply conv_refl. assumption.
-    + apply cong_Lambda ; try apply conv_refl. assumption.
-    + apply cong_Prod ; try apply conv_refl. assumption.
-      rewrite notdep_lift, lift_subst in eB1 by assumption.
-      rewrite notdep_lift, lift_subst in eB2 by assumption.
-      eapply conv_trans ; try eassumption.
-      apply conv_sym. assumption.
-    + apply cong_Lambda ; try apply conv_refl. assumption.
-      * rewrite notdep_lift, lift_subst in eB1 by assumption.
-        rewrite notdep_lift, lift_subst in eB2 by assumption.
-        eapply conv_trans ; try eassumption.
-        apply conv_sym. assumption.
-      * rewrite notdep_lift, lift_subst in et1 by assumption.
-        rewrite notdep_lift, lift_subst in et2 by assumption.
-        eapply conv_trans ; try eassumption.
-        apply conv_sym. assumption.
+    eapply type_Lambda ; eassumption.
+  - cbn. reflexivity.
 Defined.
 
 Definition optCongApp B1 B2 pu pA pB pv :=
@@ -520,69 +445,21 @@ Proof.
   destruct (istype_type hg hpB) as [? hTB]. ttinv hTB.
   destruct (istype_type hg hpu) as [? hTu]. ttinv hTu.
   destruct (istype_type hg hpv) as [? hTv]. ttinv hTv.
-  destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
-  destruct (heq_conv_inv h4) as [[[es3 eB1] es4] eB2].
-  destruct (heq_conv_inv h7) as [[[? eu1] ?] eu2].
-  destruct (heq_conv_inv h10) as [[[? ev1] ?] ev2].
-  assert (sSort s1 ≡ sSort s2).
-  { eapply conv_trans ; try eassumption.
-    apply conv_sym. assumption.
-  }
-  assert (sSort z1 ≡ sSort z2).
-  { eapply conv_trans ; try eassumption.
-    apply conv_sym. assumption.
-  }
-  repeat match goal with
-  | h : sSort _ ≡ sSort _ |- _ =>
-    pose proof (sort_conv_inv h) ; clear h
-  end.
+  inversion h1 ; subst.
+  inversion h4 ; subst.
+  rewrite notdep_lift, lift_subst in H4 by assumption.
+  rewrite notdep_lift, lift_subst in H4 by assumption.
   subst.
-  assert (Σ;;; Γ |-i pA2 : sSort s2).
-  { econstructor ; eassumption. }
-  assert (wf Σ Γ).
-  { eapply typing_wf. eassumption. }
-  assert (Σ;;; Γ,, pA2 |-i B1 : sSort z2).
-  { eapply ContextConversion.type_ctxconv ; try eassumption.
-    - econstructor ; eassumption.
-    - econstructor ; try apply ContextConversion.ctxconv_refl.
-      apply conv_sym. assumption.
-  }
-  assert (B1 ≡ B2).
-  { rewrite notdep_lift, lift_subst in eB1 by assumption.
-    rewrite notdep_lift, lift_subst in eB2 by assumption.
-    eapply conv_trans ; try eassumption.
-    apply conv_sym. assumption.
-  }
-  assert (pv1 ≡ pA2).
-  { eapply conv_trans ; try eassumption.
-    apply conv_sym. assumption.
-  }
-  assert (A1 ≡ pA2).
-  { eapply conv_trans ; try eassumption.
-    apply conv_sym. assumption.
-  }
-  econstructor.
-  - econstructor.
-    + ContextConversion.lift_sort. eapply typing_subst ; try eassumption.
-      econstructor ; eassumption.
-    + econstructor ; try eassumption.
-      * econstructor ; try eassumption.
-        -- econstructor ; eassumption.
-        -- eapply conv_trans ; try eassumption.
-           apply conv_sym. apply cong_Prod ; assumption.
-      * econstructor ; eassumption.
-  - econstructor.
-    + ContextConversion.lift_sort. eapply typing_subst ; try eassumption.
-      econstructor ; eassumption.
-    + ContextConversion.lift_sort. eapply typing_subst ; eassumption.
-    + econstructor ; eassumption.
-    + econstructor ; eassumption.
-  - apply cong_Heq.
-    + apply substs_conv. assumption.
-    + apply cong_App ; try apply conv_refl ; assumption.
-    + apply cong_subst ; assumption.
-    + apply cong_App ; try apply conv_refl ; assumption.
-  Unshelve. exact nAnon.
+  inversion h7.
+  clear H4.
+  inversion h10 ; subst.
+  repeat match goal with
+  | e : sSort _ = sSort _ |- _ => inversion e ; subst
+  end.
+  eapply type_rename.
+  - eapply type_HeqRefl' ; try eassumption.
+    eapply type_App ; try eassumption.
+  - cbn. reflexivity.
 Defined.
 
 (* TODO congSum, congPair, congPi1, congPi2 *)
@@ -618,32 +495,14 @@ Proof.
   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
   destruct (istype_type hg hpu) as [? hTu]. ttinv hTu.
   destruct (istype_type hg hpv) as [? hTv]. ttinv hTv.
-  destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
-  destruct (heq_conv_inv h4) as [[[es3 ?] es4] ?].
-  destruct (heq_conv_inv h7) as [[[es5 ?] es6] ?].
+  inversion h1. inversion h4. inversion h7. subst.
   repeat match goal with
-  | h : sSort _ ≡ sSort _ |- _ =>
-    pose proof (sort_conv_inv h) ; clear h
+  | h : sSort _ = sSort _ |- _ => inversion h ; subst
   end.
-  subst.
-  econstructor.
-  - econstructor ; try eassumption.
-    + econstructor. eapply typing_wf. eassumption.
-    + econstructor ; try eassumption.
-      * econstructor ; try eassumption.
-        eapply conv_trans ; try eassumption.
-        apply conv_sym. assumption.
-      * econstructor ; try eassumption.
-        eapply conv_trans ; try eassumption.
-        apply conv_sym. assumption.
-  - econstructor.
-    + econstructor. eapply typing_wf. eassumption.
-    + econstructor. eapply typing_wf. eassumption.
-    + econstructor ; eassumption.
-    + econstructor ; eassumption.
-  - apply cong_Heq ; try apply conv_refl.
-    + apply cong_Eq ; assumption.
-    + apply cong_Eq ; assumption.
+  eapply type_rename.
+  - eapply type_HeqRefl' ; try eassumption.
+    eapply type_Eq ; eassumption.
+  - reflexivity.
 Defined.
 
 Definition optCongRefl pA pu :=
@@ -670,38 +529,14 @@ Proof.
   ttinv hpA. ttinv hpu.
   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
   destruct (istype_type hg hpu) as [? hTu]. ttinv hTu.
-  destruct (heq_conv_inv h1) as [[[es1 ?] es2] ?].
-  destruct (heq_conv_inv h4) as [[[es3 ?] es4] ?].
+  inversion h1. inversion h4. subst.
   repeat match goal with
-  | h : sSort _ ≡ sSort _ |- _ =>
-    pose proof (sort_conv_inv h) ; clear h
+  | h : sSort _ = sSort _ |- _ => inversion h ; subst
   end.
-  subst.
-  assert (Σ ;;; Γ |-i pA2 : sSort s1).
-  { econstructor ; eassumption. }
-  econstructor.
-  - econstructor.
-    + econstructor ; try eassumption.
-      * econstructor ; try eassumption.
-        eapply conv_trans ; try eassumption.
-        apply conv_sym. assumption.
-      * econstructor ; try eassumption.
-        eapply conv_trans ; try eassumption.
-        apply conv_sym. assumption.
-    + econstructor ; try eassumption.
-      econstructor ; try eassumption.
-      eapply conv_trans ; try eassumption.
-      apply conv_sym. assumption.
-  - econstructor.
-    + econstructor ; eassumption.
-    + econstructor ; eassumption.
-    + econstructor ; eassumption.
-    + econstructor ; eassumption.
-  - apply cong_Heq.
-    + apply cong_Eq ; assumption.
-    + apply cong_Refl ; assumption.
-    + apply cong_Eq ; assumption.
-    + apply cong_Refl ; assumption.
+  eapply type_rename.
+  - eapply type_HeqRefl' ; try eassumption.
+    eapply type_Refl' ; eassumption.
+  - reflexivity.
 Defined.
 
 End Optim.

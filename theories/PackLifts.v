@@ -52,6 +52,7 @@ Fixpoint llift γ δ (t:sterm)  : sterm :=
        (llift γ δ p)
   | sTransport A B p t =>
     sTransport (llift γ δ A) (llift γ δ B) (llift γ δ p) (llift γ δ t)
+  | sBeta t u => sBeta (llift γ (S δ) t) (llift γ δ u)
   | sHeq A a B b =>
     sHeq (llift γ δ A) (llift γ δ a) (llift γ δ B) (llift γ δ b)
   | sHeqToEq p => sHeqToEq (llift γ δ p)
@@ -123,6 +124,7 @@ Fixpoint rlift γ δ t : sterm :=
        (rlift γ δ p)
   | sTransport A B p t =>
     sTransport (rlift γ δ A) (rlift γ δ B) (rlift γ δ p) (rlift γ δ t)
+  | sBeta t u => sBeta (rlift γ (S δ) t) (rlift γ δ u)
   | sHeq A a B b =>
     sHeq (rlift γ δ A) (rlift γ δ a) (rlift γ δ B) (rlift γ δ b)
   | sHeqToEq p => sHeqToEq (rlift γ δ p)
@@ -796,28 +798,6 @@ Proof.
   - myomega.
 Defined.
 
-Fixpoint llift_red1 {n k t1 t2} (h : t1 ▷ t2) :
-  llift n k t1 ▷ llift n k t2.
-Proof.
-  destruct h ; cbn ;
-    try match goal with
-        | h : ?t ▷ _ |- ?tt ▷ _ =>
-          match tt with
-          | context [t] =>
-            econstructor ;
-              eapply llift_red1 ; [ exact h | .. ]
-          end
-        end.
-  - eapply meta_red_eq ; [ econstructor |].
-    replace k with (k + 0)%nat by myomega.
-    rewrite llift_subst.
-    replace (k + 0)%nat with k by myomega.
-    replace (S k + 0)%nat with (S k) by myomega.
-    reflexivity.
-  - eapply meta_red_eq ; [ econstructor |]. reflexivity.
-  - eapply meta_red_eq ; [ econstructor |]. reflexivity.
-Defined.
-
 Lemma nl_llift :
   forall {t u n k},
     nl t = nl u ->
@@ -835,44 +815,6 @@ Proof.
   - intros h e. exfalso. apply h. apply e.
 Defined.
 
-Lemma llift_conv :
-  forall {n k t1 t2},
-    t1 ≡ t2 ->
-    llift n k t1 ≡ llift n k t2.
-Proof.
-  intros n k t1 t2 h.
-  induction h.
-  - apply conv_eq. apply nl_llift. assumption.
-  - eapply conv_red_l.
-    + eapply llift_red1. eassumption.
-    + assumption.
-  - eapply conv_red_r.
-    + eassumption.
-    + eapply llift_red1. eassumption.
-Defined.
-
-Fixpoint rlift_red1 {n k t1 t2} (h : t1 ▷ t2) :
-  rlift n k t1 ▷ rlift n k t2.
-Proof.
-  destruct h ; cbn ;
-    try match goal with
-        | h : ?t ▷ _ |- ?tt ▷ _ =>
-          match tt with
-          | context [t] =>
-            econstructor ;
-              eapply rlift_red1 ; [ exact h | .. ]
-          end
-        end.
-  - eapply meta_red_eq ; [ econstructor |].
-    replace k with (k + 0)%nat by myomega.
-    rewrite rlift_subst.
-    replace (k + 0)%nat with k by myomega.
-    replace (S k + 0)%nat with (S k) by myomega.
-    reflexivity.
-  - eapply meta_red_eq ; [ econstructor |]. reflexivity.
-  - eapply meta_red_eq ; [ econstructor |]. reflexivity.
-Defined.
-
 Lemma nl_rlift :
   forall {t u n k},
     nl t = nl u ->
@@ -888,22 +830,6 @@ Proof.
       try (cbn ; inversion e ;
            repeat (erewrite_assumption by eassumption) ; reflexivity).
   - intros h e. exfalso. apply h. apply e.
-Defined.
-
-Lemma rlift_conv :
-  forall {n k t1 t2},
-    t1 ≡ t2 ->
-    rlift n k t1 ≡ rlift n k t2.
-Proof.
-  intros n k t1 t2 h.
-  induction h.
-  - apply conv_eq. apply nl_rlift. assumption.
-  - eapply conv_red_l.
-    + eapply rlift_red1. eassumption.
-    + assumption.
-  - eapply conv_red_r.
-    + eassumption.
-    + eapply rlift_red1. eassumption.
 Defined.
 
 Fact llift_ax_type :
@@ -1127,6 +1053,11 @@ Proof.
           replace (#|Δ| + 1)%nat with (S #|Δ| + 0)%nat by myomega.
           rewrite <- llift_subst. f_equal. myomega.
       - cbn. eapply type_Transport ; emh.
+      - cbn.
+        replace #|Δ| with (#|Δ| + 0)%nat by myomega.
+        rewrite 2!llift_subst. cbn.
+        replace (#|Δ| + 0)%nat with #|Δ| by myomega.
+        eapply type_Beta ; emh.
       - cbn. eapply type_Heq ; emh.
       - cbn. eapply type_HeqToEq ; emh.
       - cbn. eapply type_HeqRefl ; emh.
@@ -1239,8 +1170,6 @@ Proof.
         eapply type_Ax.
         + eapply wf_llift' ; eassumption.
         + assumption.
-      - eapply type_conv ; try emh.
-        eapply llift_conv. assumption.
     }
 
   (* type_rlift' *)
@@ -1316,6 +1245,11 @@ Proof.
           replace (#|Δ| + 1)%nat with (S #|Δ| + 0)%nat by myomega.
           rewrite <- rlift_subst. f_equal. myomega.
       - cbn. eapply type_Transport ; emh.
+      - cbn.
+        replace #|Δ| with (#|Δ| + 0)%nat by myomega.
+        rewrite 2!rlift_subst. cbn.
+        replace (#|Δ| + 0)%nat with #|Δ| by myomega.
+        eapply type_Beta ; emh.
       - cbn. eapply type_Heq ; emh.
       - cbn. eapply type_HeqToEq ; emh.
       - cbn. eapply type_HeqRefl ; emh.
@@ -1428,8 +1362,6 @@ Proof.
         eapply type_Ax.
         + eapply wf_rlift' ; eassumption.
         + assumption.
-      - eapply type_conv ; try emh.
-        eapply rlift_conv. assumption.
     }
 
   (* wf_llift' *)
