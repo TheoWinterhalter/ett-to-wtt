@@ -21,6 +21,8 @@ theories/Translation.v
 theories/WAst.v
 theories/WLiftSubst.v
 theories/WTyping.v
+theories/WEquality.v
+# theories/WChecker.v
 
 theories/Quotes.v
 theories/FinalTranslation.v
