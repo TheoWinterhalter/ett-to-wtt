@@ -79,9 +79,9 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
   end.
 
 Notation subst0 t u := (subst t 0 u).
-Notation "M { j := N }" := (subst N j M) (at level 10, right associativity) : s_scope.
+Notation "M { j := N }" := (subst N j M) (at level 10, right associativity) : w_scope.
 
-Open Scope s_scope.
+Open Scope w_scope.
 
 Section LiftSubst.
 
