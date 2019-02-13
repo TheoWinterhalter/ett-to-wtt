@@ -26,10 +26,16 @@ Fixpoint lift `{Sort_notion : Sorts.notion} n k t : wterm :=
        (lift n k w)
        (lift n k v)
        (lift n k p)
+  | wTransport A B p t =>
+    wTransport (lift n k A) (lift n k B) (lift n k p) (lift n k t)
   | wBeta t u => wBeta (lift n (S k) t) (lift n k u)
   | wK A u p => wK (lift n k A) (lift n k u) (lift n k p)
   | wFunext A B f g p =>
     wFunext (lift n k A) (lift n (S k) B) (lift n k f) (lift n k g) (lift n k p)
+  | wHeq A a B b => wHeq (lift n k A) (lift n k a) (lift n k B) (lift n k b)
+  | wHeqPair p q => wHeqPair (lift n k p) (lift n k q)
+  | wHeqTy p => wHeqTy (lift n k p)
+  | wHeqTm p => wHeqTm (lift n k p)
   | wPack A1 A2 => wPack (lift n k A1) (lift n k A2)
   | wProjT1 p => wProjT1 (lift n k p)
   | wProjT2 p => wProjT2 (lift n k p)
@@ -65,11 +71,17 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
        (subst t k w)
        (subst t k v)
        (subst t k p)
+  | wTransport A B p u =>
+    wTransport (subst t k A) (subst t k B) (subst t k p) (subst t k u)
   | wBeta f u => wBeta (subst t (S k) f) (subst t k u)
   | wK A u p => wK (subst t k A) (subst t k u) (subst t k p)
   | wFunext A B f g p =>
     wFunext (subst t k A) (subst t (S k) B)
             (subst t k f) (subst t k g) (subst t k p)
+  | wHeq A a B b => wHeq (subst t k A) (subst t k a) (subst t k B) (subst t k b)
+  | wHeqPair p q => wHeqPair (subst t k p) (subst t k q)
+  | wHeqTy p => wHeqTy (subst t k p)
+  | wHeqTm p => wHeqTm (subst t k p)
   | wPack A1 A2 => wPack (subst t k A1) (subst t k A2)
   | wProjT1 p => wProjT1 (subst t k p)
   | wProjT2 p => wProjT2 (subst t k p)
@@ -116,6 +128,11 @@ Fixpoint closed_above k t :=
     closed_above k w &&
     closed_above k v &&
     closed_above k p
+  | wTransport A B p u =>
+    closed_above k A &&
+    closed_above k B &&
+    closed_above k p &&
+    closed_above k u
   | wBeta t u =>
     closed_above (S k) t &&
     closed_above k u
@@ -129,6 +146,14 @@ Fixpoint closed_above k t :=
     closed_above k f &&
     closed_above k g &&
     closed_above k p
+  | wHeq A a B b =>
+    closed_above k A &&
+    closed_above k a &&
+    closed_above k B &&
+    closed_above k b
+  | wHeqPair p q => closed_above k p && closed_above k q
+  | wHeqTy p => closed_above k p
+  | wHeqTm p => closed_above k p
   | wPack A1 A2 => closed_above k A1 && closed_above k A2
   | wProjT1 p => closed_above k p
   | wProjT2 p => closed_above k p

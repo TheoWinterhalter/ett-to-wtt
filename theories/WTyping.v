@@ -116,12 +116,43 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w w : P{ 1 := u }{ 0 := wRefl A u } ->
     Σ ;;; Γ |-w wJ A u P w v p : P{ 1 := v }{ 0 := p }
 
+| type_Transport Γ s T1 T2 p t :
+    Σ ;;; Γ |-w T1 : wSort s ->
+    Σ ;;; Γ |-w T2 : wSort s ->
+    Σ ;;; Γ |-w p : wEq (wSort s) T1 T2 ->
+    Σ ;;; Γ |-w t : T1 ->
+    Σ ;;; Γ |-w wTransport T1 T2 p t : T2
+
 | type_Beta Γ A B t u n :
     Σ ;;; Γ ,, A |-w t : B ->
     Σ ;;; Γ |-w u : A ->
     Σ ;;; Γ |-w wBeta t u : wEq (B{ 0 := u })
                                (wApp (wLambda n A t) u)
                                (t{ 0 := u })
+
+| type_Heq Γ A a B b s :
+    Σ ;;; Γ |-w A : wSort s ->
+    Σ ;;; Γ |-w B : wSort s ->
+    Σ ;;; Γ |-w a : A ->
+    Σ ;;; Γ |-w b : B ->
+    Σ ;;; Γ |-w wHeq A a B b : wSort s
+
+| type_HeqPair Γ A a B b s p q :
+    Σ ;;; Γ |-w a : A ->
+    Σ ;;; Γ |-w b : B ->
+    Σ ;;; Γ |-w p : wEq (wSort s) A B ->
+    Σ ;;; Γ |-w q : wEq B (wTransport A B p a) b ->
+    Σ ;;; Γ |-w wHeq A a B b : wSort s
+
+| type_HeqTy Γ A a B b p s :
+    Σ ;;; Γ |-w A : wSort s ->
+    Σ ;;; Γ |-w B : wSort s ->
+    Σ ;;; Γ |-w p : wHeq A a B b ->
+    Σ ;;; Γ |-w wHeqTy p : wEq (wSort s) A B
+
+| type_HeqTm Γ A a B b p :
+    Σ ;;; Γ |-w p : wHeq A a B b ->
+    Σ ;;; Γ |-w wHeqTm p : wEq B (wTransport A B (wHeqTy p) a) b
 
 | type_Pack Γ A1 A2 s :
     Σ ;;; Γ |-w A1 : wSort s ->
@@ -140,12 +171,11 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w p : wPack A1 A2 ->
     Σ ;;; Γ |-w wProjT2 p : A2
 
-(* TODO We need Heq after all *)
-(* | type_ProjTe Γ A1 A2 p s : *)
-(*     Σ ;;; Γ |-w A1 : wSort s -> *)
-(*     Σ ;;; Γ |-w A2 : wSort s -> *)
-(*     Σ ;;; Γ |-w p : wPack A1 A2 -> *)
-(*     Σ ;;; Γ |-w wProjTe p : sHeq A1 (wProjT1 p) A2 (wProjT2 p) *)
+| type_ProjTe Γ A1 A2 p s :
+    Σ ;;; Γ |-w A1 : wSort s ->
+    Σ ;;; Γ |-w A2 : wSort s ->
+    Σ ;;; Γ |-w p : wPack A1 A2 ->
+    Σ ;;; Γ |-w wProjTe p : wHeq A1 (wProjT1 p) A2 (wProjT2 p)
 
 | type_Ax Γ id ty :
     wf Σ Γ ->
