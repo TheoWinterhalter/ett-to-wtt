@@ -23,6 +23,18 @@ Definition getprod (T : wterm) : option (wterm * wterm) :=
   | _ => None
   end.
 
+Definition geteq (T : wterm) : option (wterm * wterm * wterm) :=
+  match T with
+  | wEq A u v => ret (A,u,v)
+  | _ => None
+  end.
+
+Definition gettransport (t : wterm) : option (wterm * wterm * wterm * wterm) :=
+  match t with
+  | wTransport A B e t => ret (A,B,e,t)
+  | _ => None
+  end.
+
 Definition assert_true (b : bool) : option unit :=
   if b then ret tt else None.
 
@@ -74,6 +86,28 @@ Fixpoint _wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     assert_eq (wEq (wSort s) A B) =<< _wttinfer Σ Γ p ;;
     assert_eq A =<< _wttinfer Σ Γ t ;;
     ret B
+  | wBeta t u =>
+    A <- _wttinfer Σ Γ u ;;
+    B <- _wttinfer Σ (Γ,, A) t ;;
+    ret (wEq (B{ 0 := u }) (wApp (wLambda nAnon A t) u) (t{ 0 := u }))
+  | wHeq A a B b =>
+    s <- getsort =<< _wttinfer Σ Γ A ;;
+    assert_eq_sort s =<< getsort =<< _wttinfer Σ Γ B ;;
+    assert_eq A =<< _wttinfer Σ Γ a ;;
+    assert_eq B =<< _wttinfer Σ Γ b ;;
+    ret (wSort s)
+  | wHeqPair p q =>
+    E <- geteq =<< _wttinfer Σ Γ p ;;
+    let '(T,A,B) := E in
+    s <- getsort T ;;
+    E' <- geteq =<< _wttinfer Σ Γ q ;;
+    let '(B',ta,b) := E' in
+    assert_eq B B' ;;
+    ti <- gettransport ta ;;
+    let '(A',B',e,a) := ti in
+    assert_eq A A' ;;
+    assert_eq B B' ;;
+    ret (wHeq A a B b)
   | _ => None
   end.
 

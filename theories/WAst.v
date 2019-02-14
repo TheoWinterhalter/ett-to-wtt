@@ -28,7 +28,7 @@ Inductive wterm : Type :=
 | wRefl (A u : wterm)
 | wJ (A u P w v p : wterm)
 | wTransport (A B p t : wterm)
-| wBeta (f t : wterm)
+| wBeta (t u : wterm)
 | wK (A u p : wterm)
 | wFunext (A B f g p : wterm)
 (* Heterogenous equality *)
