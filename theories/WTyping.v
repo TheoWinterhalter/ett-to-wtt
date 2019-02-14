@@ -214,31 +214,29 @@ Derive Signature for wf.
 
 Delimit Scope w_scope with w.
 
-(* TODO: What should be done abut this in WTT? Only rehabilitate if necessary. *)
-(* Section Global. *)
+Section Global.
 
-(* Context `{Sort_notion : Sorts.notion}. *)
+Context `{Sort_notion : Sorts.notion}.
 
-(* Definition isType (Σ : wglobal_context) (Γ : wcontext) (t : wterm) := *)
-(*   exists s, Σ ;;; Γ |-w t : wSort s. *)
+Definition isType (Σ : wglobal_context) (Γ : wcontext) (t : wterm) :=
+  exists s, Σ ;;; Γ |-w t : wSort s.
 
-(* Inductive fresh_glob (id : ident) : wglobal_context -> Prop := *)
-(* | fresh_glob_nil : fresh_glob id [] *)
-(* | fresh_glob_cons Σ d : *)
-(*     fresh_glob id Σ -> *)
-(*     (dname d) <> id -> *)
-(*     fresh_glob id (d :: Σ). *)
+Inductive fresh_glob (id : ident) : wglobal_context -> Prop :=
+| fresh_glob_nil : fresh_glob id []
+| fresh_glob_cons Σ d :
+    fresh_glob id Σ ->
+    (dname d) <> id ->
+    fresh_glob id (d :: Σ).
 
-(* Inductive type_glob : wglobal_context -> Type := *)
-(* | type_glob_nil : type_glob [] *)
-(* | type_glob_cons Σ d : *)
-(*     type_glob Σ -> *)
-(*     fresh_glob (dname d) Σ -> *)
-(*     isType Σ [] (dtype d) -> *)
-(*     Xcomp (dtype d) -> *)
-(*     type_glob (d :: Σ). *)
+Inductive type_glob : wglobal_context -> Type :=
+| type_glob_nil : type_glob []
+| type_glob_cons Σ d :
+    type_glob Σ ->
+    fresh_glob (dname d) Σ ->
+    isType Σ [] (dtype d) ->
+    type_glob (d :: Σ).
 
-(* End Global. *)
+End Global.
 
-(* Derive Signature for fresh_glob. *)
-(* Derive Signature for type_glob. *)
+Derive Signature for fresh_glob.
+Derive Signature for type_glob.

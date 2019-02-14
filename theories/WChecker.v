@@ -60,7 +60,8 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
   : option wterm :=
   match t with
   | wRel n =>
-    nth_error Γ n
+     A <- nth_error Γ n ;;
+     ret (lift0 (S n) A)
   | wSort s =>
     ret (wSort (succ s))
   | wProd n A B =>
@@ -181,5 +182,41 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
   | wAx id =>
     lookup_glob Σ id
   end.
+
+Lemma meta_conv :
+  forall Σ Γ t A B,
+    Σ ;;; Γ |-w t : A ->
+    A = B ->
+    Σ ;;; Γ |-w t : B.
+Proof.
+  intros Σ Γ t A B h e.
+  destruct e. assumption.
+Defined.
+
+Lemma wttinfer_sound :
+  forall Σ Γ t A,
+    wttinfer Σ Γ t = Some A ->
+    type_glob Σ ->
+    wf Σ Γ ->
+    (* Σ ;;; Γ |-w A : Ty -> *)
+    Σ ;;; Γ |-w t : A.
+Proof.
+  intros Σ Γ t A eq hg hw.
+  revert Γ A eq hw.
+  induction t ; intros Γ A eq hw.
+  - cbn in eq. revert eq. case_eq (nth_error Γ n).
+    + intros A' eq e. inversion e. subst.
+      eapply meta_conv.
+      * eapply type_Rel. assumption.
+      * erewrite nth_error_Some_safe_nth with (e := eq). reflexivity.
+    + intros H eq. discriminate eq.
+  - cbn in eq. inversion eq. subst. clear eq.
+    eapply type_Sort. assumption.
+  - cbn in eq. revert eq.
+    case_eq (wttinfer Σ Γ t1) ; try solve [ intros ; discriminate ].
+    intros A' et1. specialize (IHt1 _ _ et1 hw).
+    case_eq (getsort A') ; try solve [ intros ; discriminate ].
+    intros s es.
+Abort.
 
 End Checking.
