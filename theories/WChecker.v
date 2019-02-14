@@ -76,7 +76,26 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     let '(A,B) := Π in
     assert_eq A =<< wttinfer Σ Γ v ;;
     ret (B{ 0 := u })
-  (* TODO Σ *)
+  | wSum n A B =>
+    s1 <- getsort =<< wttinfer Σ Γ A ;;
+    s2 <- getsort =<< wttinfer Σ (Γ ,, A) B ;;
+    ret (wSort (sum_sort s1 s2))
+  | wPair A B u v =>
+    getsort =<< wttinfer Σ Γ A ;;
+    getsort =<< wttinfer Σ (Γ,, A) B ;;
+    assert_eq A =<< wttinfer Σ Γ u ;;
+    assert_eq (B{ 0 := u }) =<< wttinfer Σ Γ v ;;
+    ret (wSum nAnon A B)
+  | wPi1 A B p =>
+    assert_eq (wSum nAnon A B) =<< wttinfer Σ Γ p ;;
+    getsort =<< wttinfer Σ Γ A ;;
+    getsort =<< wttinfer Σ (Γ,, A) B ;;
+    ret A
+  | wPi2 A B p =>
+    assert_eq (wSum nAnon A B) =<< wttinfer Σ Γ p ;;
+    getsort =<< wttinfer Σ Γ A ;;
+    getsort =<< wttinfer Σ (Γ,, A) B ;;
+    ret (B{ 0 := wPi1 A B p })
   | wEq A u v =>
     s <- getsort =<< wttinfer Σ Γ A ;;
     assert_eq A =<< wttinfer Σ Γ u ;;
@@ -104,6 +123,15 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     A <- wttinfer Σ Γ u ;;
     B <- wttinfer Σ (Γ,, A) t ;;
     ret (wEq (B{ 0 := u }) (wApp (wLambda nAnon A t) u) (t{ 0 := u }))
+  | wK A u p =>
+    assert_eq (wEq A u u) =<< wttinfer Σ Γ p ;;
+    ret (wEq (wEq A u u) p (wRefl A u))
+  | wFunext A B f g p =>
+    assert_eq (wProd nAnon A
+                 (wEq B (wApp (lift0 2 f) (wRel 0))
+                        (wApp (lift0 2 g) (wRel 0))))
+              =<< wttinfer Σ Γ p ;;
+    ret (wEq (wProd nAnon A B) f g)
   | wHeq A a B b =>
     s <- getsort =<< wttinfer Σ Γ A ;;
     assert_eq_sort s =<< getsort =<< wttinfer Σ Γ B ;;
@@ -152,7 +180,6 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     ret (wHeq A1 (wProjT1 p) A2 (wProjT2 p))
   | wAx id =>
     lookup_glob Σ id
-  | _ => None
   end.
 
 End Checking.
