@@ -148,11 +148,11 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w A : wSort s ->
     Σ ;;; Γ |-w B : wSort s ->
     Σ ;;; Γ |-w p : wHeq A a B b ->
-    Σ ;;; Γ |-w wHeqTy p : wEq (wSort s) A B
+    Σ ;;; Γ |-w wHeqTy A B p : wEq (wSort s) A B
 
 | type_HeqTm Γ A a B b p :
     Σ ;;; Γ |-w p : wHeq A a B b ->
-    Σ ;;; Γ |-w wHeqTm p : wEq B (wTransport A B (wHeqTy p) a) b
+    Σ ;;; Γ |-w wHeqTm p : wEq B (wTransport A B (wHeqTy A B p) a) b
 
 | type_Pack Γ A1 A2 s :
     Σ ;;; Γ |-w A1 : wSort s ->

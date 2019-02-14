@@ -34,7 +34,7 @@ Inductive wterm : Type :=
 (* Heterogenous equality *)
 | wHeq (A a B b : wterm)
 | wHeqPair (p q : wterm)
-| wHeqTy (p : wterm)
+| wHeqTy (A B p : wterm)
 | wHeqTm (p : wterm)
 (* Packing *)
 | wPack (A1 A2 : wterm)

@@ -35,6 +35,12 @@ Definition gettransport (t : wterm) : option (wterm * wterm * wterm * wterm) :=
   | _ => None
   end.
 
+Definition getheq (T : wterm) : option (wterm * wterm * wterm * wterm) :=
+  match T with
+  | wHeq A a B b => ret (A,a,B,b)
+  | _ => None
+  end.
+
 Definition assert_true (b : bool) : option unit :=
   if b then ret tt else None.
 
@@ -108,6 +114,14 @@ Fixpoint _wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     assert_eq A A' ;;
     assert_eq B B' ;;
     ret (wHeq A a B b)
+  | wHeqTy A B p =>
+    H <- getheq =<< _wttinfer Σ Γ p ;;
+    let '(A',a,B',b) := H in
+    assert_eq A A' ;;
+    assert_eq B B' ;;
+    s <- getsort =<< _wttinfer Σ Γ A ;;
+    assert_eq_sort s =<< getsort =<< _wttinfer Σ Γ A ;;
+    ret (wEq (wSort s) A B)
   | _ => None
   end.
 
