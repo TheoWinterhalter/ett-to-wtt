@@ -4,7 +4,7 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util Sorts WAst WLiftSubst.
+Require Import util Sorts WAst WLiftSubst WEquality.
 
 Open Scope w_scope.
 
@@ -193,6 +193,11 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     wf Σ Γ ->
     lookup_glob Σ id = Some ty ->
     Σ ;;; Γ |-w wAx id : ty
+
+| type_rename Γ t A B :
+    Σ ;;; Γ |-w t : A ->
+    nl A = nl B ->
+    Σ ;;; Γ |-w t : B
 
 where " Σ ;;; Γ '|-w' t : T " := (@typing Σ Γ t T) : w_scope
 

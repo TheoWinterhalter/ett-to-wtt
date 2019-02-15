@@ -18,19 +18,6 @@ Proof.
   intros Σ Γ t T H. induction H ; easy.
 Defined.
 
-Lemma type_rename :
-  forall {Σ Γ t A B},
-    Σ ;;; Γ |-w t : A ->
-    nl A = nl B ->
-    Σ ;;; Γ |-w t : B.
-Proof.
-  intros Σ Γ t A B h.
-  induction h ; intro e.
-  - (* Somehow it seems renaming is wrong.
-       Specifically because of the variable case.
-     *)
-Abort.
-
 Fixpoint lift_context n Γ : wcontext :=
   match Γ with
   | nil => nil
@@ -487,6 +474,9 @@ Proof.
         eapply type_Ax.
         + now apply wf_lift.
         + assumption.
+      - eapply type_rename.
+        + eih.
+        + eapply nl_lift. assumption.
     }
 
   (* wf_lift *)
