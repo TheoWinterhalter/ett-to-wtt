@@ -122,7 +122,8 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w t : T1 ->
     Σ ;;; Γ |-w wTransport T1 T2 p t : T2
 
-| type_Beta Γ A B t u n :
+| type_Beta Γ s A B t u n :
+    Σ ;;; Γ |-w A : wSort s ->
     Σ ;;; Γ ,, A |-w t : B ->
     Σ ;;; Γ |-w u : A ->
     Σ ;;; Γ |-w wBeta t u : wEq (B{ 0 := u })

@@ -491,10 +491,10 @@ Proof.
     + eapply IHh5. assumption.
     + rewrite 2!instantiate_sorts_subst in IHh6. eapply IHh6. assumption.
   - cbn. rewrite !instantiate_sorts_subst. econstructor.
-    + eapply IHh1. cbn. econstructor ; try assumption.
-      (* Need more to go in beta typing rule *)
-      admit.
-    + eapply IHh2. assumption.
+    + eapply IHh1. assumption.
+    + eapply IHh2. cbn. econstructor ; try assumption.
+      eapply IHh1. assumption.
+    + eapply IHh3. assumption.
   - cbn. econstructor. cbn in IHh. rewrite !instantiate_sorts_lift in IHh.
     eapply IHh. assumption.
   - cbn. eapply type_ProjT1 with (A4 := instantiate_sorts inst A2).
@@ -504,7 +504,7 @@ Proof.
   - cbn. unfold A'. econstructor ; try assumption.
     eapply instantiate_sorts_lookup_glob. assumption.
   Unshelve.
-  { admit. } { cbn. auto with arith. } { admit. }
+  { admit. } { cbn. auto with arith. }
 Admitted.
 
 End PolymorphicSorts.
