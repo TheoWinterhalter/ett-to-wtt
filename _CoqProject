@@ -17,14 +17,23 @@ theories/Optim.v
 theories/PackLifts.v
 theories/FundamentalLemma.v
 theories/Translation.v
+
+theories/WAst.v
+theories/WLiftSubst.v
+theories/WTyping.v
+theories/WEquality.v
+theories/WChecker.v
+
 theories/Quotes.v
 theories/FinalTranslation.v
 theories/FullQuote.v
-theories/XTypingLemmata.v
-theories/XInversions.v
-theories/IChecking.v
-theories/XChecking.v
-theories/plugin_util.v
-theories/plugin_checkers.v
-theories/plugin.v
-theories/plugin_demo.v
+
+# theories/XTypingLemmata.v
+# theories/XInversions.v
+# theories/IChecking.v
+# theories/XChecking.v
+
+# theories/plugin_util.v
+# theories/plugin_checkers.v
+# theories/plugin.v
+# theories/plugin_demo.v
