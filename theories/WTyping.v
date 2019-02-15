@@ -130,15 +130,19 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
                                (wApp (wLambda n A t) u)
                                (t{ 0 := u })
 
-| type_K Γ A u p :
+| type_K Γ A u p s :
     Σ ;;; Γ |-w p : wEq A u u ->
+    Σ ;;; Γ |-w A : wSort s ->
+    Σ ;;; Γ |-w u : A ->
     Σ ;;; Γ |-w wK A u p : wEq (wEq A u u) p (wRefl A u)
 
-| type_Funext Γ A B f g p n nx :
+| type_Funext Γ A B f g p n nx n1 n2 :
     Σ ;;; Γ |-w p : wProd nx A
-                     (wEq B (wApp (lift0 2 f) (wRel 0))
-                            (wApp (lift0 2 g) (wRel 0))) ->
-    Σ ;;; Γ |-w wFunext A B f g p : wEq (wProd n A B) f g
+                     (wEq B (wApp (lift0 1 f) (wRel 0))
+                            (wApp (lift0 1 g) (wRel 0))) ->
+    Σ ;;; Γ |-w f : wProd n1 A B ->
+    Σ ;;; Γ |-w g : wProd n2 A B ->
+    Σ ;;; Γ |-w wFunext f g p : wEq (wProd n A B) f g
 
 | type_Heq Γ A a B b s :
     Σ ;;; Γ |-w A : wSort s ->

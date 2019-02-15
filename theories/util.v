@@ -233,6 +233,7 @@ Ltac rewrite_assumptions :=
 Ltac erewrite_assumption :=
   match goal with
   | H : _, e : _ = _ |- _ => erewrite H
+  | H : _ = _ |- _ => erewrite H
   end.
 
 Ltac erewrite_assumptions :=

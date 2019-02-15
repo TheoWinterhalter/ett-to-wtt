@@ -30,8 +30,7 @@ Fixpoint lift `{Sort_notion : Sorts.notion} n k t : wterm :=
     wTransport (lift n k A) (lift n k B) (lift n k p) (lift n k t)
   | wBeta t u => wBeta (lift n (S k) t) (lift n k u)
   | wK A u p => wK (lift n k A) (lift n k u) (lift n k p)
-  | wFunext A B f g p =>
-    wFunext (lift n k A) (lift n (S k) B) (lift n k f) (lift n k g) (lift n k p)
+  | wFunext f g p => wFunext (lift n k f) (lift n k g) (lift n k p)
   | wHeq A a B b => wHeq (lift n k A) (lift n k a) (lift n k B) (lift n k b)
   | wHeqPair p q => wHeqPair (lift n k p) (lift n k q)
   | wHeqTy A B p => wHeqTy (lift n k A) (lift n k B) (lift n k p)
@@ -75,9 +74,7 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
     wTransport (subst t k A) (subst t k B) (subst t k p) (subst t k u)
   | wBeta f u => wBeta (subst t (S k) f) (subst t k u)
   | wK A u p => wK (subst t k A) (subst t k u) (subst t k p)
-  | wFunext A B f g p =>
-    wFunext (subst t k A) (subst t (S k) B)
-            (subst t k f) (subst t k g) (subst t k p)
+  | wFunext f g p => wFunext (subst t k f) (subst t k g) (subst t k p)
   | wHeq A a B b => wHeq (subst t k A) (subst t k a) (subst t k B) (subst t k b)
   | wHeqPair p q => wHeqPair (subst t k p) (subst t k q)
   | wHeqTy A B p => wHeqTy (subst t k A) (subst t k B) (subst t k p)
@@ -140,9 +137,7 @@ Fixpoint closed_above k t :=
     closed_above k A &&
     closed_above k u &&
     closed_above k p
-  | wFunext A B f g p =>
-    closed_above k A &&
-    closed_above (S k) B &&
+  | wFunext f g p =>
     closed_above k f &&
     closed_above k g &&
     closed_above k p
