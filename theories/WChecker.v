@@ -357,6 +357,27 @@ Proof.
   - intros _. reflexivity.
 Defined.
 
+Lemma instantiate_sorts_ctx_length :
+  forall `{ S : Sorts.notion } inst Γ,
+    #|instantiate_sorts_ctx inst Γ| = #|Γ|.
+Proof.
+  intros S inst Γ.
+  induction Γ ; cbn ; auto.
+Defined.
+
+Lemma instantiate_sorts_safe_nth :
+  forall `{ S : Sorts.notion } inst (Γ : @wcontext psort_notion) n is is',
+    instantiate_sorts inst (safe_nth Γ (exist _ n is)) =
+    safe_nth (instantiate_sorts_ctx inst Γ) (exist _ n is').
+Proof.
+  intros S inst Γ.
+  induction Γ ; intros n is is'.
+  - cbn. bang.
+  - destruct n.
+    + cbn. reflexivity.
+    + cbn. erewrite IHΓ. reflexivity.
+Defined.
+
 Lemma instantiate_sorts_sound :
   forall `{ S : Sorts.notion } Σ Γ inst t A,
     Σ ;;; Γ |-w t : A ->
@@ -368,7 +389,11 @@ Lemma instantiate_sorts_sound :
 Proof.
   intros S Σ Γ inst t A h Γ' t' A' hw'.
   induction h.
-  - cbn. admit.
+  - cbn. unfold A'.
+    rewrite instantiate_sorts_lift.
+    unshelve erewrite instantiate_sorts_safe_nth.
+    + rewrite instantiate_sorts_ctx_length. assumption.
+    + econstructor. assumption.
   - cbn. econstructor. assumption.
   - cbn. econstructor.
     + eapply IHh1. assumption.
