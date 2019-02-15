@@ -127,7 +127,10 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
   | wK A u p =>
     assert_eq (wEq A u u) =<< wttinfer Σ Γ p ;;
     ret (wEq (wEq A u u) p (wRefl A u))
-  | wFunext A B f g p =>
+  | wFunext f g p =>
+    Π <- getprod =<< wttinfer Σ Γ f ;;
+    let '(A,B) := Π in
+    assert_eq (wProd nAnon A B) =<< wttinfer Σ Γ g ;;
     assert_eq (wProd nAnon A
                  (wEq B (wApp (lift0 2 f) (wRel 0))
                         (wApp (lift0 2 g) (wRel 0))))
@@ -301,7 +304,7 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wTransport A B p t => wTransport (f A) (f B) (f p) (f t)
     | wBeta t u => wBeta (f t) (f u)
     | wK A u p => wK (f A) (f u) (f p)
-    | wFunext A B g h p => wFunext (f A) (f B) (f g) (f h) (f p)
+    | wFunext g h p => wFunext (f g) (f h) (f p)
     | wHeq A a B b => wHeq (f A) (f a) (f B) (f b)
     | wHeqPair p q => wHeqPair (f p) (f q)
     | wHeqTy A B p => wHeqTy (f A) (f B) (f p)
@@ -494,8 +497,11 @@ Proof.
     + eapply IHh2. cbn. econstructor ; try assumption.
       eapply IHh1. assumption.
     + eapply IHh3. assumption.
-  - cbn. econstructor. cbn in IHh. rewrite !instantiate_sorts_lift in IHh.
-    eapply IHh. assumption.
+  - cbn. econstructor.
+    + cbn in IHh1. rewrite !instantiate_sorts_lift in IHh1.
+      eapply IHh1. assumption.
+    + eapply IHh2. assumption.
+    + eapply IHh3. assumption.
   - cbn. eapply type_ProjT1 with (A4 := instantiate_sorts inst A2).
     + eapply IHh1. assumption.
     + eapply IHh2. assumption.
