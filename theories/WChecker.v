@@ -76,7 +76,7 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     Π <- getprod =<< wttinfer Σ Γ u ;;
     let '(A,B) := Π in
     assert_eq A =<< wttinfer Σ Γ v ;;
-    ret (B{ 0 := u })
+    ret (B{ 0 := v })
   | wSum n A B =>
     s1 <- getsort =<< wttinfer Σ Γ A ;;
     s2 <- getsort =<< wttinfer Σ (Γ ,, A) B ;;
@@ -242,6 +242,8 @@ Proof.
     intros. revert eq. go.
     intros u H2 eq.
     inversion eq. subst. clear eq.
+    eapply type_App with (A := pi1_ p).
+    (* TODO Need to relax typing of app *)
 Admitted.
 
 End Checking.
