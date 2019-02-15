@@ -239,11 +239,19 @@ Proof.
       econstructor ; try eassumption.
       eapply IHt1 ; eassumption.
   - cbn in eq. revert eq. go.
-    intros. revert eq. go.
-    intros u H2 eq.
+    intros w H Pi H0 p hP eq. revert eq. go.
+    intros u aeq eq.
     inversion eq. subst. clear eq.
-    eapply type_App with (A := pi1_ p).
-    (* TODO Need to relax typing of app *)
+    destruct p as [A B]. destruct Pi ; try discriminate hP. cbn in hP.
+    inversion hP. subst. clear hP.
+    unfold assert_eq in aeq. unfold assert_true in aeq.
+    revert aeq.
+    case_eq (eq_term A w) ; try (intros e aeq ; discriminate aeq).
+    intros e _.
+    eapply type_App with (A0 := A).
+    + eapply IHt1 ; eassumption.
+    + (* eapply type_rename. eapply IHt2 ; try eassumption. *)
+      (* TODO Need rename *)
 Admitted.
 
 End Checking.
@@ -438,10 +446,7 @@ Proof.
   - cbn. unfold A'. rewrite instantiate_sorts_subst.
     eapply type_App with (A0 := instantiate_sorts inst A).
     + eapply IHh1. assumption.
-    + eapply IHh2. cbn. econstructor ; try eassumption.
-      eapply IHh1. assumption.
-    + eapply IHh3. assumption.
-    + eapply IHh4. assumption.
+    + eapply IHh2. assumption.
   - cbn. econstructor.
     + eapply IHh1. assumption.
     + eapply IHh2.
