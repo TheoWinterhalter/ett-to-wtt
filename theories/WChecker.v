@@ -308,4 +308,27 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wAx id => wAx id
     end.
 
+Fixpoint instantiate_sorts_ctx `{ S : Sorts.notion }
+         (inst : @sort psort_notion -> @sort S)
+         (Γ : @wcontext psort_notion)
+  : @wcontext S :=
+  match Γ with
+  | A :: Γ => instantiate_sorts inst A :: instantiate_sorts_ctx inst Γ
+  | nil => nil
+  end.
+
+Lemma instantiate_sorts_sound :
+  forall `{ S : Sorts.notion } Σ Γ inst t A,
+    Σ ;;; Γ |-w t : A ->
+    let Γ' := instantiate_sorts_ctx inst Γ in
+    let t' := instantiate_sorts inst t in
+    let A' := instantiate_sorts inst A in
+    Σ ;;; Γ' |-w t' : A'.
+Proof.
+  intros S Σ Γ inst t A h Γ' t' A'.
+  induction h.
+  - cbn. admit.
+  - cbn.
+Abort.
+
 End PolymorphicSorts.
