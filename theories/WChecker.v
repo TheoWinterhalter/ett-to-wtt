@@ -378,16 +378,28 @@ Proof.
     + cbn. erewrite IHΓ. reflexivity.
 Defined.
 
+Fixpoint instantiate_sorts_glob `{ S : Sorts.notion } inst
+           (Σ : @wglobal_context psort_notion) : @wglobal_context S :=
+  match Σ with
+  | d :: Σ =>
+    {| dname := d.(dname) ;
+       dtype := instantiate_sorts inst d.(dtype)
+    |} :: instantiate_sorts_glob inst Σ
+  | nil => nil
+  end.
+
 Lemma instantiate_sorts_sound :
   forall `{ S : Sorts.notion } Σ Γ inst t A,
     Σ ;;; Γ |-w t : A ->
+    let Σ' := instantiate_sorts_glob inst Σ in
     let Γ' := instantiate_sorts_ctx inst Γ in
     let t' := instantiate_sorts inst t in
     let A' := instantiate_sorts inst A in
-    wf Σ Γ' ->
-    Σ ;;; Γ' |-w t' : A'.
+    type_glob Σ' ->
+    wf Σ' Γ' ->
+    Σ' ;;; Γ' |-w t' : A'.
 Proof.
-  intros S Σ Γ inst t A h Γ' t' A' hw'.
+  intros S Σ Γ inst t A h Σ' Γ' t' A' hg' hw'.
   induction h.
   all: try solve [
              cbn ; econstructor ;
