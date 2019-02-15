@@ -2,7 +2,7 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util WAst WLiftSubst WTyping.
+Require Import util WAst WLiftSubst WTyping WEquality.
 
 Section Lemmata.
 
@@ -17,6 +17,19 @@ Lemma typing_wf :
 Proof.
   intros Σ Γ t T H. induction H ; easy.
 Defined.
+
+Lemma type_rename :
+  forall {Σ Γ t A B},
+    Σ ;;; Γ |-w t : A ->
+    nl A = nl B ->
+    Σ ;;; Γ |-w t : B.
+Proof.
+  intros Σ Γ t A B h.
+  induction h ; intro e.
+  - (* Somehow it seems renaming is wrong.
+       Specifically because of the variable case.
+     *)
+Abort.
 
 Fixpoint lift_context n Γ : wcontext :=
   match Γ with
