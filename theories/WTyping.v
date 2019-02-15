@@ -59,7 +59,8 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ ,, A |-w B : wSort s2 ->
     Σ ;;; Γ |-w wProd n A B : wSort (Sorts.prod_sort s1 s2)
 
-| type_Lambda Γ n n' t A B :
+| type_Lambda Γ n n' t s A B :
+    Σ ;;; Γ |-w A : wSort s ->
     Σ ;;; Γ ,, A |-w t : B ->
     Σ ;;; Γ |-w wLambda n A t : wProd n' A B
 

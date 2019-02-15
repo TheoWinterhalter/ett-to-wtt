@@ -240,9 +240,11 @@ Proof.
     inversion eq. subst. clear eq.
     destruct t ; try discriminate es.
     inversion es. subst. clear es.
-    econstructor. eapply IHt2 ; try assumption.
-    econstructor ; try eassumption.
-    eapply IHt1 ; eassumption.
+    econstructor.
+    + eapply IHt1 ; eassumption.
+    + eapply IHt2 ; try assumption.
+      econstructor ; try eassumption.
+      eapply IHt1 ; eassumption.
   - cbn in eq. revert eq. go.
     intros. revert eq. go.
     intros u H2 eq.
@@ -330,6 +332,31 @@ Fixpoint instantiate_sorts_ctx `{ S : Sorts.notion }
   | nil => nil
   end.
 
+Lemma instantiate_sorts_lift :
+  forall `{ S : Sorts.notion } inst t n k,
+    instantiate_sorts inst (lift n k t) =
+    lift n k (instantiate_sorts inst t).
+Proof.
+  intros S inst t.
+  induction t ; intros m k.
+  all: try (cbn ; erewrite ?IHt, ?IHt1, ?IHt2, ?IHt3, ?IHt4, ?IHt5, ?IHt6 ; reflexivity).
+  cbn. case_eq (k <=? n) ; intro ; reflexivity.
+Defined.
+
+Lemma instantiate_sorts_subst :
+  forall `{ S : Sorts.notion } inst t u n,
+    instantiate_sorts inst (t{ n := u }) =
+    (instantiate_sorts inst t){ n := instantiate_sorts inst u }.
+Proof.
+  intros S inst t.
+  induction t ; intros u m.
+  all: try (cbn ; erewrite ?IHt, ?IHt1, ?IHt2, ?IHt3, ?IHt4, ?IHt5, ?IHt6 ; reflexivity).
+  cbn. case_eq (m ?= n).
+  - intros _. eapply instantiate_sorts_lift.
+  - intros _. reflexivity.
+  - intros _. reflexivity.
+Defined.
+
 Lemma instantiate_sorts_sound :
   forall `{ S : Sorts.notion } Σ Γ inst t A,
     Σ ;;; Γ |-w t : A ->
@@ -347,8 +374,24 @@ Proof.
     + eapply IHh1. assumption.
     + eapply IHh2. cbn. econstructor ; try assumption.
       eapply IHh1. assumption.
-  - cbn. econstructor. eapply IHh.
-    cbn. econstructor ; try assumption.
-Abort.
+  - cbn. econstructor.
+    + eapply IHh1. assumption.
+    + eapply IHh2.
+      cbn. econstructor ; try assumption.
+      eapply IHh1. eassumption.
+  - cbn. unfold A'. rewrite instantiate_sorts_subst.
+    eapply type_App with (A0 := instantiate_sorts inst A).
+    + eapply IHh1. assumption.
+    + eapply IHh2. cbn. econstructor ; try eassumption.
+      eapply IHh1. assumption.
+    + eapply IHh3. assumption.
+    + eapply IHh4. assumption.
+  - cbn. econstructor.
+    + eapply IHh1. assumption.
+    + eapply IHh2.
+      cbn. econstructor ; try assumption.
+      eapply IHh1. eassumption.
+  -
+Admitted.
 
 End PolymorphicSorts.
