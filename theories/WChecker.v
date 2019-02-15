@@ -69,7 +69,7 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     s2 <- getsort =<< wttinfer Σ (Γ ,, A) B ;;
     ret (wSort (prod_sort s1 s2))
   | wLambda n A t =>
-    (* _ <- getsort =<< wttinfer Σ Γ A ;; *)
+    getsort =<< wttinfer Σ Γ A ;;
     B <- wttinfer Σ (Γ ,, A) t ;;
     ret (wProd n A B)
   | wApp u v =>
@@ -193,12 +193,20 @@ Proof.
   destruct e. assumption.
 Defined.
 
+Ltac remove1 :=
+  match goal with
+  | |- context [ match ?t with _ => _ end ] =>
+    case_eq t ; try solve [ intros ; discriminate ]
+  end.
+
+Ltac go :=
+  repeat remove1.
+
 Lemma wttinfer_sound :
   forall Σ Γ t A,
     wttinfer Σ Γ t = Some A ->
     type_glob Σ ->
     wf Σ Γ ->
-    (* Σ ;;; Γ |-w A : Ty -> *)
     Σ ;;; Γ |-w t : A.
 Proof.
   intros Σ Γ t A eq hg hw.
@@ -212,11 +220,30 @@ Proof.
     + intros H eq. discriminate eq.
   - cbn in eq. inversion eq. subst. clear eq.
     eapply type_Sort. assumption.
-  - cbn in eq. revert eq.
-    case_eq (wttinfer Σ Γ t1) ; try solve [ intros ; discriminate ].
-    intros A' et1. specialize (IHt1 _ _ et1 hw).
-    case_eq (getsort A') ; try solve [ intros ; discriminate ].
-    intros s es.
+  - cbn in eq. revert eq. go.
+    intros T2 eT2 s2 es2 T1 eT1 s1 es1 eq.
+    inversion eq. subst. clear eq.
+    specialize (IHt1 _ _ eT1).
+    specialize (IHt2 _ _ eT2).
+    econstructor.
+    + destruct T1 ; try discriminate es1.
+      cbn in es1. inversion es1. subst.
+      auto.
+    + destruct T2 ; try discriminate es2.
+      cbn in es2. inversion es2. subst.
+      eapply IHt2. econstructor ; try assumption.
+      destruct T1 ; try discriminate es1.
+      cbn in es1. inversion es1. subst.
+      auto.
+  - cbn in eq. revert eq. go.
+    intros w H t H0 s es eq.
+    inversion eq. subst. clear eq.
+    destruct t ; try discriminate es.
+    inversion es. subst. clear es.
+    econstructor. eapply IHt2 ; try assumption.
+    econstructor ; try eassumption.
+    eapply IHt1 ; eassumption.
+  - cbn in eq. revert eq. go.
 Abort.
 
 End Checking.
