@@ -276,15 +276,28 @@ Proof.
     destruct s, z ; inversion e ; eauto.
 Defined.
 
+Fixpoint instantiate_sort `{ S : Sorts.notion }
+           (inst : nat -> @sort S) (s : @sort psort_notion)
+  : @sort S :=
+  match s with
+  | pvar n => inst n
+  | psucc s => succ (instantiate_sort inst s)
+  | pprod_sort s1 s2 =>
+    prod_sort (instantiate_sort inst s1) (instantiate_sort inst s2)
+  | psum_sort s1 s2 =>
+    sum_sort (instantiate_sort inst s1) (instantiate_sort inst s2)
+  | peq_sort s => eq_sort (instantiate_sort inst s)
+  end.
+
 Definition instantiate_sorts `{ S : Sorts.notion }
-           (inst : @sort psort_notion -> @sort S)
+           (inst : nat -> @sort S)
   : @wterm psort_notion -> @wterm S :=
   fix f (t : @wterm psort_notion) :=
     match t with
     | wRel n => wRel n
-    | wSort s => wSort (inst s)
+    | wSort s => wSort (instantiate_sort inst s)
     | wProd n A B => wProd n (f A) (f B)
-    | wLambda n A t => wProd n (f A) (f t)
+    | wLambda n A t => wLambda n (f A) (f t)
     | wApp u v => wApp (f u) (f v)
     | wSum n A B => wSum n (f A) (f B)
     | wPair A B u v => wPair (f A) (f B) (f u) (f v)
@@ -309,7 +322,7 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     end.
 
 Fixpoint instantiate_sorts_ctx `{ S : Sorts.notion }
-         (inst : @sort psort_notion -> @sort S)
+         (inst : nat -> @sort S)
          (Γ : @wcontext psort_notion)
   : @wcontext S :=
   match Γ with
@@ -323,12 +336,19 @@ Lemma instantiate_sorts_sound :
     let Γ' := instantiate_sorts_ctx inst Γ in
     let t' := instantiate_sorts inst t in
     let A' := instantiate_sorts inst A in
+    wf Σ Γ' ->
     Σ ;;; Γ' |-w t' : A'.
 Proof.
-  intros S Σ Γ inst t A h Γ' t' A'.
+  intros S Σ Γ inst t A h Γ' t' A' hw'.
   induction h.
   - cbn. admit.
-  - cbn.
+  - cbn. econstructor. assumption.
+  - cbn. econstructor.
+    + eapply IHh1. assumption.
+    + eapply IHh2. cbn. econstructor ; try assumption.
+      eapply IHh1. assumption.
+  - cbn. econstructor. eapply IHh.
+    cbn. econstructor ; try assumption.
 Abort.
 
 End PolymorphicSorts.
