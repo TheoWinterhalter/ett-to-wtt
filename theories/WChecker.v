@@ -471,9 +471,18 @@ Proof.
         eapply IHh1. assumption.
       * econstructor.
         -- rewrite instantiate_sorts_lift.
-           (* TODO Need type_lift lemma *)
-           admit.
-        -- rewrite instantiate_sorts_lift. admit.
+           match goal with
+           | |- _ ;;; _ |-w _ : ?S =>
+             change S with (lift0 1 S)
+           end.
+           eapply typing_lift01.
+           ++ assumption.
+           ++ eapply IHh1. assumption.
+           ++ eapply IHh1. assumption.
+        -- rewrite 2!instantiate_sorts_lift.
+           eapply typing_lift01 ; try assumption.
+           ++ eapply IHh2. assumption.
+           ++ eapply IHh1. assumption.
         -- eapply meta_conv.
            ++ econstructor. econstructor ; try assumption.
               eapply IHh1. assumption.
@@ -494,7 +503,7 @@ Proof.
   - cbn. unfold A'. econstructor ; try assumption.
     eapply instantiate_sorts_lookup_glob. assumption.
   Unshelve.
-  { admit. } { cbn. auto with arith. }
-Admitted.
+  { cbn. auto with arith. }
+Defined.
 
 End PolymorphicSorts.

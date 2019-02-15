@@ -288,4 +288,18 @@ with wf_lift {Σ Γ Δ Ξ} (h : wf Σ (Γ ,,, Ξ)) {struct h} :
 (* Defined. *)
 Admitted.
 
+Corollary typing_lift01 :
+  forall {Σ Γ t A B s},
+    type_glob Σ ->
+    Σ ;;; Γ |-w t : A ->
+    Σ ;;; Γ |-w B : wSort s ->
+    Σ ;;; Γ ,, B |-w lift0 1 t : lift0 1 A.
+Proof.
+  intros Σ Γ t A B s hg ht hB.
+  apply (@type_lift _ _ [ B ] nil _ _ ht hg).
+  econstructor.
+  - eapply typing_wf. eassumption.
+  - eassumption.
+Defined.
+
 End Lemmata.
