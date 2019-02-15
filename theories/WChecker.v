@@ -186,14 +186,81 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     lookup_glob Σ id
   end.
 
-Ltac remove1 :=
+Ltac deal_assert_eq :=
   match goal with
+  | h : assert_eq ?t ?u = _ |- _ =>
+    unfold assert_eq in h ;
+    unfold assert_true in h ;
+    revert h ;
+    case_eq (eq_term t u) ; try (intros ? h ; discriminate h) ;
+    intros
+  end.
+
+Ltac deal_getsort :=
+  match goal with
+  | h : getsort ?t = _ |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  end.
+
+Ltac deal_getprod :=
+  match goal with
+  | h : getprod ?t = _ |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  end.
+
+Ltac deal_geteq :=
+  match goal with
+  | h : geteq ?t = _ |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  end.
+
+Ltac deal_getheq :=
+  match goal with
+  | h : getheq ?t = _ |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  end.
+
+Ltac deal_gettransport :=
+  match goal with
+  | h : gettransport ?t = _ |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  end.
+
+Ltac deal_getpack :=
+  match goal with
+  | h : getpack ?t = _ |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  end.
+
+Ltac remove1 :=
+  lazymatch goal with
   | |- context [ match ?t with _ => _ end ] =>
+    case_eq t ; try solve [ intros ; discriminate ]
+  | h : context [ match ?t with _ => _ end ] |- _ =>
+    revert h ;
     case_eq t ; try solve [ intros ; discriminate ]
   end.
 
-Ltac go :=
-  repeat remove1.
+Ltac go eq :=
+  cbn in eq ; revert eq ;
+  repeat remove1 ;
+  intros ;
+  repeat remove1 ;
+  intros ;
+  inversion eq ; subst ; clear eq ;
+  repeat deal_assert_eq ;
+  repeat deal_getsort ;
+  repeat deal_geteq ;
+  repeat deal_getheq ;
+  repeat deal_getpack ;
+  repeat deal_gettransport ;
+  repeat deal_getprod.
 
 Lemma wttinfer_sound :
   forall Σ Γ t A,
@@ -205,53 +272,57 @@ Proof.
   intros Σ Γ t A eq hg hw.
   revert Γ A eq hw.
   induction t ; intros Γ A eq hw.
+  (* all: try solve [ *)
+  (*            go eq ; *)
+  (*            econstructor ; *)
+  (*            try (eapply IHt ; eassumption) ; *)
+  (*            try (eapply IHt1 ; eassumption) ; *)
+  (*            try (eapply IHt2 ; eassumption) ; *)
+  (*            try (eapply IHt3 ; eassumption) ; *)
+  (*            try (eapply IHt4 ; eassumption) ; *)
+  (*            try (eapply IHt5 ; eassumption) ; *)
+  (*            try (eapply IHt6 ; eassumption) ; *)
+  (*            try eassumption *)
+  (*          ]. *)
   - cbn in eq. revert eq. case_eq (nth_error Γ n).
     + intros A' eq e. inversion e. subst.
       eapply meta_conv.
       * eapply type_Rel. assumption.
       * erewrite nth_error_Some_safe_nth with (e := eq). reflexivity.
     + intros H eq. discriminate eq.
-  - cbn in eq. inversion eq. subst. clear eq.
-    eapply type_Sort. assumption.
-  - cbn in eq. revert eq. go.
-    intros T2 eT2 s2 es2 T1 eT1 s1 es1 eq.
-    inversion eq. subst. clear eq.
-    specialize (IHt1 _ _ eT1).
-    specialize (IHt2 _ _ eT2).
-    econstructor.
-    + destruct T1 ; try discriminate es1.
-      cbn in es1. inversion es1. subst.
-      auto.
-    + destruct T2 ; try discriminate es2.
-      cbn in es2. inversion es2. subst.
-      eapply IHt2. econstructor ; try assumption.
-      destruct T1 ; try discriminate es1.
-      cbn in es1. inversion es1. subst.
-      auto.
-  - cbn in eq. revert eq. go.
-    intros w H t H0 s es eq.
-    inversion eq. subst. clear eq.
-    destruct t ; try discriminate es.
-    inversion es. subst. clear es.
-    econstructor.
-    + eapply IHt1 ; eassumption.
+  - go eq. econstructor. assumption.
+  - go eq. econstructor.
+    + eapply IHt1 ; assumption.
     + eapply IHt2 ; try assumption.
+      econstructor ; try assumption.
+      eapply IHt1 ; eassumption.
+  - go eq. econstructor.
+    + eapply IHt1 ; eassumption.
+    + eapply IHt2 ; try eassumption.
+      econstructor ; try assumption.
+      eapply IHt1 ; eassumption.
+  - go eq. econstructor.
+    + eapply IHt1 ; eassumption.
+    + eapply type_rename.
+      * eapply IHt2 ; eassumption.
+      * symmetry. eapply eq_term_spec. assumption.
+  - go eq. econstructor.
+    + eapply IHt1 ; eassumption.
+    + eapply IHt2 ; try eassumption.
+      econstructor ; try assumption.
+      eapply IHt1 ; eassumption.
+  - go eq. econstructor.
+    + eapply IHt1 ; eassumption.
+    + eapply IHt2 ; try eassumption.
       econstructor ; try eassumption.
       eapply IHt1 ; eassumption.
-  - cbn in eq. revert eq. go.
-    intros w H Pi H0 p hP eq. revert eq. go.
-    intros u aeq eq.
-    inversion eq. subst. clear eq.
-    destruct p as [A B]. destruct Pi ; try discriminate hP. cbn in hP.
-    inversion hP. subst. clear hP.
-    unfold assert_eq in aeq. unfold assert_true in aeq.
-    revert aeq.
-    case_eq (eq_term A w) ; try (intros e aeq ; discriminate aeq).
-    intros e _.
-    eapply type_App with (A0 := A).
-    + eapply IHt1 ; eassumption.
-    + (* eapply type_rename. eapply IHt2 ; try eassumption. *)
-      (* TODO Need rename *)
+    + eapply type_rename.
+      * eapply IHt3 ; eassumption.
+      * symmetry. eapply eq_term_spec. assumption.
+    + eapply type_rename.
+      * eapply IHt4 ; eassumption.
+      * symmetry. eapply eq_term_spec. assumption.
+  -
 Admitted.
 
 End Checking.
