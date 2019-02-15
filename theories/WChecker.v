@@ -244,6 +244,68 @@ Proof.
     econstructor ; try eassumption.
     eapply IHt1 ; eassumption.
   - cbn in eq. revert eq. go.
-Abort.
+    intros. revert eq. go.
+    intros u H2 eq.
+    inversion eq. subst. clear eq.
+Admitted.
 
 End Checking.
+
+Section PolymorphicSorts.
+
+(* Polymorhpic sorts *)
+Inductive psort :=
+| pvar (n : nat)
+| psucc (s : psort)
+| pprod_sort (s1 s2 : psort)
+| psum_sort (s1 s2 : psort)
+| peq_sort (s : psort)
+.
+
+Instance psort_notion : Sorts.notion := {|
+  sort := psort ;
+  succ := psucc ;
+  prod_sort := pprod_sort ;
+  sum_sort := psum_sort ;
+  eq_sort := peq_sort
+|}.
+Proof.
+  - intros s z. decide equality.
+    decide equality.
+  - intros s z e.
+    destruct s, z ; inversion e ; eauto.
+Defined.
+
+Definition instantiate_sorts `{ S : Sorts.notion }
+           (inst : @sort psort_notion -> @sort S)
+  : @wterm psort_notion -> @wterm S :=
+  fix f (t : @wterm psort_notion) :=
+    match t with
+    | wRel n => wRel n
+    | wSort s => wSort (inst s)
+    | wProd n A B => wProd n (f A) (f B)
+    | wLambda n A t => wProd n (f A) (f t)
+    | wApp u v => wApp (f u) (f v)
+    | wSum n A B => wSum n (f A) (f B)
+    | wPair A B u v => wPair (f A) (f B) (f u) (f v)
+    | wPi1 A B p => wPi1 (f A) (f B) (f p)
+    | wPi2 A B p => wPi2 (f A) (f B) (f p)
+    | wEq A u v => wEq (f A) (f u) (f v)
+    | wRefl A u => wRefl (f A) (f u)
+    | wJ A u P w v p => wJ (f A) (f u) (f P) (f w) (f v) (f p)
+    | wTransport A B p t => wTransport (f A) (f B) (f p) (f t)
+    | wBeta t u => wBeta (f t) (f u)
+    | wK A u p => wK (f A) (f u) (f p)
+    | wFunext A B g h p => wFunext (f A) (f B) (f g) (f h) (f p)
+    | wHeq A a B b => wHeq (f A) (f a) (f B) (f b)
+    | wHeqPair p q => wHeqPair (f p) (f q)
+    | wHeqTy A B p => wHeqTy (f A) (f B) (f p)
+    | wHeqTm p => wHeqTm (f p)
+    | wPack A1 A2 => wPack (f A1) (f A2)
+    | wProjT1 p => wProjT1 (f p)
+    | wProjT2 p => wProjT2 (f p)
+    | wProjTe p => wProjTe (f p)
+    | wAx id => wAx id
+    end.
+
+End PolymorphicSorts.
