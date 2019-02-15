@@ -405,6 +405,18 @@ Proof.
     + intros e h. eapply IHΣ. assumption.
 Defined.
 
+Lemma nl_instantiate_sorts :
+  forall `{ S : Sorts.notion } inst t u,
+    nl t = nl u ->
+    nl (instantiate_sorts inst t) = nl (instantiate_sorts inst u).
+Proof.
+  intros S inst t.
+  induction t ; intros u e ; destruct u ; cbn in e ; try discriminate e.
+  all:
+    try (cbn ; inversion e ;
+         repeat (erewrite_assumption by eassumption) ; reflexivity).
+Defined.
+
 Lemma instantiate_sorts_sound :
   forall `{ S : Sorts.notion } Σ Γ inst t A,
     Σ ;;; Γ |-w t : A ->
@@ -515,6 +527,9 @@ Proof.
     + eapply IHh3. assumption.
   - cbn. unfold A'. econstructor ; try assumption.
     eapply instantiate_sorts_lookup_glob. assumption.
+  - eapply type_rename.
+    + eapply IHh. assumption.
+    + unfold A'. eapply nl_instantiate_sorts. assumption.
   Unshelve.
   { cbn. auto with arith. }
 Defined.
