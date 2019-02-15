@@ -389,6 +389,16 @@ Lemma instantiate_sorts_sound :
 Proof.
   intros S Σ Γ inst t A h Γ' t' A' hw'.
   induction h.
+  all: try solve [
+             cbn ; econstructor ;
+             try (eapply IHh ; eassumption) ;
+             try (eapply IHh1 ; eassumption) ;
+             try (eapply IHh2 ; eassumption) ;
+             try (eapply IHh3 ; eassumption) ;
+             try (eapply IHh4 ; eassumption) ;
+             try (eapply IHh5 ; eassumption) ;
+             try (eapply IHh6 ; eassumption)
+           ].
   - cbn. unfold A'.
     rewrite instantiate_sorts_lift.
     unshelve erewrite instantiate_sorts_safe_nth.
@@ -416,7 +426,59 @@ Proof.
     + eapply IHh2.
       cbn. econstructor ; try assumption.
       eapply IHh1. eassumption.
-  -
+  - cbn. econstructor.
+    + eapply IHh1. assumption.
+    + eapply IHh2. cbn. econstructor ; try eassumption.
+      eapply IHh1. assumption.
+    + eapply IHh3. assumption.
+    + rewrite <- instantiate_sorts_subst.
+      eapply IHh4. assumption.
+  - cbn. econstructor.
+    + eapply IHh1. assumption.
+    + eapply IHh2. assumption.
+    + eapply IHh3. cbn. econstructor ; try eassumption.
+      eapply IHh2. assumption.
+  - cbn. unfold A'. rewrite instantiate_sorts_subst.
+    econstructor.
+    + eapply IHh1. assumption.
+    + eapply IHh2. assumption.
+    + eapply IHh3. cbn. econstructor ; try eassumption.
+      eapply IHh2. assumption.
+  - cbn. unfold A'. rewrite 2!instantiate_sorts_subst.
+    econstructor.
+    + eapply IHh1. assumption.
+    + eapply IHh2. assumption.
+    + eapply IHh3. assumption.
+    + rewrite <- !instantiate_sorts_lift. eapply IHh4.
+      cbn. econstructor.
+      * econstructor ; try assumption.
+        eapply IHh1. assumption.
+      * econstructor.
+        -- rewrite instantiate_sorts_lift.
+           (* TODO Need type_lift lemma *)
+           admit.
+        -- rewrite instantiate_sorts_lift. admit.
+        -- eapply meta_conv.
+           ++ econstructor. econstructor ; try assumption.
+              eapply IHh1. assumption.
+           ++ cbn. rewrite instantiate_sorts_lift. reflexivity.
+    + eapply IHh5. assumption.
+    + rewrite 2!instantiate_sorts_subst in IHh6. eapply IHh6. assumption.
+  - cbn. rewrite !instantiate_sorts_subst. econstructor.
+    + eapply IHh1. cbn. econstructor ; try assumption.
+      (* Need more to go in beta typing rule *)
+      admit.
+    + eapply IHh2. assumption.
+  - cbn. econstructor. cbn in IHh. rewrite !instantiate_sorts_lift in IHh.
+    eapply IHh. assumption.
+  - cbn. eapply type_ProjT1 with (A4 := instantiate_sorts inst A2).
+    + eapply IHh1. assumption.
+    + eapply IHh2. assumption.
+    + eapply IHh3. assumption.
+  - cbn. unfold A'.
+    (* Need to instantiate sorts in Σ as well unfortunately. *)
+    admit.
+    Unshelve. { auto. } { cbn. auto with arith. } { constructor. constructor. }
 Admitted.
 
 End PolymorphicSorts.
