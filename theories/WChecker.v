@@ -4,7 +4,7 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import All.
 From Translation
-Require Import util Sorts WAst WLiftSubst WTyping WEquality.
+Require Import util Sorts WAst WLiftSubst WTyping WEquality WLemmata.
 Import MonadNotation.
 
 Section Checking.
@@ -182,16 +182,6 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
   | wAx id =>
     lookup_glob Σ id
   end.
-
-Lemma meta_conv :
-  forall Σ Γ t A B,
-    Σ ;;; Γ |-w t : A ->
-    A = B ->
-    Σ ;;; Γ |-w t : B.
-Proof.
-  intros Σ Γ t A B h e.
-  destruct e. assumption.
-Defined.
 
 Ltac remove1 :=
   match goal with
