@@ -388,6 +388,20 @@ Fixpoint instantiate_sorts_glob `{ S : Sorts.notion } inst
   | nil => nil
   end.
 
+Lemma instantiate_sorts_lookup_glob :
+  forall `{ S : Sorts.notion } inst (Σ : @wglobal_context psort_notion) id ty,
+    lookup_glob Σ id = Some ty ->
+    let Σ' := instantiate_sorts_glob inst Σ in
+    lookup_glob Σ' id = Some (instantiate_sorts inst ty).
+Proof.
+  intros S inst Σ id ty h Σ'.
+  induction Σ.
+  - cbn in *. discriminate h.
+  - cbn in *. revert h. case_eq (ident_eq id (dname a)).
+    + intros e h. inversion h. subst. reflexivity.
+    + intros e h. eapply IHΣ. assumption.
+Defined.
+
 Lemma instantiate_sorts_sound :
   forall `{ S : Sorts.notion } Σ Γ inst t A,
     Σ ;;; Γ |-w t : A ->
@@ -487,10 +501,10 @@ Proof.
     + eapply IHh1. assumption.
     + eapply IHh2. assumption.
     + eapply IHh3. assumption.
-  - cbn. unfold A'.
-    (* Need to instantiate sorts in Σ as well unfortunately. *)
-    admit.
-    Unshelve. { auto. } { cbn. auto with arith. } { constructor. constructor. }
+  - cbn. unfold A'. econstructor ; try assumption.
+    eapply instantiate_sorts_lookup_glob. assumption.
+  Unshelve.
+  { admit. } { cbn. auto with arith. } { admit. }
 Admitted.
 
 End PolymorphicSorts.
