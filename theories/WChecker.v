@@ -238,6 +238,16 @@ Ltac deal_getpack :=
     inversion h ; subst ; clear h
   end.
 
+Ltac deal_assert_eq_sort :=
+  match goal with
+  | h : assert_eq_sort ?s ?z = _ |- _ =>
+    unfold assert_eq_sort in h ;
+    revert h ;
+    destruct (eq_dec s z) ;
+    try (intros ; discriminate h) ;
+    intros ; subst ; clear h
+  end.
+
 Ltac remove1 :=
   lazymatch goal with
   | |- context [ match ?t with _ => _ end ] =>
@@ -260,7 +270,8 @@ Ltac go eq :=
   repeat deal_getheq ;
   repeat deal_getpack ;
   repeat deal_gettransport ;
-  repeat deal_getprod.
+  repeat deal_getprod ;
+  repeat deal_assert_eq_sort.
 
 Ltac one_ih :=
   lazymatch goal with
@@ -275,15 +286,6 @@ Ltac ih :=
   | econstructor ; try eassumption ;
     one_ih ; eassumption
   ].
-
-(* Ltac rih := *)
-(*   lazymatch goal with *)
-(*   | h : _ -> _ -> _ -> _ -> _ ;;; _ |-w ?t : _ |- _ ;;; _ |-w ?t : _ => *)
-(*     eapply type_rename ; [ *)
-(*       eapply h ; eassumption *)
-(*     | symmetry ; eapply eq_term_spec ; assumption *)
-(*     ] *)
-(*   end. *)
 
 Ltac rih :=
   eapply type_rename ; [
@@ -308,6 +310,22 @@ Proof.
       * eapply type_Rel. assumption.
       * erewrite nth_error_Some_safe_nth with (e := eq). reflexivity.
     + intros H eq. discriminate eq.
+  - go eq. econstructor ; try ih ; try rih.
+    one_ih.
+    + eassumption.
+    + econstructor.
+      * econstructor ; try eassumption. ih.
+      * econstructor.
+        -- match goal with
+           | |- _ ;;; _ |-w lift ?n ?k _ : ?S =>
+             change S with (lift n k S)
+           end.
+           eapply typing_lift01 ; try eassumption ; ih.
+        -- eapply typing_lift01 ; try eassumption ; try rih. ih.
+        -- eapply meta_conv.
+           ++ econstructor. econstructor ; try eassumption. ih.
+           ++ cbn. reflexivity.
+  - go eq. econstructor ; try ih ; try rih.
 Admitted.
 
 End Checking.
