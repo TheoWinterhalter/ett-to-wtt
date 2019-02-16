@@ -509,4 +509,286 @@ Proof.
   - eassumption.
 Defined.
 
+Corollary typing_lift02 :
+  forall {Σ Γ t A B s C s'},
+    type_glob Σ ->
+    Σ ;;; Γ |-w t : A ->
+    Σ ;;; Γ |-w B : wSort s ->
+    Σ ;;; Γ ,, B |-w C : wSort s' ->
+    Σ ;;; Γ ,, B ,, C |-w lift0 2 t : lift0 2 A.
+Proof.
+  intros Σ Γ t A B s C s' hg ht hB hC.
+  assert (eq : forall t, lift0 2 t = lift0 1 (lift0 1 t)).
+  { intro u. rewrite lift_lift. reflexivity. }
+  rewrite !eq. eapply typing_lift01.
+  - assumption.
+  - eapply typing_lift01  ; eassumption.
+  - eassumption.
+Defined.
+
+Fact subst_ax_type :
+  forall {Σ},
+    type_glob Σ ->
+    forall {id ty},
+      lookup_glob Σ id = Some ty ->
+      forall n u, ty{ n := u } = ty.
+Proof.
+  intros Σ hg id ty isd n k.
+  destruct (typed_ax_type hg isd).
+  eapply closed_subst.
+  eapply type_ctxempty_closed. eassumption.
+Defined.
+
+(* Substitution in context *)
+
+Fixpoint subst_context u Δ :=
+  match Δ with
+  | nil => nil
+  | A :: Δ => (A{ #|Δ| := u }) :: (subst_context u Δ)
+  end.
+
+Fact subst_context_length :
+  forall {u Ξ}, #|subst_context u Ξ| = #|Ξ|.
+Proof.
+  intros u Ξ.
+  induction Ξ.
+  - cbn. reflexivity.
+  - cbn. f_equal. assumption.
+Defined.
+
+Fact safe_nth_subst_context :
+  forall {Δ : wcontext} {n u isdecl isdecl'},
+    (safe_nth (subst_context u Δ) (exist _ n isdecl)) =
+    (safe_nth Δ (exist _ n isdecl')) { #|Δ| - S n := u }.
+Proof.
+  intro Δ. induction Δ.
+  - cbn. intros. bang.
+  - intro n. destruct n ; intros u isdecl isdecl'.
+    + cbn. replace (#|Δ| - 0) with #|Δ| by myomega. reflexivity.
+    + cbn. erewrite IHΔ. reflexivity.
+Defined.
+
+Ltac sh h :=
+  lazymatch goal with
+  | [ type_subst :
+        forall (Σ : wglobal_context) (Γ : list wterm) (Δ : wcontext) (t A : wterm)
+          (B u : wterm),
+          Σ;;; Γ,, B ,,, Δ |-w t : A ->
+          type_glob Σ ->
+          Σ;;; Γ |-w u : B ->
+          Σ;;; Γ ,,, subst_context u Δ |-w
+          t {#|Δ| := u} : A {#|Δ| := u}
+    |- _ ] =>
+    lazymatch type of h with
+    | _ ;;; ?Γ' ,, ?B' ,,, ?Δ' |-w _ : ?T' =>
+      eapply meta_conv ; [
+        eapply meta_ctx_conv ; [
+          eapply type_subst with (Γ := Γ') (Δ := Δ') (A := T') ; [
+            exact h
+          | assumption
+          | assumption
+          ]
+        | .. ]
+      | .. ]
+    | _ ;;; (?Γ' ,, ?B' ,,, ?Δ') ,, ?d' |-w _ : ?T' =>
+      eapply meta_conv ; [
+        eapply meta_ctx_conv ; [
+          eapply type_subst with (Γ := Γ') (Δ := Δ' ,, d') (A := T') ; [
+            exact h
+          | assumption
+          | assumption
+          ]
+        | .. ]
+      | .. ]
+    | _ ;;; (?Γ' ,, ?B' ,,, ?Δ') ,, ?d',, ?d'' |-w _ : ?T' =>
+      eapply meta_conv ; [
+        eapply meta_ctx_conv ; [
+          eapply type_subst with (Γ := Γ') (Δ := (Δ' ,, d') ,, d'') (A := T') ; [
+            exact h
+          | assumption
+          | assumption
+          ]
+        | .. ]
+      | .. ]
+    end ; try (cbn ; reflexivity)
+  | _ => fail "cannot find type_subst"
+  end.
+
+Ltac esh :=
+  lazymatch goal with
+  | h : _ ;;; _ |-w ?t : _ |- _ ;;; _ |-w ?t{ _ := _ } : _ => sh h
+  | _ => fail "not handled by esh"
+  end.
+
+Fixpoint type_subst {Σ Γ Δ t A B u}
+  (h : Σ ;;; Γ ,, B ,,, Δ |-w t : A) {struct h} :
+  type_glob Σ ->
+  Σ ;;; Γ |-w u : B ->
+  Σ ;;; Γ ,,, subst_context u Δ |-w t{ #|Δ| := u } : A{ #|Δ| := u }
+
+with wf_subst {Σ Γ Δ B u}
+  (h : wf Σ (Γ ,, B ,,, Δ)) {struct h} :
+  type_glob Σ ->
+  Σ ;;; Γ |-w u : B ->
+  wf Σ (Γ ,,, subst_context u Δ)
+.
+Proof.
+  (* type_subst *)
+  - { intros hg hu.
+      dependent destruction h.
+      - cbn. case_eq (#|Δ| ?= n) ; intro e ; bprop e.
+        + assert (h : n >= #|Δ|) by myomega.
+          rewrite safe_nth_ge' with (h0 := h).
+          assert (n - #|Δ| = 0) by myomega.
+          set (ge := ge_sub isdecl h).
+          generalize ge.
+          rewrite H0. intro ge'.
+          cbn. rewrite substP3 by myomega.
+          subst.
+          replace #|Δ| with #|subst_context u Δ|
+            by (now rewrite subst_context_length).
+          eapply @type_lift with (Ξ := []) (Δ := subst_context u Δ).
+          * cbn. assumption.
+          * assumption.
+          * eapply wf_subst ; eassumption.
+        + assert (h : n >= #|Δ|) by myomega.
+          rewrite safe_nth_ge' with (h0 := h).
+          set (ge := ge_sub isdecl h).
+          destruct n ; try easy.
+          rewrite substP3 by myomega.
+          generalize ge.
+          replace (S n - #|Δ|) with (S (n - #|Δ|)) by myomega.
+          cbn. intro ge'.
+          eapply meta_conv.
+          * eapply type_Rel. eapply wf_subst ; eassumption.
+          * erewrite safe_nth_ge'.
+            f_equal. eapply safe_nth_cong_irr.
+            rewrite subst_context_length. reflexivity.
+        + assert (h : n < #|Δ|) by myomega.
+          rewrite @safe_nth_lt with (isdecl' := h).
+          match goal with
+          | |- _ ;;; _ |-w _ : ?t{?d := ?u} =>
+            replace (subst u d t) with (t{((S n) + (#|Δ| - (S n)))%nat := u})
+              by (f_equal ; myomega)
+          end.
+          rewrite substP2 by myomega.
+          eapply meta_conv.
+          * eapply type_Rel.
+            eapply wf_subst ; eassumption.
+          * f_equal.
+            erewrite safe_nth_lt.
+            eapply safe_nth_subst_context.
+      - cbn. apply type_Sort. eapply wf_subst ; eassumption.
+      - cbn. eapply type_Prod ; esh.
+      - cbn. eapply type_Lambda ; esh.
+      - cbn.
+        change ((B0 {0 := u0}) {#|Δ| := u})
+          with ((B0 {0 := u0}) {0 + #|Δ| := u}).
+        rewrite substP4. cbn.
+        eapply type_App ; esh.
+      - cbn. eapply type_Sum ; esh.
+      - cbn. eapply type_Pair ; esh.
+        change (#|Δ|) with (0 + #|Δ|)%nat.
+        rewrite substP4. reflexivity.
+      - cbn. eapply type_Pi1 ; esh.
+      - cbn.
+        change (#|Δ|) with (0 + #|Δ|)%nat.
+        rewrite substP4. cbn.
+        eapply type_Pi2 ; esh.
+      - cbn. eapply type_Eq ; esh.
+      - cbn. eapply type_Refl ; esh.
+      - cbn.
+        change (#|Δ|) with (0 + #|Δ|)%nat.
+        rewrite substP4.
+        replace (S (0 + #|Δ|)) with (1 + #|Δ|)%nat by myomega.
+        rewrite substP4.
+        eapply type_J ; esh.
+        + cbn. unfold snoc. cbn.
+          f_equal. f_equal.
+          * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
+            apply substP2. myomega.
+          * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
+            apply substP2. myomega.
+        + replace (S (S #|Δ|)) with (1 + (S (0 + #|Δ|)))%nat by myomega.
+          rewrite <- substP4.
+          replace (1 + (0 + #|Δ|))%nat with (S (0 + #|Δ|))%nat by myomega.
+          change (wRefl (A0 {0 + #|Δ| := u}) (u0 {0 + #|Δ| := u}))
+            with ((wRefl A0 u0){ 0 + #|Δ| := u}).
+          rewrite <- substP4. reflexivity.
+      - cbn. eapply type_Transport ; esh.
+      - cbn.
+        change ((B0 {0 := u0}) {#|Δ| := u})
+          with ((B0 {0 := u0}) {0 + #|Δ| := u}).
+        change ((t0 {0 := u0}) {#|Δ| := u})
+          with ((t0 {0 := u0}) {0 + #|Δ| := u}).
+        rewrite 2!substP4. cbn.
+        eapply type_Beta ; esh.
+      - cbn. eapply type_K ; esh.
+      - cbn. eapply type_Funext ; esh.
+        cbn. f_equal. f_equal.
+        + f_equal. replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
+          apply substP2. myomega.
+        + f_equal. replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
+          apply substP2. myomega.
+      - cbn. eapply type_Heq ; esh.
+      - cbn. eapply type_HeqPair ; esh.
+      - cbn. eapply type_HeqTy ; esh.
+      - cbn. eapply type_HeqTm ; esh.
+      - cbn. eapply type_Pack ; esh.
+      - cbn. eapply @type_ProjT1 with (A2 := A2{#|Δ| := u}) ; esh.
+      - cbn. eapply @type_ProjT2 with (A1 := A1{#|Δ| := u}) ; esh.
+      - cbn. eapply type_ProjTe ; esh.
+      - cbn. erewrite subst_ax_type by eassumption.
+        eapply type_Ax.
+        + now eapply wf_subst.
+        + assumption.
+      - eapply type_rename.
+        + esh.
+        + eapply nl_subst.
+          * assumption.
+          * reflexivity.
+    }
+
+  (* wf_subst *)
+  - { intros hg hu.
+      destruct Δ.
+      - cbn. dependent destruction h. assumption.
+      - dependent destruction h. cbn. econstructor.
+        + eapply wf_subst ; eassumption.
+        + esh.
+    }
+
+  Unshelve.
+  all: try rewrite !length_cat ; try rewrite !subst_context_length ; myomega.
+Defined.
+
+Corollary typing_subst :
+  forall {Σ Γ t A B u},
+    type_glob Σ ->
+    Σ ;;; Γ ,, A |-w t : B ->
+    Σ ;;; Γ |-w u : A ->
+    Σ ;;; Γ |-w t{ 0 := u } : B{ 0 := u }.
+Proof.
+  intros Σ Γ t A B u hg ht hu.
+  eapply @type_subst with (Δ := []) ; eassumption.
+Defined.
+
+Corollary typing_subst2 :
+  forall {Σ Γ t A B C u v},
+    type_glob Σ ->
+    Σ ;;; Γ ,, A ,, B |-w t : C ->
+    Σ ;;; Γ |-w u : A ->
+    Σ ;;; Γ |-w v : B{ 0 := u } ->
+    Σ ;;; Γ |-w t{ 1 := u }{ 0 := v } : C{ 1 := u }{ 0 := v }.
+Proof.
+  intros Σ Γ t A B C u v hg ht hu hv.
+  eapply @type_subst with (Δ := []).
+  - eapply @type_subst with (Δ := [ B ]).
+    + exact ht.
+    + assumption.
+    + assumption.
+  - assumption.
+  - cbn. assumption.
+Defined.
+
 End Lemmata.
