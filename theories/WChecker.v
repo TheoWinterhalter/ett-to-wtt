@@ -262,6 +262,35 @@ Ltac go eq :=
   repeat deal_gettransport ;
   repeat deal_getprod.
 
+Ltac one_ih :=
+  lazymatch goal with
+  | h : _ -> _ -> _ -> _ -> _ ;;; _ |-w ?t : _ |- _ ;;; _ |-w ?t : _ =>
+    eapply h
+  end.
+
+Ltac ih :=
+  one_ih ;
+  first [
+    eassumption
+  | econstructor ; try eassumption ;
+    one_ih ; eassumption
+  ].
+
+(* Ltac rih := *)
+(*   lazymatch goal with *)
+(*   | h : _ -> _ -> _ -> _ -> _ ;;; _ |-w ?t : _ |- _ ;;; _ |-w ?t : _ => *)
+(*     eapply type_rename ; [ *)
+(*       eapply h ; eassumption *)
+(*     | symmetry ; eapply eq_term_spec ; assumption *)
+(*     ] *)
+(*   end. *)
+
+Ltac rih :=
+  eapply type_rename ; [
+    ih ; eassumption
+  | symmetry ; eapply eq_term_spec ; assumption
+  ].
+
 Lemma wttinfer_sound :
   forall Σ Γ t A,
     wttinfer Σ Γ t = Some A ->
@@ -272,65 +301,13 @@ Proof.
   intros Σ Γ t A eq hg hw.
   revert Γ A eq hw.
   induction t ; intros Γ A eq hw.
-  (* Below, only solves 3 subgoals... *)
-  (* all: try solve [ *)
-  (*            go eq ; *)
-  (*            econstructor ; *)
-  (*            try (eapply IHt ; eassumption) ; *)
-  (*            try (eapply IHt1 ; eassumption) ; *)
-  (*            try (eapply IHt2 ; eassumption) ; *)
-  (*            try (eapply IHt3 ; eassumption) ; *)
-  (*            try (eapply IHt4 ; eassumption) ; *)
-  (*            try (eapply IHt5 ; eassumption) ; *)
-  (*            try (eapply IHt6 ; eassumption) ; *)
-  (*            try eassumption *)
-  (*          ]. *)
+  all: try solve [ go eq ; econstructor ; try eassumption ; try ih ; try rih ].
   - cbn in eq. revert eq. case_eq (nth_error Γ n).
     + intros A' eq e. inversion e. subst.
       eapply meta_conv.
       * eapply type_Rel. assumption.
       * erewrite nth_error_Some_safe_nth with (e := eq). reflexivity.
     + intros H eq. discriminate eq.
-  - go eq. econstructor. assumption.
-  - go eq. econstructor.
-    + eapply IHt1 ; assumption.
-    + eapply IHt2 ; try assumption.
-      econstructor ; try assumption.
-      eapply IHt1 ; eassumption.
-  - go eq. econstructor.
-    + eapply IHt1 ; eassumption.
-    + eapply IHt2 ; try eassumption.
-      econstructor ; try assumption.
-      eapply IHt1 ; eassumption.
-  - go eq. econstructor.
-    + eapply IHt1 ; eassumption.
-    + eapply type_rename.
-      * eapply IHt2 ; eassumption.
-      * symmetry. eapply eq_term_spec. assumption.
-  - go eq. econstructor.
-    + eapply IHt1 ; eassumption.
-    + eapply IHt2 ; try eassumption.
-      econstructor ; try assumption.
-      eapply IHt1 ; eassumption.
-  - go eq. econstructor.
-    + eapply IHt1 ; eassumption.
-    + eapply IHt2 ; try eassumption.
-      econstructor ; try eassumption.
-      eapply IHt1 ; eassumption.
-    + eapply type_rename.
-      * eapply IHt3 ; eassumption.
-      * symmetry. eapply eq_term_spec. assumption.
-    + eapply type_rename.
-      * eapply IHt4 ; eassumption.
-      * symmetry. eapply eq_term_spec. assumption.
-  - go eq. econstructor.
-    + eapply type_rename.
-      * eapply IHt3 ; eassumption.
-      * symmetry. eapply eq_term_spec. assumption.
-    + eapply IHt1 ; eassumption.
-    + eapply IHt2 ; try eassumption.
-      econstructor ; try eassumption.
-      eapply IHt1 ; eassumption.
 Admitted.
 
 End Checking.
