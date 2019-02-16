@@ -199,42 +199,42 @@ Ltac deal_assert_eq :=
 Ltac deal_getsort :=
   match goal with
   | h : getsort ?t = _ |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
+    destruct t ; simpl in h ; try discriminate h ;
     inversion h ; subst ; clear h
   end.
 
 Ltac deal_getprod :=
   match goal with
   | h : getprod ?t = _ |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
+    destruct t ; simpl in h ; try discriminate h ;
     inversion h ; subst ; clear h
   end.
 
 Ltac deal_geteq :=
   match goal with
   | h : geteq ?t = _ |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
+    destruct t ; simpl in h ; try discriminate h ;
     inversion h ; subst ; clear h
   end.
 
 Ltac deal_getheq :=
   match goal with
   | h : getheq ?t = _ |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
+    destruct t ; simpl in h ; try discriminate h ;
     inversion h ; subst ; clear h
   end.
 
 Ltac deal_gettransport :=
   match goal with
   | h : gettransport ?t = _ |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
+    destruct t ; simpl in h ; try discriminate h ;
     inversion h ; subst ; clear h
   end.
 
 Ltac deal_getpack :=
   match goal with
   | h : getpack ?t = _ |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
+    destruct t ; simpl in h ; try discriminate h ;
     inversion h ; subst ; clear h
   end.
 
@@ -248,7 +248,7 @@ Ltac remove1 :=
   end.
 
 Ltac go eq :=
-  cbn in eq ; revert eq ;
+  simpl in eq ; revert eq ;
   repeat remove1 ;
   intros ;
   repeat remove1 ;
@@ -272,6 +272,7 @@ Proof.
   intros Σ Γ t A eq hg hw.
   revert Γ A eq hw.
   induction t ; intros Γ A eq hw.
+  (* Below, only solves 3 subgoals... *)
   (* all: try solve [ *)
   (*            go eq ; *)
   (*            econstructor ; *)
@@ -322,7 +323,14 @@ Proof.
     + eapply type_rename.
       * eapply IHt4 ; eassumption.
       * symmetry. eapply eq_term_spec. assumption.
-  -
+  - go eq. econstructor.
+    + eapply type_rename.
+      * eapply IHt3 ; eassumption.
+      * symmetry. eapply eq_term_spec. assumption.
+    + eapply IHt1 ; eassumption.
+    + eapply IHt2 ; try eassumption.
+      econstructor ; try eassumption.
+      eapply IHt1 ; eassumption.
 Admitted.
 
 End Checking.
