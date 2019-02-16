@@ -791,6 +791,63 @@ Proof.
   - cbn. assumption.
 Defined.
 
+Lemma inversion_Prod :
+  forall {Σ Γ n A B T},
+    Σ ;;; Γ |-w wProd n A B : T ->
+    exists s1 s2,
+      Σ ;;; Γ |-w A : wSort s1 /\
+      Σ ;;; Γ,, A |-w B : wSort s2 /\
+      nl T = nlSort (Sorts.prod_sort s1 s2).
+Proof.
+  intros Σ Γ n A B T h.
+  dependent induction h.
+  - do 2 eexists. repeat split ; eassumption.
+  - destruct IHh as [s1 [s2 [? [? ?]]]].
+    do 2 eexists. repeat split ; try eassumption.
+    transitivity (nl A) ; eauto.
+Defined.
+
+Lemma inversion_Eq :
+  forall {Σ Γ A u v T},
+    Σ ;;; Γ |-w wEq A u v : T ->
+    exists s,
+      Σ ;;; Γ |-w A : wSort s /\
+      Σ ;;; Γ |-w u : A /\
+      Σ ;;; Γ |-w v : A /\
+      nl T = nlSort (Sorts.eq_sort s).
+Proof.
+  intros Σ Γ A u v T h.
+  dependent induction h.
+  - eexists. repeat split ; eassumption.
+  - destruct IHh as [? [? [? [? ?]]]].
+    eexists. repeat split ; try eassumption.
+    transitivity (nl A) ; eauto.
+Defined.
+
+Lemma inversion_Heq :
+  forall {Σ Γ A a B b T},
+    Σ ;;; Γ |-w wHeq A a B b : T ->
+    exists s,
+      Σ ;;; Γ |-w A : wSort s /\
+      Σ ;;; Γ |-w B : wSort s /\
+      Σ ;;; Γ |-w a : A /\
+      Σ ;;; Γ |-w b : B /\
+      nl T = nlSort s.
+Proof.
+  intros Σ Γ A a B b T h.
+  dependent induction h.
+  - eexists. repeat split ; eassumption.
+  - destruct IHh as [? [? [? [? [? ?]]]]].
+    eexists. repeat split ; try eassumption.
+    transitivity (nl A) ; eauto.
+Defined.
+
+Ltac lift_sort :=
+  match goal with
+  | |- _ ;;; _ |-w lift ?n ?k ?t : ?S => change S with (lift n k S)
+  | |- _ ;;; _ |-w ?t { ?n := ?u } : ?S => change S with (S {n := u})
+  end.
+
 Lemma istype_type :
   forall {Σ Γ t T},
     type_glob Σ ->
@@ -821,115 +878,79 @@ Proof.
   - eexists. apply type_Sort. apply (typing_wf H).
   - destruct IHtyping2. eexists. apply type_Prod ; eassumption.
   - destruct IHtyping1. destruct IHtyping2.
-    (* We need inversion for Prod *)
+    destruct (inversion_Prod H1) as [s1 [s2 [? [? ?]]]].
     eexists.
     match goal with
     | |- _ ;;; _ |-w _ : ?S =>
       change S with (S{ 0 := u })
     end.
-(*     eapply typing_subst ; try eassumption. *)
-(*   - eexists. econstructor. eapply typing_wf. eassumption. *)
-(*   - eexists. econstructor ; eassumption. *)
-(*   - eexists. eassumption. *)
-(*   - exists s2. change (wSort s2) with ((wSort s2){ 0 := sPi1 A B p }). *)
-(*     eapply typing_subst ; try eassumption. *)
-(*     econstructor ; eassumption. *)
-(*   - eexists. apply type_Sort. apply (typing_wf H). *)
-(*   - eexists. now apply type_Eq. *)
-(*   - exists s2. *)
-(*     change (wSort s2) with ((wSort s2){1 := v}{0 := p}). *)
-(*     eapply typing_subst2. *)
-(*     + assumption. *)
-(*     + eassumption. *)
-(*     + assumption. *)
-(*     + cbn. rewrite !lift_subst, lift00. *)
-(*       assumption. *)
-(*   - eexists. eassumption. *)
-(*   - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H). *)
-(*   - eexists. apply type_Eq ; eassumption. *)
-(*   - exists s. apply type_Heq ; assumption. *)
-(*   - exists s. apply type_Heq ; assumption. *)
-(*   - exists s. apply type_Heq ; assumption. *)
-(*   - exists s. apply type_Heq. all: try assumption. *)
-(*     eapply type_Transport ; eassumption. *)
-(*   - eexists. *)
-(*     apply type_Heq. *)
-(*     + eapply type_Sort. apply (typing_wf H). *)
-(*     + eapply type_Sort. apply (typing_wf H). *)
-(*     + apply type_Prod ; assumption. *)
-(*     + apply type_Prod ; assumption. *)
-(*   - eexists. apply type_Heq. *)
-(*     + apply type_Prod ; eassumption. *)
-(*     + apply type_Prod ; assumption. *)
-(*     + eapply type_Lambda ; eassumption. *)
-(*     + eapply type_Lambda ; eassumption. *)
-(*   - exists z. apply type_Heq. *)
-(*     + change (wSort z) with ((wSort z){ 0 := v1 }). *)
-(*       eapply typing_subst ; eassumption. *)
-(*     + change (wSort z) with ((wSort z){ 0 := v2 }). *)
-(*       eapply typing_subst ; eassumption. *)
-(*     + eapply type_App ; eassumption. *)
-(*     + eapply type_App ; eassumption. *)
-(*   - eexists. *)
-(*     apply type_Heq. *)
-(*     + eapply type_Sort. apply (typing_wf H). *)
-(*     + eapply type_Sort. apply (typing_wf H). *)
-(*     + apply type_Sum ; assumption. *)
-(*     + apply type_Sum ; assumption. *)
-(*   - eexists. econstructor. *)
-(*     + econstructor ; eassumption. *)
-(*     + econstructor ; eassumption. *)
-(*     + econstructor ; eassumption. *)
-(*     + econstructor ; eassumption. *)
-(*   - eexists. econstructor ; try eassumption. *)
-(*     + econstructor ; eassumption. *)
-(*     + econstructor ; eassumption. *)
-(*   - eexists. econstructor ; try eassumption. *)
-(*     + match goal with *)
-(*       | |- _ ;;; _ |-w _ { 0 := ?t } : ?S => *)
-(*         change S with (S{ 0 := t }) *)
-(*       end. *)
-(*       eapply typing_subst ; try eassumption. *)
-(*       econstructor ; eassumption. *)
-(*     + match goal with *)
-(*       | |- _ ;;; _ |-w _ { 0 := ?t } : ?S => *)
-(*         change S with (S{ 0 := t }) *)
-(*       end. *)
-(*       eapply typing_subst ; try eassumption. *)
-(*       econstructor ; eassumption. *)
-(*     + econstructor ; eassumption. *)
-(*     + econstructor ; eassumption. *)
-(*   - eexists. apply type_Heq. *)
-(*     + apply type_Sort ; apply (typing_wf H). *)
-(*     + apply type_Sort ; apply (typing_wf H). *)
-(*     + apply type_Eq ; assumption. *)
-(*     + apply type_Eq ; assumption. *)
-(*   - eexists. apply type_Heq. *)
-(*     + apply type_Eq ; eassumption. *)
-(*     + apply type_Eq ; assumption. *)
-(*     + eapply type_Refl ; eassumption. *)
-(*     + eapply type_Refl ; eassumption. *)
-(*   - exists s. apply type_Heq ; assumption. *)
-(*   - eexists. eapply type_Eq ; try assumption. *)
-(*     apply type_Sort. apply (typing_wf H). *)
-(*   - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H). *)
-(*   - exists s. assumption. *)
-(*   - exists s. assumption. *)
-(*   - exists s. apply type_Heq ; try assumption. *)
-(*     + eapply type_ProjT1 ; eassumption. *)
-(*     + eapply @type_ProjT2 with (A1 := A1) ; eassumption. *)
-(*   - destruct (typed_ax_type hg H0) as [s hh]. *)
-(*     exists s. change (wSort s) with (lift #|Γ| #|@nil wterm| (wSort s)). *)
-(*     replace ty with (lift #|Γ| #|@nil wterm| ty) *)
-(*       by (erewrite lift_ax_type by eassumption ; reflexivity). *)
-(*     eapply meta_ctx_conv. *)
-(*     + eapply @type_lift with (Γ := []) (Ξ := []) (Δ := Γ). *)
-(*       * assumption. *)
-(*       * assumption. *)
-(*       * rewrite nil_cat. assumption. *)
-(*     + cbn. apply nil_cat. *)
-(*   - exists s. assumption. *)
-(* Defined. *)
+    eapply typing_subst ; eassumption.
+  - eexists. econstructor. eapply typing_wf. eassumption.
+  - eexists. econstructor ; eassumption.
+  - eexists. eassumption.
+  - exists s2. change (wSort s2) with ((wSort s2){ 0 := wPi1 A B p }).
+    eapply typing_subst ; try eassumption.
+    econstructor ; eassumption.
+  - eexists. apply type_Sort. apply (typing_wf H).
+  - eexists. now apply type_Eq.
+  - exists s2.
+    change (wSort s2) with ((wSort s2){1 := v}{0 := p}).
+    eapply typing_subst2.
+    + assumption.
+    + eassumption.
+    + assumption.
+    + cbn. rewrite !lift_subst, lift00.
+      assumption.
+  - eexists. eassumption.
+  - destruct IHtyping1. destruct IHtyping2.
+    eexists. econstructor.
+    + lift_sort. eapply typing_subst ; eassumption.
+    + eapply type_App ; try eassumption.
+      eapply type_Lambda ; eassumption.
+    + eapply typing_subst ; eassumption.
+  - destruct IHtyping1. destruct IHtyping2. destruct IHtyping3.
+    eexists. econstructor ; try eassumption.
+    econstructor ; eassumption.
+  - destruct IHtyping1. destruct IHtyping2. destruct IHtyping3.
+    destruct (inversion_Prod H3) as [? [? [? [? ?]]]].
+    eexists. econstructor.
+    + econstructor ; eassumption.
+    + eapply type_rename ; try eassumption.
+      reflexivity.
+    + eapply type_rename ; try eassumption.
+      reflexivity.
+  - eexists. apply type_Sort. apply (typing_wf H).
+  - destruct IHtyping3. destruct (inversion_Eq H3) as [? [? [? [? ?]]]].
+    eexists. econstructor ; try eassumption.
+  - eexists. econstructor ; try eassumption.
+    econstructor ; try eassumption.
+    apply (typing_wf H).
+  - destruct IHtyping. destruct (inversion_Heq H0) as [? [? [? [? [? ?]]]]].
+    eexists. econstructor ; try eassumption.
+    econstructor ; try eassumption.
+    econstructor ; eassumption.
+  - eexists. econstructor ; try eassumption.
+    apply (typing_wf H).
+  - eexists. eassumption.
+  - eexists. eassumption.
+  - eexists. econstructor ; try eassumption.
+    + econstructor ; eassumption.
+    + eapply type_ProjT2 with (A3 := A1) ; eassumption.
+  - destruct (typed_ax_type hg H0) as [s hh].
+    exists s. change (wSort s) with (lift #|Γ| #|@nil wterm| (wSort s)).
+    replace ty with (lift #|Γ| #|@nil wterm| ty)
+      by (erewrite lift_ax_type by eassumption ; reflexivity).
+    eapply meta_ctx_conv.
+    + eapply @type_lift with (Γ := []) (Ξ := []) (Δ := Γ).
+      * assumption.
+      * assumption.
+      * rewrite nil_cat. assumption.
+    + cbn. apply nil_cat.
+  - destruct IHtyping. eexists.
+    (* We need a lemma that allows us to type a renamed term.
+       Unline type_rename, this should be provable.
+     *)
+    admit.
 Admitted.
 
 End Lemmata.
