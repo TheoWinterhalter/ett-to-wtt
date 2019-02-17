@@ -848,6 +848,36 @@ Ltac lift_sort :=
   | |- _ ;;; _ |-w ?t { ?n := ?u } : ?S => change S with (S {n := u})
   end.
 
+Ltac reih :=
+  lazymatch goal with
+  | h : _ -> nl ?t1 = _ -> _ ;;; _ |-w _ : _,
+    e : nl ?t1 = nl ?t2
+    |- _ ;;; _ |-w ?t2 : _ =>
+    eapply h ; [ eapply e | ..]
+  end.
+
+Lemma rename_typed :
+  forall {Σ Γ t u A},
+    Σ ;;; Γ |-w t : A ->
+    nl t = nl u ->
+    Σ ;;; Γ |-w u : A.
+Proof.
+  intros Σ Γ t u A h e. revert u e.
+  induction h ; intros t' e.
+  all: try solve [
+    simpl in e ; destruct t' ; try discriminate e ;
+    simpl in e ; inversion e ; subst ; clear e ;
+    econstructor ; try eassumption ; try reih
+  ].
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + reih.
+    + (* Context problem here.
+         We need context α-equality.
+       *)
+Admitted.
+
 Lemma istype_type :
   forall {Σ Γ t T},
     type_glob Σ ->
@@ -947,10 +977,8 @@ Proof.
       * rewrite nil_cat. assumption.
     + cbn. apply nil_cat.
   - destruct IHtyping. eexists.
-    (* We need a lemma that allows us to type a renamed term.
-       Unline type_rename, this should be provable.
-     *)
-    admit.
-Admitted.
+    eapply rename_typed ; eassumption.
+  Unshelve. constructor.
+Defined.
 
 End Lemmata.
