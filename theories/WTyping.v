@@ -189,6 +189,12 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w p : wPack A1 A2 ->
     Σ ;;; Γ |-w wProjTe p : wHeq A1 (wProjT1 p) A2 (wProjT2 p)
 
+| type_pack Γ A1 A2 u v w :
+    Σ ;;; Γ |-w u : A1 ->
+    Σ ;;; Γ |-w v : A2 ->
+    Σ ;;; Γ |-w w : wHeq A1 u A2 v ->
+    Σ ;;; Γ |-w wpack u v w : wPack A1 A2
+
 | type_Ax Γ id ty :
     wf Σ Γ ->
     lookup_glob Σ id = Some ty ->

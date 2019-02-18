@@ -470,6 +470,7 @@ Proof.
       - cbn. eapply @type_ProjT1 with (A2 := lift #|Δ| #|Ξ| A2) ; eih.
       - cbn. eapply @type_ProjT2 with (A1 := lift #|Δ| #|Ξ| A1) ; eih.
       - cbn. eapply type_ProjTe ; eih.
+      - cbn. eapply type_pack ; eih.
       - cbn. erewrite lift_ax_type by eassumption.
         eapply type_Ax.
         + now apply wf_lift.
@@ -738,6 +739,7 @@ Proof.
       - cbn. eapply @type_ProjT1 with (A2 := A2{#|Δ| := u}) ; esh.
       - cbn. eapply @type_ProjT2 with (A1 := A1{#|Δ| := u}) ; esh.
       - cbn. eapply type_ProjTe ; esh.
+      - cbn. eapply type_pack ; esh.
       - cbn. erewrite subst_ax_type by eassumption.
         eapply type_Ax.
         + now eapply wf_subst.
@@ -1056,6 +1058,8 @@ Proof.
   - eexists. econstructor ; try eassumption.
     + econstructor ; eassumption.
     + eapply type_ProjT2 with (A3 := A1) ; eassumption.
+  - destruct IHtyping3. destruct (inversion_Heq H2) as [? [? [? [? [? ?]]]]].
+    eexists. econstructor ; eassumption.
   - destruct (typed_ax_type hg H0) as [s hh].
     exists s. change (wSort s) with (lift #|Γ| #|@nil wterm| (wSort s)).
     replace ty with (lift #|Γ| #|@nil wterm| ty)

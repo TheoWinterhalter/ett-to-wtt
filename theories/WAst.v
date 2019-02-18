@@ -41,6 +41,7 @@ Inductive wterm : Type :=
 | wProjT1 (p : wterm)
 | wProjT2 (p : wterm)
 | wProjTe (p : wterm)
+| wpack (u v w : wterm)
 (* External axioms *)
 | wAx (id : ident)
 .

@@ -39,6 +39,7 @@ Inductive nlterm : Type :=
 | nlProjT1 (p : nlterm)
 | nlProjT2 (p : nlterm)
 | nlProjTe (p : nlterm)
+| nlpack (u v w : nlterm)
 (* External axioms *)
 | nlAx (id : ident)
 .
@@ -69,6 +70,7 @@ Fixpoint nl (t : wterm) : nlterm :=
   | wProjT1 p => nlProjT1 (nl p)
   | wProjT2 p => nlProjT2 (nl p)
   | wProjTe p => nlProjTe (nl p)
+  | wpack u v w => nlpack (nl u) (nl v) (nl w)
   | wAx id => nlAx id
   end.
 

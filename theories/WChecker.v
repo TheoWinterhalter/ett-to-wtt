@@ -182,6 +182,11 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     P <- getpack =<< wttinfer Σ Γ p ;;
     let '(A1,A2) := P in
     ret (wHeq A1 (wProjT1 p) A2 (wProjT2 p))
+  | wpack u v w =>
+    A1 <- wttinfer Σ Γ u ;;
+    A2 <- wttinfer Σ Γ v ;;
+    assert_eq (wHeq A1 u A2 v) =<< wttinfer Σ Γ w ;;
+    ret (wPack A1 A2)
   | wAx id =>
     lookup_glob Σ id
   end.
@@ -397,6 +402,7 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wProjT1 p => wProjT1 (f p)
     | wProjT2 p => wProjT2 (f p)
     | wProjTe p => wProjTe (f p)
+    | wpack u v w => wpack (f u) (f v) (f w)
     | wAx id => wAx id
     end.
 

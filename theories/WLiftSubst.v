@@ -39,6 +39,7 @@ Fixpoint lift `{Sort_notion : Sorts.notion} n k t : wterm :=
   | wProjT1 p => wProjT1 (lift n k p)
   | wProjT2 p => wProjT2 (lift n k p)
   | wProjTe p => wProjTe (lift n k p)
+  | wpack u v w => wpack (lift n k u) (lift n k v) (lift n k w)
   | wSort s => wSort s
   | wAx id => wAx id
   end.
@@ -83,6 +84,7 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
   | wProjT1 p => wProjT1 (subst t k p)
   | wProjT2 p => wProjT2 (subst t k p)
   | wProjTe p => wProjTe (subst t k p)
+  | wpack u v w => wpack (subst t k u) (subst t k v) (subst t k w)
   | wSort s => wSort s
   | wAx id => wAx id
   end.
@@ -153,6 +155,7 @@ Fixpoint closed_above k t :=
   | wProjT1 p => closed_above k p
   | wProjT2 p => closed_above k p
   | wProjTe p => closed_above k p
+  | wpack u v w => closed_above k u && closed_above k v && closed_above k w
   | wAx id => true
   end.
 
