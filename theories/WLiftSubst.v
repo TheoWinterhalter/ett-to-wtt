@@ -50,6 +50,7 @@ Fixpoint lift `{Sort_notion : Sorts.notion} n k t : wterm :=
   end.
 
 Notation lift0 n t := (lift n 0 t).
+Notation "↑" := (lift 1 0).
 
 Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
   match u with

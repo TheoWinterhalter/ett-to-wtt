@@ -8,20 +8,6 @@ From Translation
 Require Import util Sorts SAst SLiftSubst SCommon ITyping Quotes.
 Import MonadNotation.
 
-(* Associative table indexed by strings *)
-Inductive assoc (A : Type) :=
-| empty
-| acons (key : string) (data : A) (t : assoc A).
-
-Arguments empty {_}.
-Arguments acons {_} _ _.
-
-Fixpoint assoc_at {A} (key : string) (t : assoc A) {struct t} : option A :=
-  match t with
-  | empty => None
-  | acons k a r => if string_dec key k then Some a else assoc_at key r
-  end.
-
 Module T := Typing.
 
 Section Final.
