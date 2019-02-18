@@ -854,6 +854,19 @@ Fixpoint nlctx Γ :=
   | nil => nil
   end.
 
+Lemma nlctx_length :
+  forall {Γ Δ},
+    nlctx Γ = nlctx Δ ->
+    #|Γ| = #|Δ|.
+Proof.
+  intro Γ. induction Γ ; intros Δ e.
+  - cbn. destruct Δ ; simpl in e ; try discriminate e.
+    reflexivity.
+  - destruct Δ ; simpl in e ; try discriminate e.
+    cbn. f_equal. eapply IHΓ.
+    simpl in e. inversion e. reflexivity.
+Defined.
+
 Lemma nl_safe_nth :
   forall {Γ Δ n i1 i2},
     nlctx Γ = nlctx Δ ->
@@ -912,7 +925,10 @@ Proof.
   all: try solve [
     simpl in e ; destruct t' ; try discriminate e ;
     simpl in e ; inversion e ; subst ; clear e ;
-    try solve [ econstructor ; try eassumption ; try reih ] ;
+    try solve [
+          econstructor ; try eassumption ; try reih ;
+          try (econstructor ; [ reih | repeat nleq ])
+        ] ;
     try solve [
           econstructor ; [
             econstructor ; try eassumption ;
@@ -925,7 +941,8 @@ Proof.
   - simpl in e. destruct t' ; try discriminate e.
     simpl in e. inversion e. subst. clear e.
     econstructor.
-    + econstructor ; eassumption.
+    + unshelve (econstructor ; eassumption).
+      rewrite <- (nlctx_length ex). assumption.
     + eapply nl_lift. eapply nl_safe_nth. assumption.
   - simpl in e. destruct t' ; try discriminate e.
     simpl in e. inversion e. subst. clear e.
@@ -943,10 +960,13 @@ Proof.
         -- repeat eapply wf_snoc ; try eassumption ; try reih.
         -- cbn. nleq.
     + nleq.
-  - simpl in e. destruct t' ; try discriminate e.
-    simpl in e. inversion e. subst. clear e.
-
-Admitted.
+  - econstructor.
+    + eapply IHh ; assumption.
+    + assumption.
+  Unshelve.
+  all: try solve [ constructor ].
+  { cbn. auto with arith. }
+Defined.
 
 Lemma istype_type :
   forall {Σ Γ t T},
