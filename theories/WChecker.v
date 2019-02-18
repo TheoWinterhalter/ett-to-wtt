@@ -136,6 +136,10 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
                         (wApp (lift0 2 g) (wRel 0))))
               =<< wttinfer Σ Γ p ;;
     ret (wEq (wProd nAnon A B) f g)
+  | wTransportBeta A t =>
+    s <- getsort =<< wttinfer Σ Γ A ;;
+    assert_eq A =<< wttinfer Σ Γ t ;;
+    ret (wEq A (wTransport A A (wRefl (wSort s) A) t) t)
   | wHeq A a B b =>
     s <- getsort =<< wttinfer Σ Γ A ;;
     assert_eq_sort s =<< getsort =<< wttinfer Σ Γ B ;;
@@ -394,6 +398,7 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wBeta t u => wBeta (f t) (f u)
     | wK A u p => wK (f A) (f u) (f p)
     | wFunext g h p => wFunext (f g) (f h) (f p)
+    | wTransportBeta A t => wTransportBeta (f A) (f t)
     | wHeq A a B b => wHeq (f A) (f a) (f B) (f b)
     | wHeqPair p q => wHeqPair (f p) (f q)
     | wHeqTy A B p => wHeqTy (f A) (f B) (f p)

@@ -462,6 +462,7 @@ Proof.
             apply liftP2. myomega.
         + f_equal. replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
             apply liftP2. myomega.
+      - cbn. eapply type_TransportBeta ; eih.
       - cbn. eapply type_Heq ; eih.
       - cbn. eapply type_HeqPair ; eih.
       - cbn. eapply type_HeqTy ; eih.
@@ -731,6 +732,7 @@ Proof.
           apply substP2. myomega.
         + f_equal. replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
           apply substP2. myomega.
+      - cbn. eapply type_TransportBeta ; esh.
       - cbn. eapply type_Heq ; esh.
       - cbn. eapply type_HeqPair ; esh.
       - cbn. eapply type_HeqTy ; esh.
@@ -1041,6 +1043,11 @@ Proof.
       reflexivity.
     + eapply type_rename ; try eassumption.
       reflexivity.
+  - econstructor ; try eassumption.
+    econstructor ; try eassumption.
+    econstructor ; try eassumption.
+    econstructor ; try eassumption.
+    econstructor. eapply typing_wf. eassumption.
   - eexists. apply type_Sort. apply (typing_wf H).
   - destruct IHtyping3. destruct (inversion_Eq H3) as [? [? [? [? ?]]]].
     eexists. econstructor ; try eassumption.
