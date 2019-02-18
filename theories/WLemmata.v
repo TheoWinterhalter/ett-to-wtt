@@ -1029,12 +1029,13 @@ Proof.
         try econstructor ; [ econstructor |].
         -- repeat eapply wf_snoc ; try eassumption ; try reih.
         -- cbn. nleq.
-    + nleq.
+    + repeat nleq.
   - econstructor.
     + eapply IHh ; assumption.
     + assumption.
   Unshelve.
   all: try solve [ constructor ].
+  { cbn. auto with arith. }
   { cbn. auto with arith. }
 Defined.
 
@@ -1109,6 +1110,17 @@ Proof.
       reflexivity.
     + eapply type_rename ; try eassumption.
       reflexivity.
+  - eexists. eapply type_Eq.
+    + match goal with
+      | |- _ ;;; _ |-w _ : ?S =>
+        change S with (S{1 := u}{0 := wRefl A u})
+      end.
+      eapply typing_subst2 ; try eassumption.
+      cbn. rewrite !lift_subst, lift00.
+      econstructor ; eassumption.
+    + econstructor ; try eassumption.
+      econstructor ; eassumption.
+    + assumption.
   - econstructor ; try eassumption.
     econstructor ; try eassumption.
     econstructor ; try eassumption.

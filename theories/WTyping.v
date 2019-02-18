@@ -142,10 +142,11 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w g : wProd n2 A B ->
     Σ ;;; Γ |-w wFunext f g p : wEq (wProd n A B) f g
 
-| type_JBeta Γ A u P w s :
+| type_JBeta Γ A u P w s1 s2 :
     Σ ;;; Γ |-w u : A ->
-    Σ ;;; Γ ,, A ,, (wEq (lift0 1 A) (lift0 1 u) (wRel 0)) |-w P : wSort s ->
+    Σ ;;; Γ ,, A ,, (wEq (lift0 1 A) (lift0 1 u) (wRel 0)) |-w P : wSort s2 ->
     Σ ;;; Γ |-w w : P{ 1 := u }{ 0 := wRefl A u } ->
+    Σ ;;; Γ |-w A : wSort s1 ->
     Σ ;;; Γ |-w wJBeta u P w : wEq (P{ 1 := u }{ 0 := wRefl A u })
                                 (wJ A u P w u (wRefl A u))
                                 w

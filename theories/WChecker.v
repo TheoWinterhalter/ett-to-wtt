@@ -138,6 +138,13 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
                         (wApp (lift0 1 g) (wRel 0))))
               =<< wttinfer Σ Γ p ;;
     ret (wEq (wProd nAnon A B) f g)
+  | wJBeta u P w =>
+    A <- wttinfer Σ Γ u ;;
+    getsort =<< wttinfer Σ (Γ,, A,, (wEq (lift0 1 A) (lift0 1 u) (wRel 0))) P ;;
+    assert_eq (P{ 1 := u }{ 0 := wRefl A u }) =<< wttinfer Σ Γ w ;;
+    ret (wEq (P{ 1 := u }{ 0 := wRefl A u })
+             (wJ A u P w u (wRefl A u))
+             w)
   | wTransportBeta A t =>
     s <- getsort =<< wttinfer Σ Γ A ;;
     assert_eq A =<< wttinfer Σ Γ t ;;
@@ -353,6 +360,22 @@ Proof.
     assert (Σ ;;; Γ |-w t2 : w) as hh by ih.
     destruct (istype_type hg hh).
     eapply type_Beta' ; try eassumption ; try ih ; try rih.
+  - go eq.
+    assert (Σ ;;; Γ |-w t1 : w0) as hh by ih.
+    destruct (istype_type hg hh).
+    econstructor ; try eassumption ; try ih ; try rih.
+    eapply IHt2 ; try eassumption.
+    repeat eapply wf_snoc ; try eassumption.
+    econstructor.
+    + match goal with
+      | |- _ ;;; _ |-w lift ?n ?k _ : ?S =>
+        change S with (lift n k S)
+      end.
+      eapply typing_lift01 ; try eassumption ; ih.
+    + eapply typing_lift01 ; try eassumption ; rih.
+    + eapply meta_conv.
+      * econstructor. econstructor ; eassumption.
+      * cbn. reflexivity.
   - simpl in eq . revert eq .
     repeat (remove1 ; intros).
     inversion eq . subst . clear eq .
@@ -451,6 +474,7 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wBeta t u => wBeta (f t) (f u)
     | wK A u p => wK (f A) (f u) (f p)
     | wFunext g h p => wFunext (f g) (f h) (f p)
+    | wJBeta u P w => wJBeta (f u) (f P) (f w)
     | wTransportBeta A t => wTransportBeta (f A) (f t)
     | wHeq A a B b => wHeq (f A) (f a) (f B) (f b)
     | wHeqPair p q => wHeqPair (f p) (f q)
@@ -659,6 +683,29 @@ Proof.
       eapply IHh1. assumption.
     + eapply IHh2. assumption.
     + eapply IHh3. assumption.
+  - cbn. rewrite 2!instantiate_sorts_subst.
+    econstructor.
+    + eapply IHh1. assumption.
+    + cbn in IHh2. rewrite !instantiate_sorts_lift in IHh2. eapply IHh2.
+      repeat eapply wf_snoc ; try eassumption.
+      * eapply IHh4. assumption.
+      * econstructor.
+        -- match goal with
+           | |- _ ;;; _ |-w _ : ?S =>
+             change S with (lift0 1 S)
+           end.
+           eapply typing_lift01 ; try eassumption.
+           all: eapply IHh4 ; assumption.
+        -- eapply typing_lift01 ; try eassumption.
+           ++ eapply IHh1 ; assumption.
+           ++ eapply IHh4 ; assumption.
+        -- eapply meta_conv.
+           ++ econstructor ; try eassumption.
+              econstructor ; try eassumption.
+              eapply IHh4 ; assumption.
+           ++ reflexivity.
+    + rewrite 2!instantiate_sorts_subst in IHh3. eapply IHh3. assumption.
+    + eapply IHh4 ; assumption.
   - cbn. eapply type_ProjT1 with (A4 := instantiate_sorts inst A2).
     + eapply IHh1. assumption.
     + eapply IHh2. assumption.
@@ -669,6 +716,7 @@ Proof.
     + eapply IHh. assumption.
     + unfold A'. eapply nl_instantiate_sorts. assumption.
   Unshelve.
+  { cbn. auto with arith. }
   { cbn. auto with arith. }
 Defined.
 
