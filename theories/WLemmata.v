@@ -896,6 +896,24 @@ Proof.
     transitivity (nl A) ; eauto.
 Defined.
 
+Lemma inversion_Transport :
+  forall {Σ Γ A B p t T},
+    Σ ;;; Γ |-w wTransport A B p t : T ->
+    exists s,
+      Σ ;;; Γ |-w A : wSort s /\
+      Σ ;;; Γ |-w B : wSort s /\
+      Σ ;;; Γ |-w p : wEq (wSort s) A B /\
+      Σ ;;; Γ |-w t : A /\
+      nl T = nl B.
+Proof.
+  intros Σ Γ A B p t T h.
+  dependent induction h.
+  - eexists. repeat split ; eassumption.
+  - destruct IHh as [? [? [? [? [? ?]]]]].
+    eexists. repeat split ; try eassumption.
+    transitivity (nl A) ; eauto.
+Defined.
+
 Ltac lift_sort :=
   match goal with
   | |- _ ;;; _ |-w lift ?n ?k ?t : ?S => change S with (lift n k S)

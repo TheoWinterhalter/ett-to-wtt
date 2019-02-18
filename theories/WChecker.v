@@ -380,15 +380,32 @@ Proof.
     repeat (remove1 ; intros).
     inversion eq . subst . clear eq .
     repeat deal_assert_eq .
-    repeat deal_getsort .
     repeat deal_geteq .
     repeat deal_getheq .
     repeat deal_getpack .
     repeat deal_gettransport .
     repeat deal_getprod .
+    repeat deal_getsort .
     repeat deal_assert_eq_sort.
-    (* econstructor ; try ih ; try rih. *)
-    admit.
+    assert (Σ ;;; Γ |-w t1 : wEq (wSort s) w0_2 w0_3) as hh1 by ih.
+    assert (Σ ;;; Γ |-w t2 : wEq w1 (wTransport w2_1 w2_2 w2_3 w2_4) w3) as hh2 by ih.
+    destruct (istype_type hg hh1) as [s1 hs1].
+    destruct (istype_type hg hh2) as [s2 hs2].
+    destruct (inversion_Eq hs1) as [? [? [? [? es]]]].
+    inversion es. subst. clear es.
+    destruct (inversion_Eq hs2) as [? [? [? [? es]]]].
+    inversion es. subst. clear es.
+    destruct (inversion_Transport H11) as [? [? [? [? [? ?]]]]].
+    econstructor ; try eassumption ; try ih ; try rih.
+    + eapply type_rename ; try eassumption.
+      symmetry. eapply eq_term_spec. assumption.
+    + eapply type_rename ; try eassumption.
+      symmetry. eapply eq_term_spec. assumption.
+    + eapply type_rename ; try eassumption.
+      cbn. symmetry. f_equal ; try assumption.
+      * eapply eq_term_spec. assumption.
+      * f_equal ; eapply eq_term_spec ; try assumption.
+        admit.
   - go eq. econstructor ; try ih ; try rih.
     eapply type_rename.
     + ih.
