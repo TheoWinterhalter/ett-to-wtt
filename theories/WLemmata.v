@@ -887,6 +887,10 @@ Ltac reih :=
     ]
   end.
 
+Ltac nleq :=
+  repeat (try eapply nl_lift ; try eapply nl_subst) ;
+  cbn ; auto ; f_equal ; eauto.
+
 Lemma rename_typed :
   forall {Σ Γ Δ t u A},
     Σ ;;; Γ |-w t : A ->
@@ -903,8 +907,10 @@ Proof.
     try solve [ econstructor ; try eassumption ; try reih ] ;
     try solve [
           econstructor ; [
-            econstructor ; try eassumption ; try reih
-          | cbn ; f_equal ; eauto
+            econstructor ; try eassumption ;
+            try reih ;
+            try (econstructor ; [ reih | nleq ])
+          | nleq
           ]
         ]
   ].
@@ -916,31 +922,14 @@ Proof.
   - simpl in e. destruct t' ; try discriminate e.
     simpl in e. inversion e. subst. clear e.
     econstructor.
-    + econstructor ; try eassumption ; try reih.
-    + cbn. f_equal ; eauto.
+    + econstructor ; try eassumption ; try reih ; try (econstructor ; [ reih | nleq ]).
+      *
 
-  (*   + reih. *)
-  (*   + lazymatch goal with *)
-  (* | h : _ -> _ -> _ -> nl ?t1 = _ -> _ -> _ ;;; _ |-w _ : _, *)
-  (*   e : nl ?t1 = nl ?t2 *)
-  (*   |- _ ;;; _ |-w ?t2 : _ => *)
-  (*   eapply h ; [ *)
-  (*     cbn ; f_equal ; eassumption *)
-  (*   | eassumption *)
-  (*   | first [ *)
-  (*       eassumption *)
-  (*     | econstructor ; try eassumption *)
-  (*     ] *)
-  (*   ] *)
-  (* end. reih. *)
-  (*     * cbn. f_equal ; eassumption. *)
-  (* - simpl in e. destruct t' ; try discriminate e. *)
-  (*   simpl in e. inversion e. subst. clear e. *)
-  (*   econstructor. *)
-  (*   + reih. *)
-  (*   + (* Context problem here. *)
-  (*        We need context α-equality. *)
-  (*      *) *)
+(* econstructor. *)
+(*         -- reih. *)
+(*         -- nleq. *)
+(*     + repeat (try eapply nl_lift ; try eapply nl_subst) ; cbn ; auto ; f_equal ; eauto. *)
+
 Admitted.
 
 Lemma istype_type :
