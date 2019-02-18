@@ -1067,7 +1067,9 @@ Proof.
       * rewrite nil_cat. assumption.
     + cbn. apply nil_cat.
   - destruct IHtyping. eexists.
-    eapply rename_typed ; eassumption.
+    eapply rename_typed ; try eassumption.
+    + reflexivity.
+    + eapply typing_wf. eassumption.
   Unshelve. constructor.
 Defined.
 
