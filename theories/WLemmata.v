@@ -848,34 +848,99 @@ Ltac lift_sort :=
   | |- _ ;;; _ |-w ?t { ?n := ?u } : ?S => change S with (S {n := u})
   end.
 
+Fixpoint nlctx Γ :=
+  match Γ with
+  | A :: Γ => nlctx Γ,, nl A
+  | nil => nil
+  end.
+
+Lemma nl_safe_nth :
+  forall {Γ Δ n i1 i2},
+    nlctx Γ = nlctx Δ ->
+    nl (safe_nth Δ (exist _ n i1)) = nl (safe_nth Γ (exist _ n i2)).
+Proof.
+  intros Γ Δ n i1 i2 e. cbn in *. revert Δ n i1 i2 e.
+  induction Γ as [| A Γ ih] ; intros Δ n i1 i2 e.
+  - cbn. bang.
+  - destruct Δ as [|B Δ] ; simpl in e ; try discriminate e.
+    inversion e.
+    destruct n.
+    + cbn. symmetry. assumption.
+    + cbn. eapply ih. assumption.
+Defined.
+
 Ltac reih :=
   lazymatch goal with
-  | h : _ -> nl ?t1 = _ -> _ ;;; _ |-w _ : _,
+  | h : _ -> _ -> _ -> nl ?t1 = _ -> _ -> _ ;;; _ |-w _ : _,
     e : nl ?t1 = nl ?t2
     |- _ ;;; _ |-w ?t2 : _ =>
-    eapply h ; [ eapply e | ..]
+    eapply h ; [
+      first [
+        eassumption
+      | cbn ; f_equal ; eassumption
+      ]
+    | eassumption
+    | first [
+        eassumption
+      | econstructor ; try eassumption ; reih
+      ]
+    ]
   end.
 
 Lemma rename_typed :
-  forall {Σ Γ t u A},
+  forall {Σ Γ Δ t u A},
     Σ ;;; Γ |-w t : A ->
+    nlctx Γ = nlctx Δ ->
     nl t = nl u ->
-    Σ ;;; Γ |-w u : A.
+    wf Σ Δ ->
+    Σ ;;; Δ |-w u : A.
 Proof.
-  intros Σ Γ t u A h e. revert u e.
-  induction h ; intros t' e.
+  intros Σ Γ Δ t u A h ex e hw. revert Δ ex u e hw.
+  induction h ; intros Δ ex t' e hw.
   all: try solve [
     simpl in e ; destruct t' ; try discriminate e ;
     simpl in e ; inversion e ; subst ; clear e ;
-    econstructor ; try eassumption ; try reih
+    try solve [ econstructor ; try eassumption ; try reih ] ;
+    try solve [
+          econstructor ; [
+            econstructor ; try eassumption ; try reih
+          | cbn ; f_equal ; eauto
+          ]
+        ]
   ].
   - simpl in e. destruct t' ; try discriminate e.
     simpl in e. inversion e. subst. clear e.
     econstructor.
-    + reih.
-    + (* Context problem here.
-         We need context α-equality.
-       *)
+    + econstructor ; eassumption.
+    + eapply nl_lift. eapply nl_safe_nth. assumption.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih.
+    + cbn. f_equal ; eauto.
+
+  (*   + reih. *)
+  (*   + lazymatch goal with *)
+  (* | h : _ -> _ -> _ -> nl ?t1 = _ -> _ -> _ ;;; _ |-w _ : _, *)
+  (*   e : nl ?t1 = nl ?t2 *)
+  (*   |- _ ;;; _ |-w ?t2 : _ => *)
+  (*   eapply h ; [ *)
+  (*     cbn ; f_equal ; eassumption *)
+  (*   | eassumption *)
+  (*   | first [ *)
+  (*       eassumption *)
+  (*     | econstructor ; try eassumption *)
+  (*     ] *)
+  (*   ] *)
+  (* end. reih. *)
+  (*     * cbn. f_equal ; eassumption. *)
+  (* - simpl in e. destruct t' ; try discriminate e. *)
+  (*   simpl in e. inversion e. subst. clear e. *)
+  (*   econstructor. *)
+  (*   + reih. *)
+  (*   + (* Context problem here. *)
+  (*        We need context α-equality. *)
+  (*      *) *)
 Admitted.
 
 Lemma istype_type :
