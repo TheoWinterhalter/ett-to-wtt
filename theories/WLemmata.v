@@ -869,16 +869,17 @@ Proof.
     + cbn. eapply ih. assumption.
 Defined.
 
+Ltac nleq :=
+  repeat (try eapply nl_lift ; try eapply nl_subst) ;
+  cbn ; auto ; f_equal ; eauto.
+
 Ltac reih :=
   lazymatch goal with
   | h : _ -> _ -> _ -> nl ?t1 = _ -> _ -> _ ;;; _ |-w _ : _,
     e : nl ?t1 = nl ?t2
     |- _ ;;; _ |-w ?t2 : _ =>
     eapply h ; [
-      first [
-        eassumption
-      | cbn ; f_equal ; eassumption
-      ]
+      repeat nleq
     | eassumption
     | first [
         eassumption
@@ -886,10 +887,6 @@ Ltac reih :=
       ]
     ]
   end.
-
-Ltac nleq :=
-  repeat (try eapply nl_lift ; try eapply nl_subst) ;
-  cbn ; auto ; f_equal ; eauto.
 
 Lemma rename_typed :
   forall {Σ Γ Δ t u A},
@@ -909,8 +906,8 @@ Proof.
           econstructor ; [
             econstructor ; try eassumption ;
             try reih ;
-            try (econstructor ; [ reih | nleq ])
-          | nleq
+            try (econstructor ; [ reih | repeat nleq ])
+          | repeat nleq
           ]
         ]
   ].
@@ -922,14 +919,10 @@ Proof.
   - simpl in e. destruct t' ; try discriminate e.
     simpl in e. inversion e. subst. clear e.
     econstructor.
-    + econstructor ; try eassumption ; try reih ; try (econstructor ; [ reih | nleq ]).
-      *
-
-(* econstructor. *)
-(*         -- reih. *)
-(*         -- nleq. *)
-(*     + repeat (try eapply nl_lift ; try eapply nl_subst) ; cbn ; auto ; f_equal ; eauto. *)
-
+    + econstructor ; try eassumption ; try reih ; try (econstructor ; [ reih | repeat nleq ]).
+      * eapply IHh4.
+        -- repeat nleq.
+        --
 Admitted.
 
 Lemma istype_type :
