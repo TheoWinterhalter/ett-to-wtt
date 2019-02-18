@@ -125,6 +125,8 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     B <- wttinfer Σ (Γ,, A) t ;;
     ret (wEq (B{ 0 := u }) (wApp (wLambda nAnon A t) u) (t{ 0 := u }))
   | wK A u p =>
+    getsort =<< wttinfer Σ Γ A ;;
+    assert_eq A =<< wttinfer Σ Γ u ;;
     assert_eq (wEq A u u) =<< wttinfer Σ Γ p ;;
     ret (wEq (wEq A u u) p (wRefl A u))
   | wFunext f g p =>
@@ -132,8 +134,8 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     let '(A,B) := Π in
     assert_eq (wProd nAnon A B) =<< wttinfer Σ Γ g ;;
     assert_eq (wProd nAnon A
-                 (wEq B (wApp (lift0 2 f) (wRel 0))
-                        (wApp (lift0 2 g) (wRel 0))))
+                 (wEq B (wApp (lift0 1 f) (wRel 0))
+                        (wApp (lift0 1 g) (wRel 0))))
               =<< wttinfer Σ Γ p ;;
     ret (wEq (wProd nAnon A B) f g)
   | wTransportBeta A t =>
@@ -194,6 +196,19 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
   | wAx id =>
     lookup_glob Σ id
   end.
+
+Lemma type_Beta' :
+  forall {Σ Γ A B t u n},
+    type_glob Σ ->
+    Σ ;;; Γ,, A |-w t : B ->
+    Σ ;;; Γ |-w u : A ->
+    Σ ;;; Γ |-w wBeta t u
+             : wEq (B {0 := u}) (wApp (wLambda n A t) u) (t {0 := u}).
+Proof.
+  intros Σ Γ A B t u n hg ht hu.
+  destruct (istype_type hg hu).
+  econstructor ; eassumption.
+Defined.
 
 Ltac deal_assert_eq :=
   match goal with
@@ -334,7 +349,22 @@ Proof.
         -- eapply meta_conv.
            ++ econstructor. econstructor ; try eassumption. ih.
            ++ cbn. reflexivity.
-  - go eq. econstructor ; try ih ; try rih.
+  - go eq.
+    assert (Σ ;;; Γ |-w t2 : w) as hh by ih.
+    destruct (istype_type hg hh).
+    eapply type_Beta' ; try eassumption ; try ih ; try rih.
+  - simpl in eq . revert eq .
+    repeat (remove1 ; intros).
+  inversion eq . subst . clear eq .
+  repeat deal_assert_eq .
+  repeat deal_getsort .
+  repeat deal_geteq .
+  repeat deal_getheq .
+  repeat deal_getpack .
+  repeat deal_gettransport .
+  repeat deal_getprod .
+  repeat deal_assert_eq_sort.
+  econstructor ; try ih ; try rih.
 Admitted.
 
 End Checking.
