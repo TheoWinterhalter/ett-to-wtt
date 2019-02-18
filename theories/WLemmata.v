@@ -880,7 +880,17 @@ Ltac reih :=
     |- _ ;;; _ |-w ?t2 : _ =>
     eapply h ; [
       repeat nleq
-    | eassumption
+    | first [ eassumption | reflexivity ]
+    | first [
+        eassumption
+      | econstructor ; try eassumption ; reih
+      ]
+    ]
+  | h : _ -> _ -> _ -> nl ?t = _ -> _ -> _ ;;; _ |-w _ : _
+    |- _ ;;; _ |-w ?t : _ =>
+    eapply h ; [
+      repeat nleq
+    | first [ eassumption | reflexivity ]
     | first [
         eassumption
       | econstructor ; try eassumption ; reih
@@ -935,17 +945,7 @@ Proof.
     + nleq.
   - simpl in e. destruct t' ; try discriminate e.
     simpl in e. inversion e. subst. clear e.
-    econstructor.
-    + econstructor ; try eassumption ; try reih ;
-      try (econstructor ; [ reih | repeat nleq ]).
-      eapply IHh1.
-      * nleq.
-      * eassumption.
-      * (* repeat eapply wf_snoc ; try eassumption ; try reih. *)
-        (* econstructor ; try lift_sort ; try eapply typing_lift01 ; *)
-        (* try eassumption ; try reih ; *)
-        (* try (econstructor ; [ reih | repeat nleq ]). *)
-        (* We're missing assumption on A to go on. *)
+
 Admitted.
 
 Lemma istype_type :
