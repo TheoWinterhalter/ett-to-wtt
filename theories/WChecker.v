@@ -166,6 +166,7 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     let '(A',B',e,a) := ti in
     assert_eq A A' ;;
     assert_eq B B' ;;
+    assert_eq p e ;;
     ret (wHeq A a B b)
   | wHeqTy A B p =>
     H <- getheq =<< wttinfer Σ Γ p ;;
@@ -395,7 +396,7 @@ Proof.
     inversion es. subst. clear es.
     destruct (inversion_Eq hs2) as [? [? [? [? es]]]].
     inversion es. subst. clear es.
-    destruct (inversion_Transport H11) as [? [? [? [? [? ?]]]]].
+    destruct (inversion_Transport H13) as [? [? [? [? [? ?]]]]].
     econstructor ; try eassumption ; try ih ; try rih.
     + eapply type_rename ; try eassumption.
       symmetry. eapply eq_term_spec. assumption.
@@ -404,8 +405,7 @@ Proof.
     + eapply type_rename ; try eassumption.
       cbn. symmetry. f_equal ; try assumption.
       * eapply eq_term_spec. assumption.
-      * f_equal ; eapply eq_term_spec ; try assumption.
-        admit.
+      * f_equal ; eapply eq_term_spec ; assumption.
   - go eq. econstructor ; try ih ; try rih.
     eapply type_rename.
     + ih.
@@ -428,7 +428,8 @@ Proof.
   Unshelve.
   all: try solve [ constructor ].
   { cbn. auto with arith. }
-Admitted.
+  { cbn. auto with arith. }
+Defined.
 
 End Checking.
 
