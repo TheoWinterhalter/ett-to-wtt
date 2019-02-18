@@ -479,6 +479,8 @@ Proof.
             with (lift #|Δ| #|Ξ| (wRefl A0 u)).
           rewrite <- substP1. reflexivity.
       - cbn. eapply type_TransportBeta ; eih.
+      - cbn. eapply type_ProjT1Beta ; eih.
+      - cbn. eapply type_ProjT2Beta ; eih.
       - cbn. eapply type_Heq ; eih.
       - cbn. eapply type_HeqPair ; eih.
       - cbn. eapply type_HeqTy ; eih.
@@ -767,6 +769,8 @@ Proof.
             with ((wRefl A0 u0){ 0 + #|Δ| := u}).
           rewrite <- substP4. reflexivity.
       - cbn. eapply type_TransportBeta ; esh.
+      - cbn. eapply type_ProjT1Beta ; esh.
+      - cbn. eapply type_ProjT2Beta ; esh.
       - cbn. eapply type_Heq ; esh.
       - cbn. eapply type_HeqPair ; esh.
       - cbn. eapply type_HeqTy ; esh.
@@ -1144,6 +1148,14 @@ Proof.
     econstructor ; try eassumption.
     econstructor ; try eassumption.
     econstructor. eapply typing_wf. eassumption.
+  - destruct IHtyping3. destruct (inversion_Heq H2) as [? [? [? [? [? ?]]]]].
+    eexists. econstructor ; try eassumption.
+    econstructor ; try eassumption.
+    econstructor ; eassumption.
+  - destruct IHtyping3. destruct (inversion_Heq H2) as [? [? [? [? [? ?]]]]].
+    eexists. econstructor ; try eassumption.
+    eapply type_ProjT2 with (A3 := A1) ; try eassumption.
+    econstructor ; eassumption.
   - eexists. apply type_Sort. apply (typing_wf H).
   - destruct IHtyping3. destruct (inversion_Eq H3) as [? [? [? [? ?]]]].
     eexists. econstructor ; try eassumption.

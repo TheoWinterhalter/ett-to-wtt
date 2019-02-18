@@ -157,6 +157,18 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w wTransportBeta A t
              : wEq A (wTransport A A (wRefl (wSort s) A) t) t
 
+| type_ProjT1Beta Γ A1 A2 u v w :
+    Σ ;;; Γ |-w u : A1 ->
+    Σ ;;; Γ |-w v : A2 ->
+    Σ ;;; Γ |-w w : wHeq A1 u A2 v ->
+    Σ ;;; Γ |-w wProjT1Beta u v w : wEq A1 (wProjT1 (wpack u v w)) u
+
+| type_ProjT2Beta Γ A1 A2 u v w :
+    Σ ;;; Γ |-w u : A1 ->
+    Σ ;;; Γ |-w v : A2 ->
+    Σ ;;; Γ |-w w : wHeq A1 u A2 v ->
+    Σ ;;; Γ |-w wProjT2Beta u v w : wEq A2 (wProjT2 (wpack u v w)) v
+
 | type_Heq Γ A a B b s :
     Σ ;;; Γ |-w A : wSort s ->
     Σ ;;; Γ |-w B : wSort s ->

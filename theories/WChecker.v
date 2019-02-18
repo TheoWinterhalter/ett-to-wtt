@@ -149,6 +149,16 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     s <- getsort =<< wttinfer Σ Γ A ;;
     assert_eq A =<< wttinfer Σ Γ t ;;
     ret (wEq A (wTransport A A (wRefl (wSort s) A) t) t)
+  | wProjT1Beta u v w =>
+    A1 <- wttinfer Σ Γ u ;;
+    A2 <- wttinfer Σ Γ v ;;
+    assert_eq (wHeq A1 u A2 v) =<< wttinfer Σ Γ w ;;
+    ret (wEq A1 (wProjT1 (wpack u v w)) u)
+  | wProjT2Beta u v w =>
+    A1 <- wttinfer Σ Γ u ;;
+    A2 <- wttinfer Σ Γ v ;;
+    assert_eq (wHeq A1 u A2 v) =<< wttinfer Σ Γ w ;;
+    ret (wEq A2 (wProjT2 (wpack u v w)) v)
   | wHeq A a B b =>
     s <- getsort =<< wttinfer Σ Γ A ;;
     assert_eq_sort s =<< getsort =<< wttinfer Σ Γ B ;;
@@ -494,6 +504,8 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wFunext g h p => wFunext (f g) (f h) (f p)
     | wJBeta u P w => wJBeta (f u) (f P) (f w)
     | wTransportBeta A t => wTransportBeta (f A) (f t)
+    | wProjT1Beta u v w => wProjT1Beta (f u) (f v) (f w)
+    | wProjT2Beta u v w => wProjT2Beta (f u) (f v) (f w)
     | wHeq A a B b => wHeq (f A) (f a) (f B) (f b)
     | wHeqPair p q => wHeqPair (f p) (f q)
     | wHeqTy A B p => wHeqTy (f A) (f B) (f p)

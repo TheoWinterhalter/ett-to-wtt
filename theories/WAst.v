@@ -33,6 +33,8 @@ Inductive wterm : Type :=
 | wFunext (f g p : wterm)
 | wJBeta (u P w : wterm)
 | wTransportBeta (A t : wterm)
+| wProjT1Beta (u v w : wterm)
+| wProjT2Beta (u v w : wterm)
 (* Heterogenous equality *)
 | wHeq (A a B b : wterm)
 | wHeqPair (p q : wterm)
