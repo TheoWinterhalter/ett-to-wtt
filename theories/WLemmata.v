@@ -462,6 +462,22 @@ Proof.
             apply liftP2. myomega.
         + f_equal. replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
             apply liftP2. myomega.
+      - cbn. change (#|Ξ|) with (0 + #|Ξ|)%nat.
+        rewrite substP1.
+        replace (S (0 + #|Ξ|)) with (1 + #|Ξ|)%nat by myomega.
+        rewrite substP1.
+        eapply type_JBeta ; eih.
+        + cbn. unfold snoc. f_equal. f_equal.
+          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
+            apply liftP2. myomega.
+          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
+            apply liftP2. myomega.
+        + cbn. replace (S (S #|Ξ|)) with (1 + (S (0 + #|Ξ|)))%nat by myomega.
+          rewrite <- substP1.
+          replace (1 + (0 + #|Ξ|))%nat with (S (0 + #|Ξ|))%nat by myomega.
+          change (wRefl (lift #|Δ| #|Ξ| A0) (lift #|Δ| #|Ξ| u))
+            with (lift #|Δ| #|Ξ| (wRefl A0 u)).
+          rewrite <- substP1. reflexivity.
       - cbn. eapply type_TransportBeta ; eih.
       - cbn. eapply type_Heq ; eih.
       - cbn. eapply type_HeqPair ; eih.
@@ -732,6 +748,24 @@ Proof.
           apply substP2. myomega.
         + f_equal. replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
           apply substP2. myomega.
+      - cbn.
+        change (#|Δ|) with (0 + #|Δ|)%nat.
+        rewrite substP4.
+        replace (S (0 + #|Δ|)) with (1 + #|Δ|)%nat by myomega.
+        rewrite substP4.
+        eapply type_JBeta ; esh.
+        + cbn. unfold snoc. cbn.
+          f_equal. f_equal.
+          * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
+            apply substP2. myomega.
+          * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
+            apply substP2. myomega.
+        + replace (S (S #|Δ|)) with (1 + (S (0 + #|Δ|)))%nat by myomega.
+          rewrite <- substP4.
+          replace (1 + (0 + #|Δ|))%nat with (S (0 + #|Δ|))%nat by myomega.
+          change (wRefl (A0 {0 + #|Δ| := u}) (u0 {0 + #|Δ| := u}))
+            with ((wRefl A0 u0){ 0 + #|Δ| := u}).
+          rewrite <- substP4. reflexivity.
       - cbn. eapply type_TransportBeta ; esh.
       - cbn. eapply type_Heq ; esh.
       - cbn. eapply type_HeqPair ; esh.
@@ -970,6 +1004,22 @@ Proof.
     + econstructor ; try eassumption ; try reih ;
       try (econstructor ; [ reih | repeat nleq ]).
       eapply IHh4.
+      * repeat nleq.
+      * eassumption.
+      * repeat eapply wf_snoc ; try eassumption ; try reih.
+        econstructor ; try lift_sort ; try eapply typing_lift01 ;
+        try eassumption ; try reih ;
+        try (econstructor ; [ reih | repeat nleq ]).
+        try econstructor ; [ econstructor |].
+        -- repeat eapply wf_snoc ; try eassumption ; try reih.
+        -- cbn. nleq.
+    + nleq.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      eapply IHh2.
       * repeat nleq.
       * eassumption.
       * repeat eapply wf_snoc ; try eassumption ; try reih.
