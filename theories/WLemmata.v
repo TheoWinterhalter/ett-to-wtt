@@ -890,13 +890,14 @@ Ltac reih :=
 
 Lemma rename_typed :
   forall {Σ Γ Δ t u A},
+    type_glob Σ ->
     Σ ;;; Γ |-w t : A ->
     nlctx Γ = nlctx Δ ->
     nl t = nl u ->
     wf Σ Δ ->
     Σ ;;; Δ |-w u : A.
 Proof.
-  intros Σ Γ Δ t u A h ex e hw. revert Δ ex u e hw.
+  intros Σ Γ Δ t u A hg h ex e hw. revert Δ ex u e hw.
   induction h ; intros Δ ex t' e hw.
   all: try solve [
     simpl in e ; destruct t' ; try discriminate e ;
@@ -919,10 +920,32 @@ Proof.
   - simpl in e. destruct t' ; try discriminate e.
     simpl in e. inversion e. subst. clear e.
     econstructor.
-    + econstructor ; try eassumption ; try reih ; try (econstructor ; [ reih | repeat nleq ]).
-      * eapply IHh4.
-        -- repeat nleq.
-        --
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      eapply IHh4.
+      * repeat nleq.
+      * eassumption.
+      * repeat eapply wf_snoc ; try eassumption ; try reih.
+        econstructor ; try lift_sort ; try eapply typing_lift01 ;
+        try eassumption ; try reih ;
+        try (econstructor ; [ reih | repeat nleq ]).
+        try econstructor ; [ econstructor |].
+        -- repeat eapply wf_snoc ; try eassumption ; try reih.
+        -- cbn. nleq.
+    + nleq.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      eapply IHh1.
+      * nleq.
+      * eassumption.
+      * (* repeat eapply wf_snoc ; try eassumption ; try reih. *)
+        (* econstructor ; try lift_sort ; try eapply typing_lift01 ; *)
+        (* try eassumption ; try reih ; *)
+        (* try (econstructor ; [ reih | repeat nleq ]). *)
+        (* We're missing assumption on A to go on. *)
 Admitted.
 
 Lemma istype_type :
