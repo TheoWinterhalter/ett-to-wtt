@@ -846,6 +846,22 @@ Proof.
     transitivity (nl A) ; eauto.
 Defined.
 
+Lemma inversion_Pack :
+  forall {Σ Γ A1 A2 T},
+    Σ ;;; Γ |-w wPack A1 A2 : T ->
+    exists s,
+      Σ ;;; Γ |-w A1 : wSort s /\
+      Σ ;;; Γ |-w A2 : wSort s /\
+      nl T = nlSort s.
+Proof.
+  intros Σ Γ A1 A2 T h.
+  dependent induction h.
+  - eexists. repeat split ; eassumption.
+  - destruct IHh as [? [? [? ?]]].
+    eexists. repeat split ; try eassumption.
+    transitivity (nl A) ; eauto.
+Defined.
+
 Ltac lift_sort :=
   match goal with
   | |- _ ;;; _ |-w lift ?n ?k ?t : ?S => change S with (lift n k S)

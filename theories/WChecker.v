@@ -166,7 +166,7 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     assert_eq A A' ;;
     assert_eq B B' ;;
     s <- getsort =<< wttinfer Σ Γ A ;;
-    assert_eq_sort s =<< getsort =<< wttinfer Σ Γ A ;;
+    assert_eq_sort s =<< getsort =<< wttinfer Σ Γ B ;;
     ret (wEq (wSort s) A B)
   | wHeqTm p =>
     H <- getheq =<< wttinfer Σ Γ p ;;
@@ -355,16 +355,39 @@ Proof.
     eapply type_Beta' ; try eassumption ; try ih ; try rih.
   - simpl in eq . revert eq .
     repeat (remove1 ; intros).
-  inversion eq . subst . clear eq .
-  repeat deal_assert_eq .
-  repeat deal_getsort .
-  repeat deal_geteq .
-  repeat deal_getheq .
-  repeat deal_getpack .
-  repeat deal_gettransport .
-  repeat deal_getprod .
-  repeat deal_assert_eq_sort.
-  econstructor ; try ih ; try rih.
+    inversion eq . subst . clear eq .
+    repeat deal_assert_eq .
+    repeat deal_getsort .
+    repeat deal_geteq .
+    repeat deal_getheq .
+    repeat deal_getpack .
+    repeat deal_gettransport .
+    repeat deal_getprod .
+    repeat deal_assert_eq_sort.
+    (* econstructor ; try ih ; try rih. *)
+    admit.
+  - go eq. econstructor ; try ih ; try rih.
+    eapply type_rename.
+    + ih.
+    + symmetry. cbn. f_equal ; eapply eq_term_spec ; assumption.
+  - go eq.
+    assert (Σ ;;; Γ |-w t : wPack w1 w2) as hh by ih.
+    destruct (istype_type hg hh) as [s hs].
+    destruct (inversion_Pack hs) as [? [? [? ?]]].
+    eapply type_ProjT1 with (A2 := w2) ; try eassumption ; try ih ; try rih.
+  - go eq.
+    assert (Σ ;;; Γ |-w t : wPack w1 w2) as hh by ih.
+    destruct (istype_type hg hh) as [s hs].
+    destruct (inversion_Pack hs) as [? [? [? ?]]].
+    eapply type_ProjT2 with (A1 := w1) ; try eassumption ; try ih ; try rih.
+  - go eq.
+    assert (Σ ;;; Γ |-w t : wPack w1 w2) as hh by ih.
+    destruct (istype_type hg hh) as [s hs].
+    destruct (inversion_Pack hs) as [? [? [? ?]]].
+    eapply type_ProjTe ; try eassumption ; try ih ; try rih.
+  Unshelve.
+  all: try solve [ constructor ].
+  { cbn. auto with arith. }
 Admitted.
 
 End Checking.
