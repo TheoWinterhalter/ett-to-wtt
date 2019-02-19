@@ -2,7 +2,7 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util SAst SLiftSubst SCommon
+Require Import util SAst SLiftSubst SCommon Equality
                ITyping ITypingInversions.
 
 (* Lemmata about typing *)
@@ -238,14 +238,10 @@ Proof.
                 try apply weak_glob_type ;
                 eassumption
                ).
-      - eapply type_HeqTrans with (B0 := B) (b0 := b).
-        all: apply weak_glob_type ; eassumption.
-      - eapply type_ProjT2 with (A3 := A1).
-        all: apply weak_glob_type ; eassumption.
-      - eapply type_Ax.
-        + eapply weak_glob_wf ; eassumption.
-        + cbn. erewrite ident_neq_fresh by eassumption.
-          assumption.
+      eapply type_Ax.
+      - eapply weak_glob_wf ; eassumption.
+      - cbn. erewrite ident_neq_fresh by eassumption.
+        assumption.
     }
 
   (* weak_glob_wf *)
@@ -541,6 +537,9 @@ Proof.
         eapply type_Ax.
         + now apply wf_lift.
         + assumption.
+      - eapply type_rename.
+        + eih.
+        + eapply nl_lift. assumption.
     }
 
   (* wf_lift *)
@@ -861,6 +860,9 @@ Proof.
         eapply type_Ax.
         + now eapply wf_subst.
         + assumption.
+      - eapply type_rename.
+        + esh.
+        + eapply nl_subst ; try assumption. reflexivity.
     }
 
   (* wf_subst *)
@@ -977,6 +979,142 @@ Proof.
         { apply nth_error_Some. rewrite hn. discriminate. }
         myomega.
 Defined.
+
+Fixpoint nlctx Γ :=
+  match Γ with
+  | A :: Γ => nl A :: nlctx Γ
+  | nil => nil
+  end.
+
+Lemma nlctx_length :
+  forall {Γ Δ},
+    nlctx Γ = nlctx Δ ->
+    #|Γ| = #|Δ|.
+Proof.
+  intro Γ. induction Γ ; intros Δ e.
+  - cbn. destruct Δ ; simpl in e ; try discriminate e.
+    reflexivity.
+  - destruct Δ ; simpl in e ; try discriminate e.
+    cbn. f_equal. eapply IHΓ.
+    simpl in e. inversion e. reflexivity.
+Defined.
+
+Lemma nl_safe_nth :
+  forall {Γ Δ n i1 i2},
+    nlctx Γ = nlctx Δ ->
+    nl (safe_nth Δ (exist _ n i1)) = nl (safe_nth Γ (exist _ n i2)).
+Proof.
+  intros Γ Δ n i1 i2 e. cbn in *. revert Δ n i1 i2 e.
+  induction Γ as [| A Γ ih] ; intros Δ n i1 i2 e.
+  - cbn. bang.
+  - destruct Δ as [|B Δ] ; simpl in e ; try discriminate e.
+    inversion e.
+    destruct n.
+    + cbn. symmetry. assumption.
+    + cbn. eapply ih. assumption.
+Defined.
+
+Ltac nleq :=
+  repeat (try eapply nl_lift ; try eapply nl_subst) ;
+  cbn ; auto ; f_equal ; eauto.
+
+Ltac reih :=
+  lazymatch goal with
+  | h : _ -> _ -> _ -> nl ?t1 = _ -> _ -> _ ;;; _ |-i _ : _,
+    e : nl ?t1 = nl ?t2
+    |- _ ;;; _ |-i ?t2 : _ =>
+    eapply h ; [
+      repeat nleq
+    | first [ eassumption | reflexivity ]
+    | first [
+        eassumption
+      | econstructor ; try eassumption ; reih
+      ]
+    ]
+  | h : _ -> _ -> _ -> nl ?t = _ -> _ -> _ ;;; _ |-i _ : _
+    |- _ ;;; _ |-i ?t : _ =>
+    eapply h ; [
+      repeat nleq
+    | first [ eassumption | reflexivity ]
+    | first [
+        eassumption
+      | econstructor ; try eassumption ; reih
+      ]
+    ]
+  end.
+
+Ltac lift_sort :=
+  match goal with
+  | |- _ ;;; _ |-i lift ?n ?k ?t : ?S => change S with (lift n k S)
+  | |- _ ;;; _ |-i ?t { ?n := ?u } : ?S => change S with (S {n := u})
+  end.
+
+Lemma rename_typed :
+  forall {Σ Γ Δ t u A},
+    type_glob Σ ->
+    Σ ;;; Γ |-i t : A ->
+    nlctx Γ = nlctx Δ ->
+    nl t = nl u ->
+    wf Σ Δ ->
+    Σ ;;; Δ |-i u : A.
+Proof.
+  intros Σ Γ Δ t u A hg h ex e hw. revert Δ ex u e hw.
+  induction h ; intros Δ ex t' e hw.
+  all: try solve [
+    simpl in e ; destruct t' ; try discriminate e ;
+    simpl in e ; inversion e ; subst ; clear e ;
+    try solve [
+          econstructor ; try eassumption ; try reih ;
+          try (econstructor ; [ reih | repeat nleq ])
+        ] ;
+    try solve [
+          econstructor ; [
+            econstructor ; try eassumption ;
+            try reih ;
+            try (econstructor ; [ reih | repeat nleq ])
+          | repeat nleq
+          ]
+        ]
+  ].
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + unshelve (econstructor ; eassumption).
+      rewrite <- (nlctx_length ex). assumption.
+    + eapply nl_lift. eapply nl_safe_nth. assumption.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      eapply IHh4.
+      * repeat nleq.
+      * eassumption.
+      * repeat eapply wf_snoc ; try eassumption ; try reih.
+        econstructor ; try lift_sort ; try eapply typing_lift01 ;
+        try eassumption ; try reih ;
+        try (econstructor ; [ reih | repeat nleq ]).
+        try econstructor ; [ econstructor |].
+        -- repeat eapply wf_snoc ; try eassumption ; try reih.
+        -- cbn. nleq.
+    + nleq.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      eapply IHh1.
+      * repeat nleq.
+      * eassumption.
+      * repeat eapply wf_snoc ; try eassumption ; try reih.
+        econstructor ; try lift_sort ; try eapply typing_lift01 ;
+        try eassumption ; try reih ;
+        try (econstructor ; [ reih | repeat nleq ]).
+        try econstructor ; [ econstructor |].
+        -- repeat eapply wf_snoc ; try eassumption ; try reih.
+        (* -- cbn. nleq. *)
+    (* + repeat nleq. *)
+Admitted.
 
 Lemma istype_type :
   forall {Σ Γ t T},
@@ -1117,7 +1255,11 @@ Proof.
       * assumption.
       * rewrite nil_cat. assumption.
     + cbn. apply nil_cat.
-      Unshelve. all: exact nAnon.
+  - destruct IHtyping. eexists.
+    eapply rename_typed ; try eassumption.
+    + reflexivity.
+    + eapply typing_wf. eassumption.
+  Unshelve. all: exact nAnon.
 Defined.
 
 End Lemmata.
