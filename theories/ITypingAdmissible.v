@@ -32,9 +32,9 @@ Proof.
   intros Σ Γ s1 s2 A B p hg h.
   destruct (istype_type hg h) as [? i].
   ttinv i.
-  ttinv h0. ttinv h5.
-  rewrite <- h6 in h1.
-  inversion h1.
+  ttinv h0. ttinv h1.
+  rewrite <- h4 in h6.
+  inversion h6.
   assert (s1 = s2) by (apply succ_inj ; assumption).
   subst. assumption.
 Defined.
@@ -112,7 +112,8 @@ Proof.
   eapply type_HeqTrans. all: try eassumption.
   eapply type_rename.
   - eassumption.
-  - apply (uniqueness hg h0 h6).
+  - pose proof (uniqueness hg h h7).
+    eauto.
 Defined.
 
 Lemma type_HeqTransport' :
@@ -448,8 +449,8 @@ Proof.
   destruct (istype_type hg hpA) as [? ipA]. ttinv ipA.
   destruct (istype_type hg hpB) as [? ipB]. ttinv ipB.
   destruct (istype_type hg hpp) as [? ipp]. ttinv ipp.
-  pose proof (sorts_in_sort h h4). subst.
-  pose proof (sorts_in_sort h0 h9). subst.
+  pose proof (sorts_in_sort h0 h). subst.
+  pose proof (sorts_in_sort h5 h3). subst.
   eapply type_CongPi1'' ; eassumption.
 Defined.
 
@@ -492,8 +493,8 @@ Proof.
   destruct (istype_type hg hpA) as [? ipA]. ttinv ipA.
   destruct (istype_type hg hpB) as [? ipB]. ttinv ipB.
   destruct (istype_type hg hpp) as [? ipp]. ttinv ipp.
-  pose proof (sorts_in_sort h h4). subst.
-  pose proof (sorts_in_sort h0 h9). subst.
+  pose proof (sorts_in_sort h0 h). subst.
+  pose proof (sorts_in_sort h5 h3). subst.
   eapply type_CongPi2'' ; eassumption.
 Defined.
 
@@ -529,7 +530,7 @@ Proof.
   destruct (istype_type hg hpA) as [? iA]. ttinv iA.
   destruct (istype_type hg hpu) as [? iu]. ttinv iu.
   destruct (istype_type hg hpv) as [? iv]. ttinv iv.
-  pose proof (sorts_in_sort h h4). subst.
+  pose proof (sorts_in_sort h h0). subst.
   eapply type_CongEq''.
   all: assumption.
 Defined.
@@ -641,7 +642,7 @@ Proof.
   intros Σ Γ A u B v p s hg hp hA.
   destruct (istype_type hg hp) as [? i]. ttinv i.
   eapply type_HeqTypeEq ; try eassumption.
-  pose proof (uniqueness hg h hA).
+  pose proof (uniqueness hg h0 hA).
   eapply type_rename ; try eassumption.
 Defined.
 
