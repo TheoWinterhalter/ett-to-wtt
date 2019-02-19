@@ -35,6 +35,7 @@ Fixpoint lift `{Sort_notion : Sorts.notion} n k t : wterm :=
   | wTransportBeta A u => wTransportBeta (lift n k A) (lift n k u)
   | wProjT1Beta u v w => wProjT1Beta (lift n k u) (lift n k v) (lift n k w)
   | wProjT2Beta u v w => wProjT2Beta (lift n k u) (lift n k v) (lift n k w)
+  | wPairEta p => wPairEta (lift n k p)
   | wHeq A a B b => wHeq (lift n k A) (lift n k a) (lift n k B) (lift n k b)
   | wHeqPair p q => wHeqPair (lift n k p) (lift n k q)
   | wHeqTy A B p => wHeqTy (lift n k A) (lift n k B) (lift n k p)
@@ -84,6 +85,7 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
   | wTransportBeta A u => wTransportBeta (subst t k A) (subst t k u)
   | wProjT1Beta u v w => wProjT1Beta (subst t k u) (subst t k v) (subst t k w)
   | wProjT2Beta u v w => wProjT2Beta (subst t k u) (subst t k v) (subst t k w)
+  | wPairEta p => wPairEta (subst t k p)
   | wHeq A a B b => wHeq (subst t k A) (subst t k a) (subst t k B) (subst t k b)
   | wHeqPair p q => wHeqPair (subst t k p) (subst t k q)
   | wHeqTy A B p => wHeqTy (subst t k A) (subst t k B) (subst t k p)
@@ -160,6 +162,7 @@ Fixpoint closed_above k t :=
     closed_above k t
   | wProjT1Beta u v w => closed_above k u && closed_above k v && closed_above k w
   | wProjT2Beta u v w => closed_above k u && closed_above k v && closed_above k w
+  | wPairEta p => closed_above k p
   | wHeq A a B b =>
     closed_above k A &&
     closed_above k a &&

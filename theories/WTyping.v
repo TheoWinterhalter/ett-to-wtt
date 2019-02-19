@@ -169,6 +169,11 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w w : wHeq A1 u A2 v ->
     Σ ;;; Γ |-w wProjT2Beta u v w : wEq A2 (wProjT2 (wpack u v w)) v
 
+| type_PairEta Γ A B p n n' :
+    Σ ;;; Γ |-w p : wSum n A B ->
+    Σ ;;; Γ |-w wPairEta p
+             : wEq (wSum n' A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p
+
 | type_Heq Γ A a B b s :
     Σ ;;; Γ |-w A : wSort s ->
     Σ ;;; Γ |-w B : wSort s ->

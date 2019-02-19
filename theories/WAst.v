@@ -35,6 +35,7 @@ Inductive wterm : Type :=
 | wTransportBeta (A t : wterm)
 | wProjT1Beta (u v w : wterm)
 | wProjT2Beta (u v w : wterm)
+| wPairEta (p : wterm)
 (* Heterogenous equality *)
 | wHeq (A a B b : wterm)
 | wHeqPair (p q : wterm)

@@ -481,6 +481,7 @@ Proof.
       - cbn. eapply type_TransportBeta ; eih.
       - cbn. eapply type_ProjT1Beta ; eih.
       - cbn. eapply type_ProjT2Beta ; eih.
+      - cbn. eapply type_PairEta ; eih.
       - cbn. eapply type_Heq ; eih.
       - cbn. eapply type_HeqPair ; eih.
       - cbn. eapply type_HeqTy ; eih.
@@ -771,6 +772,7 @@ Proof.
       - cbn. eapply type_TransportBeta ; esh.
       - cbn. eapply type_ProjT1Beta ; esh.
       - cbn. eapply type_ProjT2Beta ; esh.
+      - cbn. eapply type_PairEta ; esh.
       - cbn. eapply type_Heq ; esh.
       - cbn. eapply type_HeqPair ; esh.
       - cbn. eapply type_HeqTy ; esh.
@@ -840,6 +842,22 @@ Lemma inversion_Prod :
       Σ ;;; Γ |-w A : wSort s1 /\
       Σ ;;; Γ,, A |-w B : wSort s2 /\
       nl T = nlSort (Sorts.prod_sort s1 s2).
+Proof.
+  intros Σ Γ n A B T h.
+  dependent induction h.
+  - do 2 eexists. repeat split ; eassumption.
+  - destruct IHh as [s1 [s2 [? [? ?]]]].
+    do 2 eexists. repeat split ; try eassumption.
+    transitivity (nl A) ; eauto.
+Defined.
+
+Lemma inversion_Sum :
+  forall {Σ Γ n A B T},
+    Σ ;;; Γ |-w wSum n A B : T ->
+    exists s1 s2,
+      Σ ;;; Γ |-w A : wSort s1 /\
+      Σ ;;; Γ,, A |-w B : wSort s2 /\
+      nl T = nlSort (Sorts.sum_sort s1 s2).
 Proof.
   intros Σ Γ n A B T h.
   dependent induction h.
@@ -1156,6 +1174,14 @@ Proof.
     eexists. econstructor ; try eassumption.
     eapply type_ProjT2 with (A3 := A1) ; try eassumption.
     econstructor ; eassumption.
+  - destruct IHtyping as [s hs].
+    destruct (inversion_Sum hs) as [? [? [? [? ?]]]].
+    eexists. econstructor.
+    + econstructor ; eassumption.
+    + econstructor ; try eassumption.
+      * econstructor ; eassumption.
+      * econstructor ; eassumption.
+    + econstructor ; try eassumption. reflexivity.
   - eexists. apply type_Sort. apply (typing_wf H).
   - destruct IHtyping3. destruct (inversion_Eq H3) as [? [? [? [? ?]]]].
     eexists. econstructor ; try eassumption.

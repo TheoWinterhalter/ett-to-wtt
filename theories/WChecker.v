@@ -23,6 +23,12 @@ Definition getprod (T : wterm) : option (wterm * wterm) :=
   | _ => None
   end.
 
+Definition getsum (T : wterm) : option (wterm * wterm) :=
+  match T with
+  | wSum n A B => ret (A,B)
+  | _ => None
+  end.
+
 Definition geteq (T : wterm) : option (wterm * wterm * wterm) :=
   match T with
   | wEq A u v => ret (A,u,v)
@@ -159,6 +165,10 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     A2 <- wttinfer Σ Γ v ;;
     assert_eq (wHeq A1 u A2 v) =<< wttinfer Σ Γ w ;;
     ret (wEq A2 (wProjT2 (wpack u v w)) v)
+  | wPairEta p =>
+    T <- getsum =<< wttinfer Σ Γ p ;;
+    let '(A,B) := T in
+    ret (wEq (wSum nAnon A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p)
   | wHeq A a B b =>
     s <- getsort =<< wttinfer Σ Γ A ;;
     assert_eq_sort s =<< getsort =<< wttinfer Σ Γ B ;;
@@ -252,6 +262,13 @@ Ltac deal_getprod :=
     inversion h ; subst ; clear h
   end.
 
+Ltac deal_getsum :=
+  match goal with
+  | h : getsum ?t = _ |- _ =>
+    destruct t ; simpl in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  end.
+
 Ltac deal_geteq :=
   match goal with
   | h : geteq ?t = _ |- _ =>
@@ -313,6 +330,7 @@ Ltac go eq :=
   repeat deal_getpack ;
   repeat deal_gettransport ;
   repeat deal_getprod ;
+  repeat deal_getsum ;
   repeat deal_assert_eq_sort.
 
 Ltac one_ih :=
@@ -506,6 +524,7 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wTransportBeta A t => wTransportBeta (f A) (f t)
     | wProjT1Beta u v w => wProjT1Beta (f u) (f v) (f w)
     | wProjT2Beta u v w => wProjT2Beta (f u) (f v) (f w)
+    | wPairEta p => wPairEta (f p)
     | wHeq A a B b => wHeq (f A) (f a) (f B) (f b)
     | wHeqPair p q => wHeqPair (f p) (f q)
     | wHeqTy A B p => wHeqTy (f A) (f B) (f p)
