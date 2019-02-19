@@ -93,9 +93,10 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ |-i t : T1 ->
     Σ ;;; Γ |-i sTransport T1 T2 p t : T2
 
-| type_Beta Γ A B t u n :
+| type_Beta Γ A B t u n s :
     Σ ;;; Γ ,, A |-i t : B ->
     Σ ;;; Γ |-i u : A ->
+    Σ ;;; Γ |-i A : sSort s ->
     Σ ;;; Γ |-i sBeta t u : sEq (B{ 0 := u })
                                (sApp (sLambda n A B t) A B u)
                                (t{ 0 := u })

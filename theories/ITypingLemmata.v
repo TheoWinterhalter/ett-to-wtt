@@ -1103,18 +1103,174 @@ Proof.
     econstructor.
     + econstructor ; try eassumption ; try reih ;
       try (econstructor ; [ reih | repeat nleq ]).
-      eapply IHh1.
-      * repeat nleq.
-      * eassumption.
-      * repeat eapply wf_snoc ; try eassumption ; try reih.
-        econstructor ; try lift_sort ; try eapply typing_lift01 ;
-        try eassumption ; try reih ;
-        try (econstructor ; [ reih | repeat nleq ]).
-        try econstructor ; [ econstructor |].
+      econstructor.
+      * eapply IHh2.
+        -- repeat nleq.
+        -- eassumption.
         -- repeat eapply wf_snoc ; try eassumption ; try reih.
-        (* -- cbn. nleq. *)
-    (* + repeat nleq. *)
-Admitted.
+           econstructor.
+           ++ eapply IHh3 ; try eassumption. reflexivity.
+           ++ eapply IHh4 ; try eassumption. reflexivity.
+      * cbn. f_equal.
+        all: eapply nl_subst.
+        all: try eapply nl_lift.
+        all: try reflexivity.
+        all: assumption.
+    + cbn. f_equal.
+      all: f_equal.
+      all: eauto.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      econstructor.
+      * eapply IHh2.
+        -- repeat nleq.
+        -- eassumption.
+        -- repeat eapply wf_snoc ; try eassumption ; try reih.
+           econstructor.
+           ++ eapply IHh4 ; try eassumption. reflexivity.
+           ++ eapply IHh5 ; try eassumption. reflexivity.
+      * cbn. f_equal.
+        all: eapply nl_subst.
+        all: try eapply nl_lift.
+        all: try reflexivity.
+        all: assumption.
+      * econstructor.
+        -- eapply IHh3.
+           ++ repeat nleq.
+           ++ assumption.
+           ++ repeat eapply wf_snoc ; try eassumption ; try reih.
+              econstructor.
+              ** eapply IHh4 ; try eassumption. reflexivity.
+              ** eapply IHh5 ; try eassumption. reflexivity.
+        -- cbn. f_equal.
+           all: eapply nl_subst.
+           all: try eapply nl_lift.
+           all: try reflexivity.
+           all: eauto.
+    + cbn. f_equal.
+      all: f_equal.
+      all: eauto.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      econstructor.
+      * eapply IHh2.
+        -- repeat nleq.
+        -- eassumption.
+        -- repeat eapply wf_snoc ; try eassumption ; try reih.
+           econstructor.
+           ++ eapply IHh5 ; try eassumption. reflexivity.
+           ++ eapply IHh6 ; try eassumption. reflexivity.
+      * cbn. f_equal.
+        all: eapply nl_subst.
+        all: try eapply nl_lift.
+        all: try reflexivity.
+        all: assumption.
+    + cbn. symmetry. f_equal.
+      all: try eapply nl_subst.
+      all: try assumption.
+      all: try reflexivity.
+      all: f_equal.
+      all: eauto.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      econstructor.
+      * eapply IHh2.
+        -- repeat nleq.
+        -- eassumption.
+        -- repeat eapply wf_snoc ; try eassumption ; try reih.
+           econstructor.
+           ++ eapply IHh3 ; try eassumption. reflexivity.
+           ++ eapply IHh4 ; try eassumption. reflexivity.
+      * cbn. f_equal.
+        all: eapply nl_subst.
+        all: try eapply nl_lift.
+        all: try reflexivity.
+        all: assumption.
+    + cbn. f_equal.
+      all: f_equal.
+      all: eauto.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      econstructor.
+      * eapply IHh2.
+        -- repeat nleq.
+        -- eassumption.
+        -- repeat eapply wf_snoc ; try eassumption ; try reih.
+           econstructor.
+           ++ eapply IHh5 ; try eassumption. reflexivity.
+           ++ eapply IHh6 ; try eassumption. reflexivity.
+      * cbn. f_equal.
+        all: eapply nl_subst.
+        all: try eapply nl_lift.
+        all: try reflexivity.
+        all: assumption.
+    + cbn. f_equal.
+      all: f_equal.
+      all: eauto.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      econstructor.
+      * eapply IHh2.
+        -- repeat nleq.
+        -- eassumption.
+        -- repeat eapply wf_snoc ; try eassumption ; try reih.
+           econstructor.
+           ++ eapply IHh4 ; try eassumption. reflexivity.
+           ++ eapply IHh5 ; try eassumption. reflexivity.
+      * cbn. f_equal.
+        all: eapply nl_subst.
+        all: try eapply nl_lift.
+        all: try reflexivity.
+        all: assumption.
+    + cbn. f_equal.
+      all: f_equal.
+      all: eauto.
+  - simpl in e. destruct t' ; try discriminate e.
+    simpl in e. inversion e. subst. clear e.
+    econstructor.
+    + econstructor ; try eassumption ; try reih ;
+      try (econstructor ; [ reih | repeat nleq ]).
+      econstructor.
+      * eapply IHh2.
+        -- repeat nleq.
+        -- eassumption.
+        -- repeat eapply wf_snoc ; try eassumption ; try reih.
+           econstructor.
+           ++ eapply IHh4 ; try eassumption. reflexivity.
+           ++ eapply IHh5 ; try eassumption. reflexivity.
+      * cbn. f_equal.
+        all: eapply nl_subst.
+        all: try eapply nl_lift.
+        all: try reflexivity.
+        all: assumption.
+    + cbn. symmetry. f_equal.
+      all: try eapply nl_subst.
+      all: try assumption.
+      all: cbn.
+      all: f_equal.
+      all: eauto.
+  - econstructor.
+    + eapply IHh ; assumption.
+    + assumption.
+  Unshelve.
+  all: try solve [ constructor ].
+  { cbn. auto with arith. }
+Defined.
 
 Lemma istype_type :
   forall {Σ Γ t T},
@@ -1164,10 +1320,9 @@ Proof.
     + cbn. rewrite !lift_subst, lift00.
       assumption.
   - eexists. eassumption.
-  - destruct IHtyping1 as [s h].
-    destruct IHtyping2 as [? hA].
-    exists (Sorts.eq_sort s). eapply type_Eq.
-    + change (sSort s) with ((sSort s){ 0 := u }).
+  - destruct IHtyping1 as [z h].
+    exists (Sorts.eq_sort z). eapply type_Eq.
+    + change (sSort z) with ((sSort z){ 0 := u }).
       eapply typing_subst ; eassumption.
     + eapply type_App ; try eassumption.
       eapply type_Lambda ; eassumption.
