@@ -9,13 +9,6 @@ Section Admissible.
 
 Context `{Sort_notion : Sorts.notion}.
 
-Lemma type_rename :
-  forall {Σ Γ t A B},
-    Σ ;;; Γ |-i t : A ->
-    nl A = nl B ->
-    Σ ;;; Γ |-i t : B.
-Admitted.
-
 Lemma sorts_in_sort :
   forall {Σ Γ s1 s2 s3},
     Σ ;;; Γ |-i sSort s1 : sSort s3 ->

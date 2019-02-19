@@ -2,7 +2,7 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util Sorts SAst SLiftSubst SCommon.
+Require Import util Sorts SAst SLiftSubst SCommon Equality.
 
 Open Scope s_scope.
 
@@ -326,6 +326,11 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     wf Σ Γ ->
     lookup_glob Σ id = Some ty ->
     Σ ;;; Γ |-i sAx id : ty
+
+| type_rename Γ t A B :
+    Σ ;;; Γ |-i t : A ->
+    nl A = nl B ->
+    Σ ;;; Γ |-i t : B
 
 where " Σ ;;; Γ '|-i' t : T " := (@typing Σ Γ t T) : i_scope
 
