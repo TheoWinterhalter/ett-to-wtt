@@ -5,6 +5,7 @@
    WTT is the final target of the translation.
  *)
 
+Require Import List.
 From Template Require Import Ast.
 From Translation Require Import util Sorts.
 
@@ -50,5 +51,11 @@ Inductive wterm : Type :=
 (* External axioms *)
 | wAx (id : ident)
 .
+
+Fixpoint mkApps u l :=
+  match l with
+  | nil => u
+  | v :: l => mkApps (wApp u v) l
+  end.
 
 End Ast.
