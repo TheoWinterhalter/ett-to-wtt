@@ -120,29 +120,29 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ |-i sHeqRefl A a : sHeq A a A a
 
 | type_HeqSym Γ A a B b p s :
-    Σ ;;; Γ |-i A : sSort s ->
-    Σ ;;; Γ |-i B : sSort s ->
+    Σ ;;; Γ |-i p : sHeq A a B b ->
     Σ ;;; Γ |-i a : A ->
     Σ ;;; Γ |-i b : B ->
-    Σ ;;; Γ |-i p : sHeq A a B b ->
+    Σ ;;; Γ |-i A : sSort s ->
+    Σ ;;; Γ |-i B : sSort s ->
     Σ ;;; Γ |-i sHeqSym p : sHeq B b A a
 
 | type_HeqTrans Γ A a B b C c p q s :
-    Σ ;;; Γ |-i A : sSort s ->
-    Σ ;;; Γ |-i B : sSort s ->
-    Σ ;;; Γ |-i C : sSort s ->
+    Σ ;;; Γ |-i p : sHeq A a B b ->
+    Σ ;;; Γ |-i q : sHeq B b C c ->
     Σ ;;; Γ |-i a : A ->
     Σ ;;; Γ |-i b : B ->
     Σ ;;; Γ |-i c : C ->
-    Σ ;;; Γ |-i p : sHeq A a B b ->
-    Σ ;;; Γ |-i q : sHeq B b C c ->
+    Σ ;;; Γ |-i A : sSort s ->
+    Σ ;;; Γ |-i B : sSort s ->
+    Σ ;;; Γ |-i C : sSort s ->
     Σ ;;; Γ |-i sHeqTrans p q : sHeq A a C c
 
 | type_HeqTransport Γ A B p t s :
+    Σ ;;; Γ |-i p : sEq (sSort s) A B ->
+    Σ ;;; Γ |-i t : A ->
     Σ ;;; Γ |-i A : sSort s ->
     Σ ;;; Γ |-i B : sSort s ->
-    Σ ;;; Γ |-i t : A ->
-    Σ ;;; Γ |-i p : sEq (sSort s) A B ->
     Σ ;;; Γ |-i sHeqTransport p t : sHeq A t B (sTransport A B p t)
 
 | type_CongProd Γ s z nx ny A1 A2 B1 B2 pA pB :
@@ -305,21 +305,21 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ |-i sPack A1 A2 : sSort s
 
 | type_ProjT1 Γ A1 A2 p s :
+    Σ ;;; Γ |-i p : sPack A1 A2 ->
     Σ ;;; Γ |-i A1 : sSort s ->
     Σ ;;; Γ |-i A2 : sSort s ->
-    Σ ;;; Γ |-i p : sPack A1 A2 ->
     Σ ;;; Γ |-i sProjT1 p : A1
 
 | type_ProjT2 Γ A1 A2 p s :
+    Σ ;;; Γ |-i p : sPack A1 A2 ->
     Σ ;;; Γ |-i A1 : sSort s ->
     Σ ;;; Γ |-i A2 : sSort s ->
-    Σ ;;; Γ |-i p : sPack A1 A2 ->
     Σ ;;; Γ |-i sProjT2 p : A2
 
 | type_ProjTe Γ A1 A2 p s :
+    Σ ;;; Γ |-i p : sPack A1 A2 ->
     Σ ;;; Γ |-i A1 : sSort s ->
     Σ ;;; Γ |-i A2 : sSort s ->
-    Σ ;;; Γ |-i p : sPack A1 A2 ->
     Σ ;;; Γ |-i sProjTe p : sHeq A1 (sProjT1 p) A2 (sProjT2 p)
 
 | type_Ax Γ id ty :

@@ -21,13 +21,22 @@ Ltac destruct_pand :=
 Ltac destruct_pands :=
   repeat destruct_pand.
 
+Ltac mysplit :=
+  match goal with
+  | |- exists _, _ => eexists
+  | |- _ /\ _ => split
+  end.
+
+Ltac mysplits :=
+  repeat mysplit.
+
 Ltac invtac :=
   intros ;
   lazymatch goal with
   | h : _ |- _ =>
     dependent induction h ; [
       repeat eexists ; eassumption
-    | destruct_pands ; repeat eexists ; try eassumption ;
+    | destruct_pands ; mysplits ; try eassumption ;
       match goal with
       | h : nl ?A = _ |- _ =>
         solve [ transitivity (nl A) ; eauto ]
@@ -242,60 +251,45 @@ Lemma inversionHeqSym :
   forall {Σ Γ p T},
     Σ ;;; Γ |-i sHeqSym p : T ->
     exists A a B b s,
-      (Σ ;;; Γ |-i A : sSort s) /\
-      (Σ ;;; Γ |-i B : sSort s) /\
+      (Σ ;;; Γ |-i p : sHeq A a B b) /\
       (Σ ;;; Γ |-i a : A) /\
       (Σ ;;; Γ |-i b : B) /\
-      (Σ ;;; Γ |-i p : sHeq A a B b) /\
+      (Σ ;;; Γ |-i A : sSort s) /\
+      (Σ ;;; Γ |-i B : sSort s) /\
       (nl (sHeq B b A a) = nl T).
 Proof.
-  (* invtac. *)
-  intros Σ Γ p T h.
-  dependent induction h.
-  - repeat eexists ; eassumption.
-  - destruct_pands.
-    (* We need to put typing of p as a first argument in HeqSym *)
-(* Defined. *)
-Admitted.
+  invtac.
+Defined.
 
 Lemma inversionHeqTrans :
   forall {Σ Γ p q T},
     Σ ;;; Γ |-i sHeqTrans p q : T ->
     exists A a B b C c s,
-      (Σ ;;; Γ |-i A : sSort s) /\
-      (Σ ;;; Γ |-i B : sSort s) /\
-      (Σ ;;; Γ |-i C : sSort s) /\
+      (Σ ;;; Γ |-i p : sHeq A a B b) /\
+      (Σ ;;; Γ |-i q : sHeq B b C c) /\
       (Σ ;;; Γ |-i a : A) /\
       (Σ ;;; Γ |-i b : B) /\
       (Σ ;;; Γ |-i c : C) /\
-      (Σ ;;; Γ |-i p : sHeq A a B b) /\
-      (Σ ;;; Γ |-i q : sHeq B b C c) /\
+      (Σ ;;; Γ |-i A : sSort s) /\
+      (Σ ;;; Γ |-i B : sSort s) /\
+      (Σ ;;; Γ |-i C : sSort s) /\
       (nl (sHeq A a C c) = nl T).
 Proof.
-  (* invtac. *)
-  (* Similar *)
-(*   intros Σ Γ p q T h. *)
-(*   dependent induction h. *)
-(*   exists A, a, B, b, C, c, s. repeat split. all: try assumption. *)
-(* Defined. *)
-Admitted.
+  invtac.
+Defined.
 
 Lemma inversionHeqTransport :
   forall {Σ Γ p t T},
     Σ ;;; Γ |-i sHeqTransport p t : T ->
     exists A B s,
+      (Σ ;;; Γ |-i p : sEq (sSort s) A B) /\
+      (Σ ;;; Γ |-i t : A) /\
       (Σ ;;; Γ |-i A : sSort s) /\
       (Σ ;;; Γ |-i B : sSort s) /\
-      (Σ ;;; Γ |-i t : A) /\
-      (Σ ;;; Γ |-i p : sEq (sSort s) A B) /\
       (nl (sHeq A t B (sTransport A B p t)) = nl T).
 Proof.
-  (* invtac. *)
-  (* intros Σ Γ p t T h. *)
-(*   dependent induction h. *)
-(*   exists A, B, s. repeat split. all: try assumption. *)
-(* Defined. *)
-Admitted.
+  invtac.
+Defined.
 
 Lemma inversionCongProd :
   forall {Σ Γ B1 B2 pA pB T},
@@ -521,49 +515,37 @@ Lemma inversionProjT1 :
   forall {Σ Γ p T},
     Σ ;;; Γ |-i sProjT1 p : T ->
     exists s A1 A2,
+      (Σ ;;; Γ |-i p : sPack A1 A2) /\
       (Σ ;;; Γ |-i A1 : sSort s) /\
       (Σ ;;; Γ |-i A2 : sSort s) /\
-      (Σ ;;; Γ |-i p : sPack A1 A2) /\
       (nl A1 = nl T).
 Proof.
-  (* invtac. *)
-(*   intros Σ Γ p T h. *)
-(*   dependent induction h. *)
-(*   exists s, A1, A2. repeat split. all: try assumption. *)
-(* Defined. *)
-Admitted.
+  invtac.
+Defined.
 
 Lemma inversionProjT2 :
   forall {Σ Γ p T},
     Σ ;;; Γ |-i sProjT2 p : T ->
     exists s A1 A2,
+      (Σ ;;; Γ |-i p : sPack A1 A2) /\
       (Σ ;;; Γ |-i A1 : sSort s) /\
       (Σ ;;; Γ |-i A2 : sSort s) /\
-      (Σ ;;; Γ |-i p : sPack A1 A2) /\
       (nl A2 = nl T).
 Proof.
-  (* invtac. *)
-(*   intros Σ Γ p T h. *)
-(*   dependent induction h. *)
-(*   exists s, A1, A2. repeat split. all: try assumption. *)
-(* Defined. *)
-Admitted.
+  invtac.
+Defined.
 
 Lemma inversionProjTe :
   forall {Σ Γ p T},
     Σ ;;; Γ |-i sProjTe p : T ->
     exists s A1 A2,
+      (Σ ;;; Γ |-i p : sPack A1 A2) /\
       (Σ ;;; Γ |-i A1 : sSort s) /\
       (Σ ;;; Γ |-i A2 : sSort s) /\
-      (Σ ;;; Γ |-i p : sPack A1 A2) /\
       (nl (sHeq A1 (sProjT1 p) A2 (sProjT2 p)) = nl T).
 Proof.
-  (* invtac. *)
-  (* intros Σ Γ p T h. *)
-(*   dependent induction h. *)
-(*   exists s, A1, A2. repeat split. all: try assumption. *)
-(* Defined. *)
-Admitted.
+  invtac.
+Defined.
 
 Lemma inversionAx :
   forall {Σ Γ id T},
@@ -572,12 +554,8 @@ Lemma inversionAx :
       (lookup_glob Σ id = Some ty) /\
       (nl ty = nl T).
 Proof.
-  (* invtac. *)
-  (* intros Σ Γ id T h. *)
-  (* dependent induction h. *)
-  (* exists ty. split ; try assumption. reflexivity. *)
-(* Defined. *)
-Admitted.
+  invtac.
+Defined.
 
 End Inversions.
 
