@@ -83,10 +83,10 @@ Fixpoint fullquote (t : term)
       ret (wLambda nx A' t')
     | tCast t _ _ => fullquote t
     | tConst id univs => fullquote (tApp (tConst id univs) [])
-    | tApp (tConst c _) l => 
+    | tApp (tConst c _) l =>
       if eq_string c "Translation.Quotes.sigT" then
         match l with
-        | [A; tLambda nx _ B] => 
+        | [A; tLambda nx _ B] =>
           A' <- fullquote A ;;
           B' <- fullquote B ;;
           ret (wSum nx A' B')
@@ -95,7 +95,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.existT" then
         match l with
-        | [A; tLambda nx _ B; u; v] => 
+        | [A; tLambda nx _ B; u; v] =>
           A' <- fullquote A ;;
           B' <- fullquote B ;;
           u' <- fullquote u ;;
@@ -106,7 +106,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.projT1" then
         match l with
-        | [A; tLambda nx _ B; u] => 
+        | [A; tLambda nx _ B; u] =>
           A' <- fullquote A ;;
           B' <- fullquote B ;;
           u' <- fullquote u ;;
@@ -116,7 +116,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.projT2" then
         match l with
-        | [A; tLambda nx _ B; u] => 
+        | [A; tLambda nx _ B; u] =>
           A' <- fullquote A ;;
           B' <- fullquote B ;;
           u' <- fullquote u ;;
@@ -126,7 +126,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.eq" then
         match l with
-        | [A; x; y] => 
+        | [A; x; y] =>
           A' <- fullquote A ;;
           x' <- fullquote x ;;
           y' <- fullquote y ;;
@@ -182,7 +182,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.coe" then
         match l with
-        | [A; B; e; x] => 
+        | [A; B; e; x] =>
           A' <- fullquote A ;;
           B' <- fullquote B ;;
           e' <- fullquote e ;;
@@ -195,7 +195,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.K" then
         match l with
-        | [A; u; p] => 
+        | [A; u; p] =>
           A' <- fullquote A ;;
           u' <- fullquote u ;;
           p' <- fullquote p ;;
@@ -205,7 +205,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.funext" then
         match l with
-        | [A; B; f; g; e] => 
+        | [A; B; f; g; e] =>
           f' <- fullquote f ;;
           g' <- fullquote g ;;
           e' <- fullquote e ;;
@@ -215,7 +215,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.heq" then
         match l with
-        | [A; a; B; b] => 
+        | [A; a; B; b] =>
           A' <- fullquote A ;;
           a' <- fullquote a ;;
           B' <- fullquote B ;;
@@ -226,7 +226,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.Pack" then
         match l with
-        | [A; B] => 
+        | [A; B] =>
           A' <- fullquote A ;;
           B' <- fullquote B ;;
           ret (wPack A' B')
@@ -247,7 +247,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.ProjT1" then
         match l with
-        | [A; B; u] => 
+        | [A; B; u] =>
           u' <- fullquote u ;;
           ret (wProjT1 u')
         | _ => raise (InstanciationNotHandeled c l)
@@ -255,7 +255,7 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.ProjT2" then
         match l with
-        | [A; B; u] => 
+        | [A; B; u] =>
           u' <- fullquote u ;;
           ret (wProjT2 u')
         | _ => raise (InstanciationNotHandeled c l)
@@ -263,14 +263,14 @@ Fixpoint fullquote (t : term)
 
       else if eq_string c "Translation.Quotes.ProjTe" then
         match l with
-        | [A; B; u] => 
+        | [A; B; u] =>
           u' <- fullquote u ;;
           ret (wProjTe u')
         | _ => raise (InstanciationNotHandeled c l)
         end
 
       else match assoc_at c constt with
-      | Some t => 
+      | Some t =>
         l' <- monad_map fullquote l ;;
         ret (mkApps t l')
       | None => raise (UnknownConst c)
@@ -364,29 +364,29 @@ Eval vm_compute in (match fullquote empty univs qcong_prod with
              | _ => 122
              end).
 
-Eval compute in (List.length ())
+(* Eval compute in (List.length ()) *)
 
 
-Definition wcong_prod :=
-  Eval hnf in
-  fullquote empty unvis qcong_prod. with
-  | Success t => t
-  | Error e => wRel 212
-  end.
+(* Definition wcong_prod := *)
+(*   Eval hnf in *)
+(*   fullquote empty univs qcong_prod. with *)
+(*   | Success t => t *)
+(*   | Error e => wRel 212 *)
+(*   end. *)
 
-Definition sHeq0_type :=
-  Eval compute in
-  match wttinfer [] [] sHeq0 with
-  | Some t => t
-  | None => wRel 48
-  end.
+(* Definition sHeq0_type := *)
+(*   Eval compute in *)
+(*   match wttinfer [] [] sHeq0 with *)
+(*   | Some t => t *)
+(*   | None => wRel 48 *)
+(*   end. *)
 
-Definition type_sHeq0 :=
-  wttinfer_sound [] [] sHeq0 sHeq0_type Logic.eq_refl type_glob_nil
-                 (wf_nil _).
+(* Definition type_sHeq0 := *)
+(*   wttinfer_sound [] [] sHeq0 sHeq0_type Logic.eq_refl type_glob_nil *)
+(*                  (wf_nil _). *)
 
-Definition sHeq A a B b s
-  := mkApps (instantiate_sorts (fun _ => s) sHeq0) [A; a; B; b].
+(* Definition sHeq A a B b s *)
+(*   := mkApps (instantiate_sorts (fun _ => s) sHeq0) [A; a; B; b]. *)
 
 
 
@@ -404,41 +404,41 @@ Definition weak_glob_type' {Σ Γ t A} (h : [] ;;; Γ |-w t : A) :
   Σ ;;; Γ |-w t : A.
 Admitted.
 
-Fixpoint type_lift' {Σ Γ t A} (h : Σ ;;; [] |-w t : A) :
-  type_glob Σ ->
-  wf Σ Γ ->
-  Σ ;;; Γ |-w lift #|Γ| 0 t : lift #|Γ| 0 A.
-Proof.
-  pose (@type_lift _ Σ [] Γ [] _ _ h).
-  cbn in t0. rewrite nil_cat in t0.
-  assumption.
-Defined.
+(* Fixpoint type_lift' {Σ Γ t A} (h : Σ ;;; [] |-w t : A) : *)
+(*   type_glob Σ -> *)
+(*   wf Σ Γ -> *)
+(*   Σ ;;; Γ |-w lift #|Γ| 0 t : lift #|Γ| 0 A. *)
+(* Proof. *)
+(*   pose (@type_lift _ Σ [] Γ [] _ _ h). *)
+(*   cbn in t0. rewrite nil_cat in t0. *)
+(*   assumption. *)
+(* Defined. *)
 End F.
 
 (* sHeq as s as additional annotation *)
-Definition type_Heq Σ Γ A a B b s :
-    Σ ;;; Γ |-w A : wSort s ->
-    Σ ;;; Γ |-w B : wSort s ->
-    Σ ;;; Γ |-w a : A ->
-    Σ ;;; Γ |-w b : B ->
-    Σ ;;; Γ |-w sHeq A a B b s : wSort s.
-Proof.
-  intros HA HB Ha Hb.
-  pose proof (instantiate_sorts_sound _ _ (fun _ => s) sHeq0 sHeq0_type type_sHeq0
-                                      type_glob_nil (wf_nil _)).
-  repeat (eapply meta_conv; [eapply type_App|]).
-  eapply (weak_glob_type' (Σ:=Σ)) in H.
-  refine (type_lift' (Γ:=Γ) H _ _).
-  admit. admit. all: try eassumption.
-  simpl; rewrite lift00; try reflexivity.
-  reflexivity.
-  simpl; rewrite lift00; reflexivity.
-  simpl.
-Abort.
+(* Definition type_Heq Σ Γ A a B b s : *)
+(*     Σ ;;; Γ |-w A : wSort s -> *)
+(*     Σ ;;; Γ |-w B : wSort s -> *)
+(*     Σ ;;; Γ |-w a : A -> *)
+(*     Σ ;;; Γ |-w b : B -> *)
+(*     Σ ;;; Γ |-w sHeq A a B b s : wSort s. *)
+(* Proof. *)
+(*   intros HA HB Ha Hb. *)
+(*   pose proof (instantiate_sorts_sound _ _ (fun _ => s) sHeq0 sHeq0_type type_sHeq0 *)
+(*                                       type_glob_nil (wf_nil _)). *)
+(*   repeat (eapply meta_conv; [eapply type_App|]). *)
+(*   eapply (weak_glob_type' (Σ:=Σ)) in H. *)
+(*   refine (type_lift' (Γ:=Γ) H _ _). *)
+(*   admit. admit. all: try eassumption. *)
+(*   simpl; rewrite lift00; try reflexivity. *)
+(*   reflexivity. *)
+(*   simpl; rewrite lift00; reflexivity. *)
+(*   simpl. *)
+(* Abort. *)
 
 
 
-Compute (List.map global_decl_ident (Datatypes.fst qq)).
+(* Compute (List.map global_decl_ident (Datatypes.fst qq)). *)
 (* ["Translation.Quotes.sigT"; "Translation.Quotes.eq"; *)
 (*  "Translation.Quotes.eq_refl"; "Translation.Quotes.J"; *)
 (*  "Translation.Quotes.transport"; "Translation.Quotes.coe"; *)
@@ -459,3 +459,7 @@ Compute (List.map global_decl_ident (Datatypes.fst qq)).
 
 
 Definition T0 := acons "Translation.Quotes.sigT" (wSum) empty.
+
+End SS.
+
+End l.
