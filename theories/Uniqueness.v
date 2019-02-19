@@ -11,18 +11,55 @@ Section Uniqueness.
 
 Context `{Sort_notion : Sorts.notion}.
 
-Ltac nlassumption :=
-  try eapply (f_equal nl) ; assumption.
+(* Ltac nlassumption := *)
+(*   try eapply (f_equal nl) ; assumption. *)
 
-Ltac nleassumption :=
-  try eapply (f_equal nl) ; eassumption.
+(* Ltac nleassumption := *)
+(*   try eapply (f_equal nl) ; eassumption. *)
+
+Ltac unih :=
+  match goal with
+  | ih : _ -> _ -> _ -> _ ;;; _ |-i ?t : _ -> _ ;;; _ |-i ?t : _ -> _,
+    h1 : _ ;;; _ |-i ?t : _,
+    h2 : _ ;;; _ |-i ?t : _
+    |- _ =>
+    specialize (ih _ _ _ h1 h2) ;
+    simpl in ih ;
+    inversion ih ; subst ; clear ih
+  end.
 
 Ltac unitac h1 h2 :=
   ttinv h1 ; ttinv h2 ;
   eapply eq_trans ; [
-    eapply eq_sym ; nleassumption
-  | idtac
+    eapply eq_sym ; eassumption
+  | repeat unih
   ].
+
+Ltac nleq :=
+  repeat (try eapply nl_lift ; try eapply nl_subst) ;
+  cbn ; auto ; f_equal ; eauto.
+
+Ltac finish :=
+  lazymatch goal with
+  | h : nl ?u = nl ?t |- _ = nl ?t =>
+    transitivity (nl u) ; [ | assumption ] ;
+    repeat nleq
+  end.
+
+Ltac reunih :=
+  match goal with
+  | ih : _ -> _ -> _ -> _ ;;; _ |-i ?t : _ -> _ ;;; _ |-i ?t : _ -> _,
+    h1 : ?Σ ;;; ?Γ |-i ?t : _,
+    h2 : _ ;;; _ |-i ?t : ?A
+    |- _ =>
+    let hh2 := fresh h2 in
+    assert (Σ ;;; Γ |-i t : A) as hh2 ; [
+      eapply rename_typed ; try eassumption ; try reflexivity
+    | specialize (ih _ _ _ h1 hh2) ;
+      simpl in ih ;
+      inversion ih ; subst ; clear ih
+    ]
+  end.
 
 Lemma uniqueness :
   forall {Σ Γ A B u},
@@ -34,201 +71,30 @@ Proof.
   intros Σ Γ A B u hg h1 h2.
   revert Γ A B h1 h2.
   induction u ; intros Γ A B h1 h2.
-  all: try unitac h1 h2. all: try nlassumption.
+  all: try unitac h1 h2.
+  all: try assumption.
+  all: try solve [finish].
   - cbn in *. erewrite @safe_nth_irr with (isdecl' := is) in h0.
-    nlassumption.
-  - specialize (IHu1 _ _ _ h h0).
-    specialize (IHu2 _ _ _ h4 h7).
-(*     eapply eq_trans ; try eapply h6. *)
-(*     inversion IHu1 as [e1]. *)
-(*     inversion IHu2 as [e2]. *)
-(*     subst. apply eq_refl. *)
-(*   - eapply nl_conv ; try nleassumption ; reflexivity. *)
-(*   - specialize (IHu1 _ _ _ h h0). *)
-(*     specialize (IHu2 _ _ _ h4 h7). *)
-(*     eapply eq_trans ; try eapply h6. *)
-(*     pose proof (sort_conv_inv IHu1) as e1. *)
-(*     pose proof (sort_conv_inv IHu2) as e2. *)
-(*     subst. apply eq_refl. *)
-(*   - eapply eq_trans ; [| exact h8 ]. *)
-(*     apply cong_Sum ; apply eq_refl. *)
-(*   - specialize (IHu1 _ _ _ h0 h6). *)
-(*     pose proof (sort_conv_inv IHu1) as e. subst. nlassumption. *)
-(*   - specialize (IHu1 _ _ _ h h0). *)
-(*     pose proof (sort_conv_inv IHu1) as e. subst. nlassumption. *)
-(*   - specialize (IHu _ _ _ h h0). *)
-(*     pose proof (heq_conv_inv IHu) as e. split_hyps. *)
-(*     eapply eq_trans ; try exact h8. *)
-(*     apply cong_Eq ; nlassumption. *)
-(*   - specialize (IHu _ _ _ h4 h10). *)
-(*     pose proof (heq_conv_inv IHu) as e. split_hyps. *)
-(*     eapply eq_trans ; [ | exact h9 ]. *)
-(*     apply cong_Heq ; nlassumption. *)
-(*   - specialize (IHu1 _ _ _ h5 h14). *)
-(*     specialize (IHu2 _ _ _ h4 h13). *)
-(*     pose proof (heq_conv_inv IHu1) as e1. *)
-(*     pose proof (heq_conv_inv IHu2) as e2. split_hyps. *)
-(*     eapply eq_trans ; [ | exact h12 ]. *)
-(*     apply cong_Heq ; nlassumption. *)
-(*   - specialize (IHu1 _ _ _ h4 h9). *)
-(*     specialize (IHu2 _ _ _ h5 h10). *)
-(*     pose proof (eq_conv_inv IHu1) as e1. split_hyps. *)
-(*     eapply eq_trans ; [| exact h8 ]. *)
-(*     apply cong_Heq ; try nlassumption. *)
-(*     + apply eq_refl. *)
-(*     + apply cong_Transport ; try nlassumption. *)
-(*       all: apply eq_refl. *)
-(*   - specialize (IHu3 _ _ _ h h0). *)
-(*     pose proof (heq_conv_inv IHu3) as e3. split_hyps. *)
-(*     pose proof (sort_conv_inv pi1_). subst. *)
-(*     assert (hh : Σ ;;; Γ,, A1 |-i u1 : sSort z0). *)
-(*     { eapply type_ctxconv ; try nleassumption. *)
-(*       - econstructor ; try nleassumption. *)
-(*         eapply typing_wf. nleassumption. *)
-(*       - constructor. *)
-(*         + apply ctxeq_refl. *)
-(*         + apply conv_sym. nlassumption. *)
-(*     } *)
-(*     specialize (IHu1 _ _ _ h5 hh). *)
-(*     pose proof (sort_conv_inv IHu1). subst. *)
-(*     eapply eq_trans ; [| exact h10 ]. *)
-(*     apply cong_Heq. *)
-(*     + apply eq_refl. *)
-(*     + apply cong_Prod ; try nlassumption. *)
-(*       apply eq_refl. *)
-(*     + apply eq_refl. *)
-(*     + apply cong_Prod ; try nlassumption. apply eq_refl. *)
-(*   - specialize (IHu5 _ _ _ h0 h12). *)
-(*     pose proof (heq_conv_inv IHu5) as e5. split_hyps. *)
-(*     pose proof (sort_conv_inv pi1_). subst. *)
-(*     eapply eq_trans ; [| exact h13 ]. *)
-(*     apply cong_Heq ; try nlassumption. *)
-(*     + apply cong_Prod ; try nlassumption. apply eq_refl. *)
-(*     + apply cong_Lambda ; try nlassumption. all: apply eq_refl. *)
-(*     + apply cong_Prod ; try nlassumption. apply eq_refl. *)
-(*     + apply cong_Lambda ; try nlassumption. all: apply eq_refl. *)
-(*   - specialize (IHu3 _ _ _ h13 h26). *)
-(*     specialize (IHu4 _ _ _ h h0). *)
-(*     specialize (IHu6 _ _ _ h12 h25). *)
-(*     pose proof (heq_conv_inv IHu3). *)
-(*     pose proof (heq_conv_inv IHu4). *)
-(*     pose proof (heq_conv_inv IHu6). *)
-(*     split_hyps. *)
-(*     eapply eq_trans ; [| exact h16 ]. *)
-(*     apply cong_Heq ; try nlassumption. *)
-(*     + apply substs_conv. nlassumption. *)
-(*     + apply cong_App ; try nlassumption. apply eq_refl. *)
-(*     + apply substs_conv. nlassumption. *)
-(*     + apply cong_App ; try nlassumption. apply eq_refl. *)
-(*   - specialize (IHu3 _ _ _ h h0). *)
-(*     pose proof (heq_conv_inv IHu3) as e3. split_hyps. *)
-(*     pose proof (sort_conv_inv pi1_). subst. *)
-(*     assert (hh : Σ ;;; Γ,, A1 |-i u1 : sSort z0). *)
-(*     { eapply type_ctxconv ; try nleassumption. *)
-(*       - econstructor ; try nleassumption. *)
-(*         eapply typing_wf. nleassumption. *)
-(*       - constructor. *)
-(*         + apply ctxeq_refl. *)
-(*         + apply conv_sym. nlassumption. *)
-(*     } *)
-(*     specialize (IHu1 _ _ _ h5 hh). *)
-(*     pose proof (sort_conv_inv IHu1). subst. *)
-(*     eapply eq_trans ; [| exact h10 ]. *)
-(*     apply cong_Heq. *)
-(*     + apply eq_refl. *)
-(*     + apply cong_Sum ; try nlassumption. *)
-(*       apply eq_refl. *)
-(*     + apply eq_refl. *)
-(*     + apply cong_Sum ; try nlassumption. apply eq_refl. *)
-(*   - specialize IHu3 with (1 := h) (2 := h0). *)
-(*     specialize IHu5 with (1 := h13) (2 := h26). *)
-(*     specialize IHu6 with (1 := h12) (2 := h25). *)
-(*     pose proof (heq_conv_inv IHu3). *)
-(*     pose proof (heq_conv_inv IHu5). *)
-(*     pose proof (heq_conv_inv IHu6). *)
-(*     split_hyps. *)
-(*     eapply eq_trans ; [| exact h16 ]. *)
-(*     apply cong_Heq. *)
-(*     + apply cong_Sum ; try apply eq_refl. nlassumption. *)
-(*     + apply cong_Pair ; try apply eq_refl ; nlassumption. *)
-(*     + apply cong_Sum ; try apply eq_refl. nlassumption. *)
-(*     + apply cong_Pair ; try apply eq_refl ; nlassumption. *)
-(*   - specialize IHu3 with (1 := h0) (2 := h12). *)
-(*     specialize IHu5 with (1 := h10) (2 := h20). *)
-(*     pose proof (heq_conv_inv IHu3). *)
-(*     pose proof (heq_conv_inv IHu5). *)
-(*     split_hyps. *)
-(*     eapply eq_trans ; [| exact h13 ]. *)
-(*     apply cong_Heq ; try nlassumption. *)
-(*     + apply cong_Pi1 ; try nlassumption. apply eq_refl. *)
-(*     + apply cong_Pi1 ; try nlassumption. apply eq_refl. *)
-(*   - specialize IHu3 with (1 := h0) (2 := h12). *)
-(*     specialize IHu5 with (1 := h10) (2 := h20). *)
-(*     pose proof (heq_conv_inv IHu3). *)
-(*     pose proof (heq_conv_inv IHu5). *)
-(*     split_hyps. *)
-(*     eapply eq_trans ; [| exact h13 ]. *)
-(*     apply cong_Heq ; try nlassumption. *)
-(*     + apply substs_conv. *)
-(*       apply cong_Pi1 ; try nlassumption. apply eq_refl. *)
-(*     + apply cong_Pi2 ; try nlassumption. apply eq_refl. *)
-(*     + apply substs_conv. *)
-(*       apply cong_Pi1 ; try nlassumption. apply eq_refl. *)
-(*     + apply cong_Pi2 ; try nlassumption. apply eq_refl. *)
-(*   - specialize (IHu1 _ _ _ h0 h12). *)
-(*     specialize (IHu2 _ _ _ h11 h21). *)
-(*     specialize (IHu3 _ _ _ h10 h20). *)
-(*     pose proof (heq_conv_inv IHu1). *)
-(*     pose proof (heq_conv_inv IHu2). *)
-(*     pose proof (heq_conv_inv IHu3). *)
-(*     split_hyps. subst. *)
-(*     pose proof (sort_conv_inv pi1_1). subst. *)
-(*     eapply eq_trans ; [| exact h13 ]. *)
-(*     apply cong_Heq ; try apply eq_refl. *)
-(*     + apply cong_Eq ; nlassumption. *)
-(*     + apply cong_Eq ; nlassumption. *)
-(*   - specialize (IHu1 _ _ _ h h0). *)
-(*     specialize (IHu2 _ _ _ h8 h15). *)
-(*     pose proof (heq_conv_inv IHu1). *)
-(*     pose proof (heq_conv_inv IHu2). *)
-(*     split_hyps. *)
-(*     pose proof (sort_conv_inv pi1_0). subst. *)
-(*     eapply eq_trans ; [| exact h10 ]. *)
-(*     apply cong_Heq. *)
-(*     + apply cong_Eq ; nlassumption. *)
-(*     + apply cong_Refl ; nlassumption. *)
-(*     + apply cong_Eq ; nlassumption. *)
-(*     + apply cong_Refl ; nlassumption. *)
-(*   - specialize (IHu _ _ _ h h0). *)
-(*     pose proof (eq_conv_inv IHu). split_hyps. *)
-(*     eapply eq_trans ; [| exact h8 ]. *)
-(*     apply cong_Heq ; nlassumption. *)
-(*   - specialize (IHu1 _ _ _ h7 h13). *)
-(*     specialize (IHu3 _ _ _ h0 h8). *)
-(*     apply conv_sym in IHu1. pose proof (sort_conv_inv IHu1). subst. *)
-(*     pose proof (heq_conv_inv IHu3). split_hyps. *)
-(*     eapply eq_trans ; [| exact h9 ]. *)
-(*     apply cong_Eq ; nlassumption. *)
-(*   - specialize (IHu1 _ _ _ h h0). *)
-(*     eapply eq_trans ; [| exact h6 ]. *)
-(*     nlassumption. *)
-(*   - specialize (IHu _ _ _ h4 h8). *)
-(*     pose proof (pack_conv_inv IHu). *)
-(*     split_hyps. *)
-(*     eapply eq_trans ; [| exact h7 ]. *)
-(*     nlassumption. *)
-(*   - specialize (IHu _ _ _ h4 h8). *)
-(*     pose proof (pack_conv_inv IHu). *)
-(*     split_hyps. *)
-(*     eapply eq_trans ; [| exact h7 ]. *)
-(*     nlassumption. *)
-(*   - specialize (IHu _ _ _ h4 h8). *)
-(*     pose proof (pack_conv_inv IHu). *)
-(*     split_hyps. *)
-(*     eapply eq_trans ; [| exact h7 ]. *)
-(*     apply cong_Heq ; try nlassumption ; apply eq_refl. *)
-(*   - rewrite h4 in h0. inversion h0. subst. nlassumption. *)
-(* Defined. *)
-Admitted.
+    assumption.
+  - reunih.
+    + cbn. f_equal. eauto.
+    + repeat eapply wf_snoc.
+      * eapply typing_wf. eassumption.
+      * eassumption.
+    + try assumption. try solve [finish].
+  - reunih.
+    + cbn. f_equal. eauto.
+    + repeat eapply wf_snoc.
+      * eapply typing_wf. eassumption.
+      * eassumption.
+    + try assumption. try solve [finish].
+  - reunih.
+    + cbn. f_equal. eauto.
+    + repeat eapply wf_snoc.
+      * eapply typing_wf. eassumption.
+      * eassumption.
+    + try assumption. try solve [finish].
+  - rewrite h4 in h0. inversion h0. inversion h0. subst. assumption.
+Defined.
 
 End Uniqueness.

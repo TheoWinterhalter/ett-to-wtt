@@ -199,6 +199,20 @@ Proof.
   invtac.
 Defined.
 
+Lemma inversionBeta :
+  forall {Σ Γ t u T},
+    Σ ;;; Γ |-i sBeta t u : T ->
+    exists s n A B,
+      (Σ ;;; Γ,, A |-i t : B) /\
+      (Σ ;;; Γ |-i u : A) /\
+      (Σ ;;; Γ |-i A : sSort s) /\
+      (nl (sEq (B {0 := u}) (sApp (sLambda n A B t) A B u) (t {0 := u}))
+       = nl T).
+Proof.
+  invtac.
+  Unshelve. constructor.
+Defined.
+
 Lemma inversionHeq :
   forall {Σ Γ A B a b T},
     Σ ;;; Γ |-i sHeq A a B b : T ->
@@ -621,6 +635,8 @@ Ltac ttinv h :=
                        splits_one hh
     | sTransport _ _ _ _ => destruct (inversionTransport h) as (s & hh) ;
                            splits_one hh
+    | sBeta _ _ =>
+      destruct (inversionBeta h) as (s & nx & A & B & hh) ; splits_one hh
     | sHeq _ _ _ _ => destruct (inversionHeq h) as (s & hh) ; splits_one hh
     | sHeqToEq _ => destruct (inversionHeqToEq h) as (A & u & v & s & hh) ;
                    splits_one hh

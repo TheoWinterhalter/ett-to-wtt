@@ -113,6 +113,11 @@ Ltac splits_one h :=
             destruct h as [h1 h2] ;
             splits_one h1 ;
             splits_one h2
+  | _ /\ _ => let h1 := fresh "h" in
+            let h2 := fresh "h" in
+            destruct h as [h1 h2] ;
+            splits_one h1 ;
+            splits_one h2
   | _ => idtac
   end.
 
