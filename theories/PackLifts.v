@@ -1170,6 +1170,9 @@ Proof.
         eapply type_Ax.
         + eapply wf_llift' ; eassumption.
         + assumption.
+      - eapply type_rename.
+        + emh.
+        + eapply nl_llift. assumption.
     }
 
   (* type_rlift' *)
@@ -1362,6 +1365,9 @@ Proof.
         eapply type_Ax.
         + eapply wf_rlift' ; eassumption.
         + assumption.
+      - eapply type_rename.
+        + emh.
+        + eapply nl_rlift. assumption.
     }
 
   (* wf_llift' *)
