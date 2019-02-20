@@ -602,7 +602,7 @@ Proof.
         constructor ; assumption.
       * eapply inrel_subst ; assumption.
       * eapply type_EqToHeq' ; try eassumption.
-        eapply type_Beta ; assumption.
+        eapply type_Beta ; eassumption.
 
     (* eq_conv *)
     + (* Translating the conversion *)
