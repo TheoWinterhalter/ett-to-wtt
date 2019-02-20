@@ -228,20 +228,26 @@ Section Fundamental.
 
 Context `{Sort_notion : Sorts.notion}.
 
-Ltac cleansorts :=
+Ltac cleannl :=
+  let inv h :=
+    inversion h ; subst ; clear h
+  in
+  let aux t h :=
+    destruct t ; cbn in h ; try discriminate h ; inv h
+  in
   repeat match goal with
-  | h : context [ nl (sSort _) ] |- _ =>
-    cbn in h
-  end ;
-  repeat match goal with
-  | h : nlSort _ = nlSort _ |- _ =>
-    inversion h ; subst ; clear h
-  | h : nl ?t = nlSort ?s |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  | h : nlSort ?s = nl ?t |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
-    inversion h ; subst ; clear h
+  | h : context [ nl (sSort _) ] |- _ => cbn in h
+  | h : context [ nl (sProd _ _ _) ] |- _ => cbn in h
+  | h : context [ nl (sSum _ _ _) ] |- _ => cbn in h
+  | h : nlSort _ = nlSort _ |- _ => inv h
+  | h : nlProd _ _ = nlProd _ _ |- _ => inv h
+  | h : nlSum _ _ = nlSum _ _ |- _ => inv h
+  | h : nl ?t = nlSort _ |- _ => aux t h
+  | h : nlSort _ = nl ?t |- _ => aux t h
+  | h : nlProd _ _ = nl ?t |- _ => aux t h
+  | h : nl ?t = nlProd _ _ |- _ => aux t h
+  | h : nlSum _ _ = nl ?t |- _ => aux t h
+  | h : nl ?t = nlSum _ _ |- _ => aux t h
   end.
 
 Lemma trel_to_heq' :
@@ -402,7 +408,7 @@ Proof.
     specialize (hpA _ _ _ hm h0 h5).
     destruct (istype_type hg hpA) as [s iA].
     ttinv iA. cbn in h12. inversion h12. subst. clear h12.
-    cleansorts.
+    cleannl.
     assert (s1 = s0).
     { eapply sorts_in_sort ; eassumption. }
     subst.
@@ -455,7 +461,7 @@ Proof.
     specialize (hpB _ _ _ hm' h h3).
     destruct (istype_type hg hpB) as [? iB]. ttinv iB.
     cbn in h16. inversion h16. subst. clear h16.
-    cleansorts.
+    cleannl.
     assert (s3 = s2).
     { eapply sorts_in_sort ; eassumption. }
     subst.
@@ -484,7 +490,7 @@ Proof.
     specialize (hpv _ _ _ hm h3 h7).
     destruct (istype_type hg hpA) as [? ipA]. ttinv ipA.
     cbn in h14. inversion h14. subst. clear h14.
-    cleansorts.
+    cleannl.
     assert (s0 = s).
     { eapply sorts_in_sort ; eassumption. }
     subst.
@@ -496,7 +502,7 @@ Proof.
   - exists (sHeqRefl (sSort (Sorts.succ s)) (sSort s)).
     intros Γm U1 U2 hm h1 h2.
     ttinv h1. ttinv h2.
-    cleansorts.
+    cleannl.
     assert (hwf : wf Σ (Γ ,,, Γm)).
     { eapply (@wf_llift Sort_notion) with (Δ := []) ; try eassumption.
       eapply typing_wf ; eassumption.
@@ -517,7 +523,7 @@ Proof.
     ttinv h1. ttinv h2.
     specialize (hpA _ _ _ hm h0 h6).
     destruct (istype_type hg hpA) as [? iA]. ttinv iA.
-    cleansorts.
+    cleannl.
     assert (s1 = s0).
     { eapply sorts_in_sort ; eassumption. }
     subst.
@@ -532,7 +538,7 @@ Proof.
     specialize (hpu _ _ _ hm' h3 h7).
     assert (s3 = s2).
     { destruct (istype_type hg hpB) as [? ipB]. ttinv ipB.
-      cleansorts. eapply sorts_in_sort ; eassumption.
+      cleannl. eapply sorts_in_sort ; eassumption.
     } subst.
     eapply type_rename.
     + eapply opt_CongLambda ; try assumption.
@@ -545,7 +551,10 @@ Proof.
         eapply (@type_rlift1 Sort_notion) ; eassumption.
       * eapply (@type_llift1 Sort_notion) ; eassumption.
       * eapply (@type_rlift1 Sort_notion) ; eassumption.
-    + cbn. f_equal. fail.
+    + cbn. f_equal. all: f_equal.
+      all: try eapply nl_llift.
+      all: try eapply nl_rlift.
+      all: eauto.
 
   (* App *)
   - destruct (IHsim1 Γ Γ1 Γ2) as [pu hpu].
@@ -556,10 +565,10 @@ Proof.
     intros Γm U1 U2 hm h1 h2.
     pose proof (mix_length1 hm) as ml. rewrite <- ml.
     ttinv h1. ttinv h2.
-    specialize (hpu _ _ _ hm h5 h10).
-    specialize (hpA _ _ _ hm h h0).
+    specialize (hpu _ _ _ hm h3 h8).
+    specialize (hpA _ _ _ hm h0 h7).
     destruct (istype_type hg hpA) as [? iA].
-    ttinv iA. inversion h13 ; subst ; clear h13.
+    ttinv iA. cleannl.
     assert (s1 = s0).
     { eapply sorts_in_sort ; eassumption. }
     subst.
@@ -570,11 +579,11 @@ Proof.
                     (Γm ,, (sPack (llift0 #|Γm| A1) (rlift0 #|Γm| A2)))
     ).
     { econstructor ; eassumption. }
-    specialize (hpB _ _ _ hm' h6 h11).
+    specialize (hpB _ _ _ hm' h h5).
     specialize (hpv _ _ _ hm h4 h9).
     assert (s3 = s2).
     { destruct (istype_type hg hpB) as [? ipB]. ttinv ipB.
-      inversion h12. eapply sorts_in_sort ; eassumption.
+      cleannl. eapply sorts_in_sort ; eassumption.
     } subst.
     eapply type_rename.
     + eapply opt_CongApp ; try assumption.
@@ -587,7 +596,9 @@ Proof.
         eapply (@type_llift1 Sort_notion) ; eassumption.
       * lift_sort.
         eapply (@type_rlift1 Sort_notion) ; eassumption.
-    + cbn. rewrite <- llift_subst, <- rlift_subst. reflexivity.
+    + cbn. rewrite <- llift_subst, <- rlift_subst. f_equal.
+      * cbn. eapply nl_llift. assumption.
+      * cbn. eapply nl_rlift. assumption.
 
   (* Pair *)
   - destruct (IHsim1 Γ Γ1 Γ2) as [pA hpA].
@@ -599,9 +610,9 @@ Proof.
     intros Γm U1 U2 hm h1 h2.
     pose proof (mix_length1 hm) as ml. rewrite <- ml.
     ttinv h1. ttinv h2.
-    specialize (hpA _ _ _ hm h h0).
+    specialize (hpA _ _ _ hm h0 h7).
     destruct (istype_type hg hpA) as [? iA].
-    ttinv iA. inversion h13 ; subst ; clear h13.
+    ttinv iA. cleannl.
     assert (s1 = s0).
     { eapply sorts_in_sort ; eassumption. }
     subst.
@@ -612,12 +623,12 @@ Proof.
                     (Γm ,, (sPack (llift0 #|Γm| A1) (rlift0 #|Γm| A2)))
     ).
     { econstructor ; eassumption. }
-    specialize (hpB _ _ _ hm' h6 h11).
+    specialize (hpB _ _ _ hm' h h5).
     assert (s3 = s2).
     { destruct (istype_type hg hpB) as [? ipB]. ttinv ipB.
-      inversion h12. eapply sorts_in_sort ; eassumption.
+      cleannl. eapply sorts_in_sort ; eassumption.
     } subst.
-    specialize (hpu _ _ _ hm h5 h10).
+    specialize (hpu _ _ _ hm h3 h8).
     specialize (hpv _ _ _ hm h4 h9).
     eapply type_rename.
     + eapply type_CongPair' ; try assumption.
@@ -630,7 +641,10 @@ Proof.
         apply hpv.
       * lift_sort. eapply (@type_llift1 Sort_notion) ; eassumption.
       * lift_sort. eapply (@type_rlift1 Sort_notion) ; eassumption.
-    + reflexivity.
+    + cbn. f_equal. all: f_equal.
+      all: try eapply nl_llift.
+      all: try eapply nl_rlift.
+      all: eauto.
 
   (* Pi1 *)
   - destruct (IHsim1 Γ Γ1 Γ2) as [pA hpA].
@@ -640,46 +654,9 @@ Proof.
     intros Γm U1 U2 hm h1 h2.
     pose proof (mix_length1 hm) as ml. rewrite <- ml.
     ttinv h1. ttinv h2.
-    specialize (hpA _ _ _ hm h5 h9).
+    specialize (hpA _ _ _ hm h h4).
     destruct (istype_type hg hpA) as [? iA].
-    ttinv iA. inversion h11 ; subst ; clear h11.
-    assert (s1 = s0).
-    { eapply sorts_in_sort ; eassumption. }
-    subst.
-    assert (hm' :
-              ismix Σ Γ
-                    (Γ1 ,, U1)
-                    (Γ2 ,, U2)
-                    (Γm ,, (sPack (llift0 #|Γm| U1) (rlift0 #|Γm| U2)))
-    ).
-    { econstructor ; eassumption. }
-    specialize (hpB _ _ _ hm' h4 h8).
-    assert (s3 = s2).
-    { destruct (istype_type hg hpB) as [? ipB]. ttinv ipB.
-      inversion h10. eapply sorts_in_sort ; eassumption.
-    } subst.
-    specialize (hpp _ _ _ hm h0 h6).
-    eapply type_rename.
-    + eapply type_CongPi1' ; try assumption.
-      * apply hpA.
-      * rewrite llift_substProj, rlift_substProj.
-        apply hpB.
-      * apply hpp.
-      * lift_sort. eapply (@type_llift1 Sort_notion) ; eassumption.
-      * lift_sort. eapply (@type_rlift1 Sort_notion) ; eassumption.
-    + reflexivity.
-
-  (* Pi2 *)
-  - destruct (IHsim1 Γ Γ1 Γ2) as [pA hpA].
-    destruct (IHsim2 Γ (Γ1,, A1) (Γ2,, A2)) as [pB hpB].
-    destruct (IHsim3 Γ Γ1 Γ2) as [pp hpp].
-    exists (sCongPi2 (llift #|Γ1| 1 B1) (rlift #|Γ1| 1 B2) pA pB pp).
-    intros Γm U1 U2 hm h1 h2.
-    pose proof (mix_length1 hm) as ml. rewrite <- ml.
-    ttinv h1. ttinv h2.
-    specialize (hpA _ _ _ hm h5 h9).
-    destruct (istype_type hg hpA) as [? iA].
-    ttinv iA. inversion h11 ; subst ; clear h11.
+    ttinv iA. cleannl.
     assert (s1 = s0).
     { eapply sorts_in_sort ; eassumption. }
     subst.
@@ -690,10 +667,50 @@ Proof.
                     (Γm ,, (sPack (llift0 #|Γm| A1) (rlift0 #|Γm| A2)))
     ).
     { econstructor ; eassumption. }
-    specialize (hpB _ _ _ hm' h4 h8).
+    specialize (hpB _ _ _ hm' h3 h7).
     assert (s3 = s2).
     { destruct (istype_type hg hpB) as [? ipB]. ttinv ipB.
-      inversion h10. eapply sorts_in_sort ; eassumption.
+      cleannl. eapply sorts_in_sort ; eassumption.
+    } subst.
+    specialize (hpp _ _ _ hm h0 h6).
+    eapply type_rename.
+    + eapply type_CongPi1' ; try assumption.
+      * apply hpA.
+      * rewrite llift_substProj, rlift_substProj.
+        apply hpB.
+      * apply hpp.
+      * lift_sort. eapply (@type_llift1 Sort_notion) ; eassumption.
+      * lift_sort. eapply (@type_rlift1 Sort_notion) ; eassumption.
+    + cbn. f_equal.
+      all: try eapply nl_llift.
+      all: try eapply nl_rlift.
+      all: eauto.
+
+  (* Pi2 *)
+  - destruct (IHsim1 Γ Γ1 Γ2) as [pA hpA].
+    destruct (IHsim2 Γ (Γ1,, A1) (Γ2,, A2)) as [pB hpB].
+    destruct (IHsim3 Γ Γ1 Γ2) as [pp hpp].
+    exists (sCongPi2 (llift #|Γ1| 1 B1) (rlift #|Γ1| 1 B2) pA pB pp).
+    intros Γm U1 U2 hm h1 h2.
+    pose proof (mix_length1 hm) as ml. rewrite <- ml.
+    ttinv h1. ttinv h2.
+    specialize (hpA _ _ _ hm h h4).
+    destruct (istype_type hg hpA) as [? iA].
+    ttinv iA. cleannl.
+    assert (s1 = s0).
+    { eapply sorts_in_sort ; eassumption. }
+    subst.
+    assert (hm' :
+              ismix Σ Γ
+                    (Γ1 ,, A1)
+                    (Γ2 ,, A2)
+                    (Γm ,, (sPack (llift0 #|Γm| A1) (rlift0 #|Γm| A2)))
+    ).
+    { econstructor ; eassumption. }
+    specialize (hpB _ _ _ hm' h3 h7).
+    assert (s3 = s2).
+    { destruct (istype_type hg hpB) as [? ipB]. ttinv ipB.
+      cleannl. eapply sorts_in_sort ; eassumption.
     } subst.
     specialize (hpp _ _ _ hm h0 h6).
     eapply type_rename.
@@ -708,11 +725,11 @@ Proof.
       * change (sPi1 (llift0 #|Γm| A1) (llift #|Γm| 1 B1) (llift0 #|Γm| p1))
           with (llift0 #|Γm| (sPi1 A1 B1 p1)).
         rewrite <- llift_subst.
-        reflexivity.
+        eapply nl_llift. assumption.
       * change (sPi1 (rlift0 #|Γm| A2) (rlift #|Γm| 1 B2) (rlift0 #|Γm| p2))
           with (rlift0 #|Γm| (sPi1 A2 B2 p2)).
         rewrite <- rlift_subst.
-        reflexivity.
+        eapply nl_rlift. assumption.
 
   (* Refl *)
   - destruct (IHsim1 Γ Γ1 Γ2) as [pA hpA].
@@ -720,15 +737,21 @@ Proof.
     exists (optCongRefl pA pu).
     intros Γm U1 U2 hm h1 h2.
     ttinv h1. ttinv h2.
-    specialize (hpA _ _ _ hm h h0).
-    specialize (hpu _ _ _ hm h4 h7).
+    specialize (hpA _ _ _ hm h0 h5).
+    specialize (hpu _ _ _ hm h h3).
     assert (s0 = s).
     { destruct (istype_type hg hpA) as [? ipA]. ttinv ipA.
-      cbn in h5, h12. eapply sorts_in_sort ; eassumption.
+      cleannl. eapply sorts_in_sort ; eassumption.
     } subst.
     eapply type_rename.
     + eapply opt_CongRefl ; eassumption.
-    + cbn. reflexivity.
+    + cbn. f_equal.
+      * change (nlEq (nl (llift0 #|Γm| A1)) (nl (llift0 #|Γm| u1)) (nl (llift0 #|Γm| u1)))
+          with (nl (llift0 #|Γm| (sEq A1 u1 u1))).
+        eapply nl_llift. assumption.
+      * change (nlEq (nl (rlift0 #|Γm| A2)) (nl (rlift0 #|Γm| u2)) (nl (rlift0 #|Γm| u2)))
+          with (nl (rlift0 #|Γm| (sEq A2 u2 u2))).
+        eapply nl_rlift. assumption.
 
   (* Ax *)
   - case_eq (lookup_glob Σ id).
@@ -753,8 +776,8 @@ Proof.
         eapply typing_wf. eassumption.
       * cbn. ttinv h1'. ttinv h2'. subst.
         f_equal.
-        -- rewrite h0 in eq. inversion eq. reflexivity.
-        -- rewrite h4 in eq. inversion eq. reflexivity.
+        -- rewrite h0 in eq. inversion eq. subst. assumption.
+        -- rewrite h4 in eq. inversion eq. subst. assumption.
     + (* The axiom isn't declared. We return garbage. *)
       intro neq.
       exists (sRel 0).
