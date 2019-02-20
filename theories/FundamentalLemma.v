@@ -1043,6 +1043,32 @@ Inductive type_head : head_kind -> Type :=
 | type_headEq : type_head headEq
 .
 
+(* Maybe a waste to have it twice in the same file.
+   Since it usually follows ttinv, maybe it should be
+   provided in the same file and used automatically.
+ *)
+Ltac cleannl :=
+  let inv h :=
+    inversion h ; subst ; clear h
+  in
+  let aux t h :=
+    destruct t ; cbn in h ; try discriminate h ; inv h
+  in
+  repeat match goal with
+  | h : context [ nl (sSort _) ] |- _ => cbn in h
+  | h : context [ nl (sProd _ _ _) ] |- _ => cbn in h
+  | h : context [ nl (sSum _ _ _) ] |- _ => cbn in h
+  | h : nlSort _ = nlSort _ |- _ => inv h
+  | h : nlProd _ _ = nlProd _ _ |- _ => inv h
+  | h : nlSum _ _ = nlSum _ _ |- _ => inv h
+  | h : nl ?t = nlSort _ |- _ => aux t h
+  | h : nlSort _ = nl ?t |- _ => aux t h
+  | h : nlProd _ _ = nl ?t |- _ => aux t h
+  | h : nl ?t = nlProd _ _ |- _ => aux t h
+  | h : nlSum _ _ = nl ?t |- _ => aux t h
+  | h : nl ?t = nlSum _ _ |- _ => aux t h
+  end.
+
 Lemma inversion_transportType :
   forall {Σ tseq Γ' A' T},
     type_glob Σ ->
@@ -1057,34 +1083,31 @@ Proof.
   - cbn in *. destruct A' ; try (now inversion hh).
     + exists (Sorts.succ s). split.
       * apply type_Sort. apply (typing_wf ht).
-      * ttinv ht. destruct (istype_type hg ht).
-        subst. eapply type_Sort. eapply typing_wf. eassumption.
-    + ttinv ht.
+      * ttinv ht. cleannl. eapply type_Sort. eapply typing_wf. eassumption.
+    + ttinv ht. cleannl.
       exists (Sorts.prod_sort s1 s2). split.
       * now apply type_Prod.
-      * destruct (istype_type hg ht).
-        subst. eapply type_Sort. eapply typing_wf. eassumption.
-    + ttinv ht.
+      * eapply type_Sort. eapply typing_wf. eassumption.
+    + ttinv ht. cleannl.
       exists (Sorts.sum_sort s1 s2). split.
       * now apply type_Sum.
-      * destruct (istype_type hg ht).
-        subst. eapply type_Sort. eapply typing_wf. eassumption.
-    + ttinv ht.
+      * eapply type_Sort. eapply typing_wf. eassumption.
+    + ttinv ht. cleannl.
       exists (eq_sort s). split.
       * now apply type_Eq.
-      * destruct (istype_type hg ht).
-        subst. eapply type_Sort. eapply typing_wf. eassumption.
+      * eapply type_Sort. eapply typing_wf. eassumption.
 
   - destruct a. cbn in ht.
     change (fold_right transport_data_app A' tseq)
       with (transport_seq_app tseq A') in ht.
     ttinv ht.
-    destruct (IHtseq Γ' A' T1 hg hh h4) as [s' [hAs hT1s]].
+    destruct (IHtseq Γ' A' T1 hg hh h) as [s' [hAs hT1s]].
     exists s'. split.
     + assumption.
-    + pose proof (uniqueness hg h3 hT1s) as hs.
+    + pose proof (uniqueness hg h1 hT1s) as hs.
       cbn in hs. inversion hs. subst.
-      assumption.
+      eapply rename_typed ; try eapply h4 ; try eassumption ; try reflexivity.
+      eapply typing_wf. eassumption.
 Defined.
 
 Lemma choose_type' :
