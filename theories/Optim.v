@@ -43,8 +43,11 @@ Proof.
   case (decHeqRefl p).
   - intros i. destruct i as [C c].
     simpl.
-    ttinv h. inversion h2. subst.
-    eapply type_HeqRefl' ; eassumption.
+    ttinv h.
+    eapply type_rename.
+    + eapply type_HeqRefl' ; eassumption.
+    + cbn in h3. inversion h3.
+      cbn. f_equal ; eauto.
   - intros e. destruct p.
     17: exfalso ; apply e ; constructor.
     all: simpl ; apply type_HeqSym' ; assumption.
@@ -74,18 +77,31 @@ Proof.
   case (decHeqRefl p) ; case (decHeqRefl q).
   - intros iq ip. destruct ip as [D d], iq as [E e].
     simpl.
-    ttinv hp. inversion h1 ; subst.
-    ttinv hq. inversion h4 ; subst.
-    eapply type_HeqRefl' ; eassumption.
+    ttinv hp. cbn in h2. inversion h2.
+    ttinv hq. cbn in h5. inversion h5.
+    eapply type_rename.
+    + eapply type_HeqRefl' ; eassumption.
+    + cbn. f_equal ; eauto.
+      * transitivity (nl B) ; eauto.
+        transitivity (nl E) ; eauto.
+      * transitivity (nl b) ; eauto.
+        transitivity (nl e) ; eauto.
   - intros bot ip. destruct ip as [D d].
     replace (optHeqTrans (sHeqRefl D d) q) with q.
-    + ttinv hp. inversion h1 ; subst.
-      assumption.
+    + ttinv hp. cbn in h2. inversion h2.
+      eapply type_rename ; try eassumption.
+      cbn. f_equal ; eauto.
+      * transitivity (nl D) ; eauto.
+      * transitivity (nl d) ; eauto.
     + destruct q. all: try reflexivity.
       exfalso. apply bot. constructor.
   - intros iq bot. destruct iq as [E e].
     replace (optHeqTrans p (sHeqRefl E e)) with p.
-    + ttinv hq. inversion h1 ; subst. assumption.
+    + ttinv hq. cbn in h2. inversion h2.
+      eapply type_rename ; try eassumption.
+      cbn. f_equal ; eauto.
+      * transitivity (nl E) ; eauto.
+      * transitivity (nl e) ; eauto.
     + destruct p. all: reflexivity.
   - intros bq bp.
     destruct p ; try (exfalso ; apply bp ; constructor).
@@ -136,10 +152,14 @@ Proof.
   destruct p.
   all: try (simpl ; eapply type_HeqToEq' ; eassumption).
   - simpl. rename p1 into B, p2 into b.
-    ttinv h. inversion h2 ; subst.
-    eapply type_Refl' ; eassumption.
+    ttinv h. cbn in h3. inversion h3.
+    eapply type_rename.
+    + eapply type_Refl' ; eassumption.
+    + cbn. f_equal ; eauto.
   - simpl. ttinv h. rename A0 into B, u0 into a, v0 into b.
-    inversion h2 ; subst. assumption.
+    cbn in h5. inversion h5.
+    eapply type_rename ; try eassumption.
+    cbn. f_equal ; eauto.
 Defined.
 
 Fact opt_sort_heq :
@@ -199,8 +219,10 @@ Proof.
   destruct p.
   all: try (simpl ; eapply type_EqToHeq' ; eassumption).
   simpl.
-  ttinv h. inversion h2 ; subst.
-  eapply type_HeqRefl' ; eassumption.
+  ttinv h. cbn in h3. inversion h3.
+  eapply type_rename.
+  - eapply type_HeqRefl' ; eassumption.
+  - cbn. f_equal ; eauto.
 Defined.
 
 (* Tests if t does not depend on variable i *)
@@ -323,18 +345,20 @@ Proof.
   ttinv hpA. ttinv hpB.
   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
   destruct (istype_type hg hpB) as [? hTB]. ttinv hTB.
-  inversion h1 ; subst.
-  inversion h4 ; subst.
-  repeat match goal with
-  | e : sSort _ = sSort _ |- _ => inversion e ; subst
-  end.
-  rewrite notdep_lift, lift_subst in H3 by assumption.
-  rewrite notdep_lift, lift_subst in H3 by assumption.
-  subst.
+  cbn in h2. inversion h2. subst.
+  cbn in h5. inversion h5. subst.
+  cbn in h15. inversion h15. subst. clear h15.
+  cbn in h10. inversion h10. subst. clear h10.
+  rewrite notdep_lift, lift_subst in H2 by assumption.
+  rewrite notdep_lift, lift_subst in H5 by assumption.
   eapply type_rename.
   - eapply type_HeqRefl' ; try eassumption.
-    eapply type_Prod ; eassumption.
-  - cbn. reflexivity.
+    eapply type_Prod ; try eassumption.
+    eapply rename_typed ; try eapply hB1 ; try eassumption ; try reflexivity.
+    + cbn. f_equal. eauto.
+    + econstructor ; try eassumption. eapply typing_wf. eassumption.
+  - cbn. f_equal ; f_equal ; eauto.
+    transitivity (nl pB2) ; eauto.
 Defined.
 
 Definition optCongLambda B1 B2 t1 t2 pA pB pt :=
@@ -384,23 +408,40 @@ Proof.
   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
   destruct (istype_type hg hpB) as [? hTB]. ttinv hTB.
   destruct (istype_type hg hpt) as [? hTt]. ttinv hTt.
-  inversion h1 ; subst.
-  inversion h4 ; subst.
-  rewrite notdep_lift, lift_subst in H4 by assumption.
-  rewrite notdep_lift, lift_subst in H4 by assumption.
-  subst.
-  inversion h7.
-  clear H4.
-  rewrite notdep_lift, lift_subst in H5 by assumption.
-  rewrite notdep_lift, lift_subst in H5 by assumption.
-  subst.
+  cbn in h2. inversion h2.
+  cbn in h5. inversion h5.
+  cbn in h8. inversion h8.
   repeat match goal with
-  | e : sSort _ = sSort _ |- _ => inversion e ; subst
+  | h : nl ?t = nlSort ?s |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  | h : nlSort ?s = nl ?t |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
   end.
+  repeat match goal with
+  | h : nl (sSort _) = nl (sSort _) |- _ =>
+    cbn in h ; inversion h ; subst ; clear h
+  end.
+  rewrite notdep_lift, lift_subst in H5 by assumption.
+  rewrite notdep_lift, lift_subst in H7 by assumption.
+  rewrite notdep_lift, lift_subst in H8 by assumption.
+  rewrite notdep_lift, lift_subst in H9 by assumption.
+  rewrite notdep_lift, lift_subst in H10 by assumption.
+  rewrite notdep_lift, lift_subst in H11 by assumption.
   eapply type_rename.
   - eapply type_HeqRefl' ; try eassumption.
-    eapply type_Lambda ; eassumption.
-  - cbn. reflexivity.
+    eapply type_Lambda ; try eassumption.
+    + eapply rename_typed ; try eapply hB1 ; try eassumption ; try reflexivity.
+      * cbn. f_equal. eauto.
+      * econstructor ; try eassumption. eapply typing_wf. eassumption.
+    + eapply rename_typed ; try eapply ht1 ; try eassumption ; try reflexivity.
+      * cbn. f_equal. eauto.
+      * econstructor ; try eassumption. eapply typing_wf. eassumption.
+  - cbn. f_equal ; f_equal. all: eauto.
+    + transitivity (nl pt1) ; eauto.
+    + transitivity (nl pt1) ; eauto.
+    + transitivity (nl pt2) ; eauto.
 Defined.
 
 Definition optCongApp B1 B2 pu pA pB pv :=
@@ -445,21 +486,42 @@ Proof.
   destruct (istype_type hg hpB) as [? hTB]. ttinv hTB.
   destruct (istype_type hg hpu) as [? hTu]. ttinv hTu.
   destruct (istype_type hg hpv) as [? hTv]. ttinv hTv.
-  inversion h1 ; subst.
-  inversion h4 ; subst.
-  rewrite notdep_lift, lift_subst in H4 by assumption.
-  rewrite notdep_lift, lift_subst in H4 by assumption.
-  subst.
-  inversion h7.
-  clear H4.
-  inversion h10 ; subst.
+  cbn in h2. inversion h2.
+  cbn in h5. inversion h5.
+  cbn in h8. inversion h8.
+  cbn in h11. inversion h11.
   repeat match goal with
-  | e : sSort _ = sSort _ |- _ => inversion e ; subst
+  | h : nl ?t = nlSort ?s |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  | h : nlSort ?s = nl ?t |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
   end.
+  repeat match goal with
+  | h : nl (sSort _) = nl (sSort _) |- _ =>
+    cbn in h ; inversion h ; subst ; clear h
+  end.
+  rewrite notdep_lift, lift_subst in H5 by assumption.
+  rewrite notdep_lift, lift_subst in H7 by assumption.
   eapply type_rename.
   - eapply type_HeqRefl' ; try eassumption.
     eapply type_App ; try eassumption.
-  - cbn. reflexivity.
+    + eapply rename_typed ; try eapply hB1 ; try eassumption ; try reflexivity.
+      * cbn. f_equal. eauto.
+      * econstructor ; try eassumption. eapply typing_wf. eassumption.
+    + eapply type_rename ; try eassumption.
+      cbn. etransitivity ; eauto. f_equal ; eauto.
+      transitivity (nl pB2) ; eauto.
+    + eapply type_rename ; try eassumption.
+      transitivity (nl A1) ; eauto.
+  - cbn. f_equal. all: try eapply nl_subst.
+    all: try reflexivity. all: eauto.
+    + f_equal. all: eauto.
+    + transitivity (nl pB2) ; eauto.
+    + f_equal. all: eauto.
+      transitivity (nl pB2) ; eauto.
+  Unshelve. constructor.
 Defined.
 
 (* TODO congSum, congPair, congPi1, congPi2 *)
@@ -495,14 +557,29 @@ Proof.
   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
   destruct (istype_type hg hpu) as [? hTu]. ttinv hTu.
   destruct (istype_type hg hpv) as [? hTv]. ttinv hTv.
-  inversion h1. inversion h4. inversion h7. subst.
+  cbn in h2. inversion h2.
+  cbn in h5. inversion h5.
+  cbn in h8. inversion h8.
   repeat match goal with
-  | h : sSort _ = sSort _ |- _ => inversion h ; subst
+  | h : nl ?t = nlSort ?s |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  | h : nlSort ?s = nl ?t |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  end.
+  repeat match goal with
+  | h : nl (sSort _) = nl (sSort _) |- _ =>
+    cbn in h ; inversion h ; subst ; clear h
   end.
   eapply type_rename.
   - eapply type_HeqRefl' ; try eassumption.
-    eapply type_Eq ; eassumption.
-  - reflexivity.
+    eapply type_Eq ; try eassumption.
+    + eapply type_rename ; try eassumption.
+      transitivity (nl A1) ; eauto.
+    + eapply type_rename ; try eassumption.
+      transitivity (nl A1) ; eauto.
+  - cbn. f_equal. all: f_equal. all: eauto.
 Defined.
 
 Definition optCongRefl pA pu :=
@@ -529,14 +606,28 @@ Proof.
   ttinv hpA. ttinv hpu.
   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
   destruct (istype_type hg hpu) as [? hTu]. ttinv hTu.
-  inversion h1. inversion h4. subst.
+  cbn in h2. inversion h2.
+  cbn in h5. inversion h5.
   repeat match goal with
-  | h : sSort _ = sSort _ |- _ => inversion h ; subst
+  | h : nl ?t = nlSort ?s |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  | h : nlSort ?s = nl ?t |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  end.
+  repeat match goal with
+  | h : nl (sSort _) = nl (sSort _) |- _ =>
+    cbn in h ; inversion h ; subst ; clear h
   end.
   eapply type_rename.
   - eapply type_HeqRefl' ; try eassumption.
-    eapply type_Refl' ; eassumption.
-  - reflexivity.
+    eapply type_Refl' ; try eassumption.
+    eapply type_rename ; try eassumption.
+    transitivity (nl A1) ; eauto.
+  - cbn. f_equal.
+    all: f_equal.
+    all: eauto.
 Defined.
 
 End Optim.
