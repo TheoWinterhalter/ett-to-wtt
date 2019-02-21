@@ -96,6 +96,17 @@ Proof.
     + cbn. erewrite IHΓ. reflexivity.
 Defined.
 
+Lemma tsl_subst :
+  forall {t u n},
+    tsl (t { n := u })%s = (tsl t){ n := tsl u }.
+Proof.
+  intro t. induction t ; intros u m.
+  all: try (cbn ; reflexivity).
+  all: try (cbn ; rewrite ?IHt, ?IHt1, ?IHt2, ?IHt3, ?IHt4, ?IHt5, ?IHt6 ; reflexivity).
+  cbn. case_eq (m ?= n) ; intros ; try reflexivity.
+  apply tsl_lift.
+Defined.
+
 Open Scope i_scope.
 
 Lemma tsl_sound :
@@ -113,7 +124,24 @@ Proof.
   - unfold t', A'. cbn. rewrite tsl_lift. unshelve erewrite tsl_safe_nth.
     + cbn. rewrite tsl_ctx_length. assumption.
     + econstructor. assumption.
-  -
+  - unfold t', A'. cbn. econstructor. assumption.
+  - unfold t', A'. cbn. econstructor.
+    + eapply IHh1. assumption.
+    + eapply IHh2. cbn. econstructor ; try assumption.
+      eapply IHh1. assumption.
+  - unfold t', A'. cbn. econstructor.
+    + eapply IHh1. assumption.
+    + eapply IHh3. cbn. econstructor ; try assumption.
+      eapply IHh1. assumption.
+  - unfold t', A'. cbn. rewrite tsl_subst.
+    econstructor.
+    + eapply IHh3. assumption.
+    + eapply IHh4. assumption.
+  - unfold t', A'. cbn. econstructor.
+    + eapply IHh1. assumption.
+    + eapply IHh2. cbn. econstructor ; try assumption.
+      eapply IHh1. assumption.
+  (* There is clearly room for automation! *)
 Admitted.
 
 Lemma tsl_fresh_glob :
