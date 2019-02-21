@@ -12,6 +12,9 @@ Import MonadNotation ListNotations.
 Section s.
 Context (Sort_notion : notion).
 
+(* Note we will require Σ and Γ in order to do some inference
+   meaning we will also land in a monad.
+ *)
 Fixpoint tsl (t : sterm) : wterm :=
   match t with
   | sRel n => wRel n
@@ -45,11 +48,11 @@ Fixpoint tsl (t : sterm) : wterm :=
   (* | sCongRefl pA pu => _ *)
   (* | sEqToHeq p => _ *)
   (* | sHeqTypeEq A B p => _ *)
-  (* | sPack A1 A2 => _ *)
-  (* | sProjT1 p => _ *)
-  (* | sProjT2 p => _ *)
-  (* | sProjTe p => _ *)
-  (* | sAx id => _ *)
+  | sPack A1 A2 => wPack (tsl A1) (tsl A2)
+  | sProjT1 p => wProjT1 (tsl p)
+  | sProjT2 p => wProjT2 (tsl p)
+  | sProjTe p => wProjTe (tsl p)
+  | sAx id => wAx id
   | _ => wAx "todo"
   end.
 
@@ -105,6 +108,35 @@ Proof.
   all: try (cbn ; rewrite ?IHt, ?IHt1, ?IHt2, ?IHt3, ?IHt4, ?IHt5, ?IHt6 ; reflexivity).
   cbn. case_eq (m ?= n) ; intros ; try reflexivity.
   apply tsl_lift.
+Defined.
+
+Lemma tsl_lookup :
+  forall {Σ id ty},
+    SCommon.lookup_glob Σ id = Some ty ->
+    lookup_glob (tsl_glob Σ) id = Some (tsl ty).
+Proof.
+  intro Σ. induction Σ ; intros id ty eq.
+  - cbn in eq. discriminate eq.
+  - revert eq. cbn. case_eq (ident_eq id (SCommon.dname a)).
+    + intros e eq. inversion eq. subst. reflexivity.
+    + intros e eq. eapply IHΣ. assumption.
+Defined.
+
+Lemma nl_tsl :
+  forall {u v},
+    Equality.nl u = Equality.nl v ->
+    WEquality.nl (tsl u) = WEquality.nl (tsl v).
+Proof.
+  intro u. induction u ; intros v eq.
+  all: destruct v ; simpl in eq ; try discriminate eq.
+  all: try (
+    cbn ; inversion eq ; f_equal ;
+    try eapply IHu ;
+    try eapply IHu1 ; try eapply IHu2 ;
+    try eapply IHu3 ; try eapply IHu4 ;
+    try eapply IHu5 ; try eapply IHu6 ;
+    assumption
+  ).
 Defined.
 
 Open Scope i_scope.
@@ -180,10 +212,32 @@ Proof.
            ++ wfctx ; ih.
            ++ cbn. auto with arith.
     + repeat (rewrite ?tsl_lift, ?tsl_subst in IHh6). ih.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
   - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst).
-    (* cbn. econstructor ; try assumption ; try ih. *)
-    admit.
-    (* Reached the TODO point *)
+    cbn. eapply type_ProjT1 with (A4 := tsl A2) ; try assumption ; try ih.
+  - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst).
+    cbn. eapply type_ProjT2 with (A3 := tsl A1) ; try assumption ; try ih.
+  - unfold t', A'. econstructor.
+    + assumption.
+    + eapply tsl_lookup. assumption.
+  - eapply type_rename.
+    + eapply IHh. assumption.
+    + unfold A'. eapply nl_tsl. assumption.
 Admitted.
 
 Lemma tsl_fresh_glob :
