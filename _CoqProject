@@ -26,8 +26,9 @@ theories/WLemmata.v
 theories/WChecker.v
 
 theories/Quotes.v
-theories/FinalTranslation.v
 theories/FullQuote.v
+
+# theories/FinalTranslation.v
 
 # theories/XTypingLemmata.v
 # theories/XInversions.v
