@@ -4,7 +4,7 @@ From Template
 Require Import Ast utils monad_utils Typing Checker.
 From Translation
      Require Import util Sorts SAst SLiftSubst WAst WLiftSubst
-     SCommon ITyping
+     SCommon ITyping ITypingLemmata
      WTyping WChecker WLemmata Quotes.
 From TypingFlags Require Import Loader.
 Import MonadNotation ListNotations.
@@ -100,13 +100,80 @@ Open Scope i_scope.
 
 Lemma tsl_sound :
   forall {Σ Γ t A},
+    let Σ' := tsl_glob Σ in
+    let Γ' := tsl_ctx Γ in
+    let t' := tsl t in
+    let A' := tsl A in
+    type_glob Σ' ->
+    wf Σ' Γ' ->
     Σ ;;; Γ |-i t : A ->
-    tsl_glob Σ ;;; tsl_ctx Γ |-w tsl t : tsl A.
+    Σ' ;;; Γ' |-w t' : A'.
 Proof.
-  intros Σ Γ t A h. induction h.
-  - cbn. rewrite tsl_lift. unshelve erewrite tsl_safe_nth.
+  intros Σ Γ t A Σ' Γ' t' A' hg hw h. induction h.
+  - unfold t', A'. cbn. rewrite tsl_lift. unshelve erewrite tsl_safe_nth.
     + cbn. rewrite tsl_ctx_length. assumption.
-    + econstructor. (* We actually have to prove things mutually. *)
-Abort.
+    + econstructor. assumption.
+  -
+Admitted.
+
+Lemma tsl_fresh_glob :
+  forall {id Σ},
+    ITyping.fresh_glob id Σ ->
+    fresh_glob id (tsl_glob Σ).
+Proof.
+  intros id Σ h. induction h.
+  - cbn. constructor.
+  - cbn. econstructor ; assumption.
+Defined.
+
+Lemma tsl_glob_sound :
+  forall {Σ},
+    ITyping.type_glob Σ ->
+    type_glob (tsl_glob Σ).
+Proof.
+  intros Σ h. induction h.
+  - cbn. econstructor.
+  - cbn. econstructor ; try assumption.
+    + cbn. eapply tsl_fresh_glob. assumption.
+    + cbn. destruct i as [s hh].
+      exists s. change (wSort s) with (tsl (sSort s)).
+      change [] with (tsl_ctx []).
+      eapply tsl_sound ; try assumption.
+      cbn. constructor.
+Defined.
+
+Lemma tsl_ctx_sound :
+  forall {Σ Γ},
+    ITyping.type_glob Σ ->
+    ITyping.wf Σ Γ ->
+    wf (tsl_glob Σ) (tsl_ctx Γ).
+Proof.
+  intros Σ Γ hg hw. induction hw.
+  - cbn. constructor.
+  - cbn. econstructor ; try eassumption.
+    match goal with
+    | |- _ ;;; _ |-w _ : wSort ?s =>
+      change (wSort s) with (tsl (sSort s))
+    end.
+    eapply tsl_sound ; try eassumption.
+    eapply tsl_glob_sound. assumption.
+Defined.
+
+Corollary tsl_soundness :
+forall {Σ Γ t A},
+    let Σ' := tsl_glob Σ in
+    let Γ' := tsl_ctx Γ in
+    let t' := tsl t in
+    let A' := tsl A in
+    ITyping.type_glob Σ ->
+    Σ ;;; Γ |-i t : A ->
+    Σ' ;;; Γ' |-w t' : A'.
+Proof.
+  intros Σ Γ t A Σ' Γ' t' A' hg h.
+  eapply tsl_sound ; try assumption.
+  - eapply tsl_glob_sound. assumption.
+  - eapply tsl_ctx_sound ; try assumption.
+    eapply ITypingLemmata.typing_wf. eassumption.
+Defined.
 
 End s.
