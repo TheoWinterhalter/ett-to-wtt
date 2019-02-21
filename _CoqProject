@@ -28,6 +28,8 @@ theories/WChecker.v
 theories/Quotes.v
 theories/FullQuote.v
 
+theories/ItoW.v
+
 # theories/FinalTranslation.v
 
 # theories/XTypingLemmata.v
