@@ -109,6 +109,35 @@ Defined.
 
 Open Scope i_scope.
 
+Ltac lift_sort :=
+  match goal with
+  | |- _ ;;; _ |-w lift ?n ?k ?t : ?S => change S with (lift n k S)
+  | |- _ ;;; _ |-w ?t { ?n := ?u } : ?S => change S with (S {n := u})
+  end.
+
+Ltac callih :=
+  match goal with
+  | h : let _ := _ in
+        let _ := tsl ?t in
+        let _ := _ in _ -> _ ;;; _ |-w _ : _
+    |- _ ;;; _ |-w tsl ?t : _ =>
+    eapply h
+  end.
+
+Ltac wfctx :=
+  first [
+    eassumption
+    | cbn ; eapply wf_snoc ; try assumption
+  ].
+
+Ltac ih :=
+  repeat (callih ; wfctx).
+
+Ltac go t' A' :=
+  unfold t', A' ; cbn ;
+  repeat (rewrite ?tsl_lift, ?tsl_subst) ;
+  econstructor ; try assumption ; ih.
+
 Lemma tsl_sound :
   forall {Σ Γ t A},
     let Σ' := tsl_glob Σ in
@@ -121,27 +150,14 @@ Lemma tsl_sound :
     Σ' ;;; Γ' |-w t' : A'.
 Proof.
   intros Σ Γ t A Σ' Γ' t' A' hg hw h. induction h.
+  all: try solve [go t' A'].
   - unfold t', A'. cbn. rewrite tsl_lift. unshelve erewrite tsl_safe_nth.
     + cbn. rewrite tsl_ctx_length. assumption.
     + econstructor. assumption.
-  - unfold t', A'. cbn. econstructor. assumption.
-  - unfold t', A'. cbn. econstructor.
-    + eapply IHh1. assumption.
-    + eapply IHh2. cbn. econstructor ; try assumption.
-      eapply IHh1. assumption.
-  - unfold t', A'. cbn. econstructor.
-    + eapply IHh1. assumption.
-    + eapply IHh3. cbn. econstructor ; try assumption.
-      eapply IHh1. assumption.
-  - unfold t', A'. cbn. rewrite tsl_subst.
-    econstructor.
-    + eapply IHh3. assumption.
-    + eapply IHh4. assumption.
-  - unfold t', A'. cbn. econstructor.
-    + eapply IHh1. assumption.
-    + eapply IHh2. cbn. econstructor ; try assumption.
-      eapply IHh1. assumption.
-  (* There is clearly room for automation! *)
+  - unfold t', A'. cbn. econstructor ; try assumption ; try ih.
+    rewrite <- tsl_subst. ih.
+  - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst).
+    cbn. (* BUG in tsl *) (* econstructor ; try assumption ; try ih. *)
 Admitted.
 
 Lemma tsl_fresh_glob :
