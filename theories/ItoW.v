@@ -22,7 +22,7 @@ Fixpoint tsl (t : sterm) : wterm :=
   | sSum nx A B => wSum nx (tsl A) (tsl B)
   | sPair A B u v => wPair (tsl A) (tsl B) (tsl u) (tsl v)
   | sPi1 A B p => wPi1 (tsl A) (tsl B) (tsl p)
-  | sPi2 A B p => wPi1 (tsl A) (tsl B) (tsl p)
+  | sPi2 A B p => wPi2 (tsl A) (tsl B) (tsl p)
   | sEq A u v => wEq (tsl A) (tsl u) (tsl v)
   | sRefl A u => wRefl (tsl A) (tsl u)
   | sJ A u P w v p => wJ (tsl A) (tsl u) (tsl P) (tsl w) (tsl v) (tsl p)
@@ -157,7 +157,33 @@ Proof.
   - unfold t', A'. cbn. econstructor ; try assumption ; try ih.
     rewrite <- tsl_subst. ih.
   - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst).
-    cbn. (* BUG in tsl *) (* econstructor ; try assumption ; try ih. *)
+    cbn. econstructor ; try assumption ; try ih.
+    + eapply rename_typed ; try assumption.
+      * eapply IHh4. cbn. repeat eapply wf_snoc ; try assumption.
+        -- ih.
+        -- econstructor.
+           ++ rewrite tsl_lift. lift_sort.
+              eapply typing_lift01 ; try assumption ; ih.
+           ++ rewrite 2!tsl_lift.
+              eapply typing_lift01 ; try assumption ; ih.
+           ++ rewrite tsl_lift. refine (type_Rel _ _ _ _ _).
+              ** wfctx ; ih.
+              ** cbn. auto with arith.
+      * cbn. rewrite 2!tsl_lift. reflexivity.
+      * reflexivity.
+      * repeat eapply wf_snoc ; try assumption ; ih.
+        econstructor.
+        -- lift_sort.
+           eapply typing_lift01 ; try assumption ; ih.
+        -- eapply typing_lift01 ; try assumption ; ih.
+        -- refine (type_Rel _ _ _ _ _).
+           ++ wfctx ; ih.
+           ++ cbn. auto with arith.
+    + repeat (rewrite ?tsl_lift, ?tsl_subst in IHh6). ih.
+  - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst).
+    (* cbn. econstructor ; try assumption ; try ih. *)
+    admit.
+    (* Reached the TODO point *)
 Admitted.
 
 Lemma tsl_fresh_glob :
