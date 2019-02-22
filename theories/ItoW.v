@@ -9,7 +9,8 @@ From Translation
 From TypingFlags Require Import Loader.
 Import MonadNotation ListNotations.
 
-Section s.
+Section Translation.
+
 Context (Sort_notion : notion).
 
 (* Note we will require Σ and Γ in order to do some inference
@@ -300,4 +301,4 @@ Proof.
     eapply ITypingLemmata.typing_wf. eassumption.
 Defined.
 
-End s.
+End Translation.
