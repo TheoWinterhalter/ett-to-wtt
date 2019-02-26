@@ -41,18 +41,6 @@ Definition gettransport (t : wterm) : option (wterm * wterm * wterm * wterm) :=
   | _ => None
   end.
 
-Definition getheq (T : wterm) : option (wterm * wterm * wterm * wterm) :=
-  match T with
-  | wHeq A a B b => ret (A,a,B,b)
-  | _ => None
-  end.
-
-Definition getpack (T : wterm) : option (wterm * wterm) :=
-  match T with
-  | wPack A1 A2 => ret (A1,A2)
-  | _ => None
-  end.
-
 Definition assert_true (b : bool) : option unit :=
   if b then ret tt else None.
 
@@ -155,72 +143,10 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     s <- getsort =<< wttinfer Σ Γ A ;;
     assert_eq A =<< wttinfer Σ Γ t ;;
     ret (wEq A (wTransport A A (wRefl (wSort s) A) t) t)
-  | wProjT1Beta u v w =>
-    A1 <- wttinfer Σ Γ u ;;
-    A2 <- wttinfer Σ Γ v ;;
-    assert_eq (wHeq A1 u A2 v) =<< wttinfer Σ Γ w ;;
-    ret (wEq A1 (wProjT1 (wpack u v w)) u)
-  | wProjT2Beta u v w =>
-    A1 <- wttinfer Σ Γ u ;;
-    A2 <- wttinfer Σ Γ v ;;
-    assert_eq (wHeq A1 u A2 v) =<< wttinfer Σ Γ w ;;
-    ret (wEq A2 (wProjT2 (wpack u v w)) v)
   | wPairEta p =>
     T <- getsum =<< wttinfer Σ Γ p ;;
     let '(A,B) := T in
     ret (wEq (wSum nAnon A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p)
-  | wHeq A a B b =>
-    s <- getsort =<< wttinfer Σ Γ A ;;
-    assert_eq_sort s =<< getsort =<< wttinfer Σ Γ B ;;
-    assert_eq A =<< wttinfer Σ Γ a ;;
-    assert_eq B =<< wttinfer Σ Γ b ;;
-    ret (wSort s)
-  | wHeqPair p q =>
-    E <- geteq =<< wttinfer Σ Γ p ;;
-    let '(T,A,B) := E in
-    s <- getsort T ;;
-    E' <- geteq =<< wttinfer Σ Γ q ;;
-    let '(B',ta,b) := E' in
-    assert_eq B B' ;;
-    ti <- gettransport ta ;;
-    let '(A',B',e,a) := ti in
-    assert_eq A A' ;;
-    assert_eq B B' ;;
-    assert_eq p e ;;
-    ret (wHeq A a B b)
-  | wHeqTy A B p =>
-    H <- getheq =<< wttinfer Σ Γ p ;;
-    let '(A',a,B',b) := H in
-    assert_eq A A' ;;
-    assert_eq B B' ;;
-    s <- getsort =<< wttinfer Σ Γ A ;;
-    assert_eq_sort s =<< getsort =<< wttinfer Σ Γ B ;;
-    ret (wEq (wSort s) A B)
-  | wHeqTm p =>
-    H <- getheq =<< wttinfer Σ Γ p ;;
-    let '(A,a,B,b) := H in
-    ret (wEq B (wTransport A B (wHeqTy A B p) a) b)
-  | wPack A1 A2 =>
-    s <- getsort =<< wttinfer Σ Γ A1 ;;
-    assert_eq_sort s =<< getsort =<< wttinfer Σ Γ A2 ;;
-    ret (wSort s)
-  | wProjT1 p =>
-    P <- getpack =<< wttinfer Σ Γ p ;;
-    let '(A1,A2) := P in
-    ret A1
-  | wProjT2 p =>
-    P <- getpack =<< wttinfer Σ Γ p ;;
-    let '(A1,A2) := P in
-    ret A2
-  | wProjTe p =>
-    P <- getpack =<< wttinfer Σ Γ p ;;
-    let '(A1,A2) := P in
-    ret (wHeq A1 (wProjT1 p) A2 (wProjT2 p))
-  | wpack u v w =>
-    A1 <- wttinfer Σ Γ u ;;
-    A2 <- wttinfer Σ Γ v ;;
-    assert_eq (wHeq A1 u A2 v) =<< wttinfer Σ Γ w ;;
-    ret (wPack A1 A2)
   | wAx id =>
     lookup_glob Σ id
   end.
@@ -276,23 +202,9 @@ Ltac deal_geteq :=
     inversion h ; subst ; clear h
   end.
 
-Ltac deal_getheq :=
-  match goal with
-  | h : getheq ?t = _ |- _ =>
-    destruct t ; simpl in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  end.
-
 Ltac deal_gettransport :=
   match goal with
   | h : gettransport ?t = _ |- _ =>
-    destruct t ; simpl in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  end.
-
-Ltac deal_getpack :=
-  match goal with
-  | h : getpack ?t = _ |- _ =>
     destruct t ; simpl in h ; try discriminate h ;
     inversion h ; subst ; clear h
   end.
@@ -326,8 +238,6 @@ Ltac go eq :=
   repeat deal_assert_eq ;
   repeat deal_getsort ;
   repeat deal_geteq ;
-  repeat deal_getheq ;
-  repeat deal_getpack ;
   repeat deal_gettransport ;
   repeat deal_getprod ;
   repeat deal_getsum ;
@@ -405,54 +315,6 @@ Proof.
     + eapply meta_conv.
       * econstructor. econstructor ; eassumption.
       * cbn. reflexivity.
-  - simpl in eq . revert eq .
-    repeat (remove1 ; intros).
-    inversion eq . subst . clear eq .
-    repeat deal_assert_eq .
-    repeat deal_geteq .
-    repeat deal_getheq .
-    repeat deal_getpack .
-    repeat deal_gettransport .
-    repeat deal_getprod .
-    repeat deal_getsort .
-    repeat deal_assert_eq_sort.
-    assert (Σ ;;; Γ |-w t1 : wEq (wSort s) w0_2 w0_3) as hh1 by ih.
-    assert (Σ ;;; Γ |-w t2 : wEq w1 (wTransport w2_1 w2_2 w2_3 w2_4) w3) as hh2 by ih.
-    destruct (istype_type hg hh1) as [s1 hs1].
-    destruct (istype_type hg hh2) as [s2 hs2].
-    destruct (inversion_Eq hs1) as [? [? [? [? es]]]].
-    inversion es. subst. clear es.
-    destruct (inversion_Eq hs2) as [? [? [? [? es]]]].
-    inversion es. subst. clear es.
-    destruct (inversion_Transport H13) as [? [? [? [? [? ?]]]]].
-    econstructor ; try eassumption ; try ih ; try rih.
-    + eapply type_rename ; try eassumption.
-      symmetry. eapply eq_term_spec. assumption.
-    + eapply type_rename ; try eassumption.
-      symmetry. eapply eq_term_spec. assumption.
-    + eapply type_rename ; try eassumption.
-      cbn. symmetry. f_equal ; try assumption.
-      * eapply eq_term_spec. assumption.
-      * f_equal ; eapply eq_term_spec ; assumption.
-  - go eq. econstructor ; try ih ; try rih.
-    eapply type_rename.
-    + ih.
-    + symmetry. cbn. f_equal ; eapply eq_term_spec ; assumption.
-  - go eq.
-    assert (Σ ;;; Γ |-w t : wPack w1 w2) as hh by ih.
-    destruct (istype_type hg hh) as [s hs].
-    destruct (inversion_Pack hs) as [? [? [? ?]]].
-    eapply type_ProjT1 with (A2 := w2) ; try eassumption ; try ih ; try rih.
-  - go eq.
-    assert (Σ ;;; Γ |-w t : wPack w1 w2) as hh by ih.
-    destruct (istype_type hg hh) as [s hs].
-    destruct (inversion_Pack hs) as [? [? [? ?]]].
-    eapply type_ProjT2 with (A1 := w1) ; try eassumption ; try ih ; try rih.
-  - go eq.
-    assert (Σ ;;; Γ |-w t : wPack w1 w2) as hh by ih.
-    destruct (istype_type hg hh) as [s hs].
-    destruct (inversion_Pack hs) as [? [? [? ?]]].
-    eapply type_ProjTe ; try eassumption ; try ih ; try rih.
   Unshelve.
   all: try solve [ constructor ].
   { cbn. auto with arith. }
@@ -611,18 +473,7 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wFunext g h p => wFunext (f g) (f h) (f p)
     | wJBeta u P w => wJBeta (f u) (f P) (f w)
     | wTransportBeta A t => wTransportBeta (f A) (f t)
-    | wProjT1Beta u v w => wProjT1Beta (f u) (f v) (f w)
-    | wProjT2Beta u v w => wProjT2Beta (f u) (f v) (f w)
     | wPairEta p => wPairEta (f p)
-    | wHeq A a B b => wHeq (f A) (f a) (f B) (f b)
-    | wHeqPair p q => wHeqPair (f p) (f q)
-    | wHeqTy A B p => wHeqTy (f A) (f B) (f p)
-    | wHeqTm p => wHeqTm (f p)
-    | wPack A1 A2 => wPack (f A1) (f A2)
-    | wProjT1 p => wProjT1 (f p)
-    | wProjT2 p => wProjT2 (f p)
-    | wProjTe p => wProjTe (f p)
-    | wpack u v w => wpack (f u) (f v) (f w)
     | wAx id => wAx id
     end.
 
@@ -844,10 +695,6 @@ Proof.
            ++ reflexivity.
     + rewrite 2!instantiate_sorts_subst in IHh3. eapply IHh3. assumption.
     + eapply IHh4 ; assumption.
-  - cbn. eapply type_ProjT1 with (A4 := instantiate_sorts inst A2).
-    + eapply IHh1. assumption.
-    + eapply IHh2. assumption.
-    + eapply IHh3. assumption.
   - cbn. unfold A'. econstructor ; try assumption.
     eapply instantiate_sorts_lookup_glob. assumption.
   - eapply type_rename.

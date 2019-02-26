@@ -157,75 +157,10 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w wTransportBeta A t
              : wEq A (wTransport A A (wRefl (wSort s) A) t) t
 
-| type_ProjT1Beta Γ A1 A2 u v w :
-    Σ ;;; Γ |-w u : A1 ->
-    Σ ;;; Γ |-w v : A2 ->
-    Σ ;;; Γ |-w w : wHeq A1 u A2 v ->
-    Σ ;;; Γ |-w wProjT1Beta u v w : wEq A1 (wProjT1 (wpack u v w)) u
-
-| type_ProjT2Beta Γ A1 A2 u v w :
-    Σ ;;; Γ |-w u : A1 ->
-    Σ ;;; Γ |-w v : A2 ->
-    Σ ;;; Γ |-w w : wHeq A1 u A2 v ->
-    Σ ;;; Γ |-w wProjT2Beta u v w : wEq A2 (wProjT2 (wpack u v w)) v
-
 | type_PairEta Γ A B p n n' :
     Σ ;;; Γ |-w p : wSum n A B ->
     Σ ;;; Γ |-w wPairEta p
              : wEq (wSum n' A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p
-
-| type_Heq Γ A a B b s :
-    Σ ;;; Γ |-w A : wSort s ->
-    Σ ;;; Γ |-w B : wSort s ->
-    Σ ;;; Γ |-w a : A ->
-    Σ ;;; Γ |-w b : B ->
-    Σ ;;; Γ |-w wHeq A a B b : wSort s
-
-| type_HeqPair Γ A a B b s p q :
-    Σ ;;; Γ |-w a : A ->
-    Σ ;;; Γ |-w b : B ->
-    Σ ;;; Γ |-w p : wEq (wSort s) A B ->
-    Σ ;;; Γ |-w q : wEq B (wTransport A B p a) b ->
-    Σ ;;; Γ |-w wHeqPair p q : wHeq A a B b
-
-| type_HeqTy Γ A a B b p s :
-    Σ ;;; Γ |-w A : wSort s ->
-    Σ ;;; Γ |-w B : wSort s ->
-    Σ ;;; Γ |-w p : wHeq A a B b ->
-    Σ ;;; Γ |-w wHeqTy A B p : wEq (wSort s) A B
-
-| type_HeqTm Γ A a B b p :
-    Σ ;;; Γ |-w p : wHeq A a B b ->
-    Σ ;;; Γ |-w wHeqTm p : wEq B (wTransport A B (wHeqTy A B p) a) b
-
-| type_Pack Γ A1 A2 s :
-    Σ ;;; Γ |-w A1 : wSort s ->
-    Σ ;;; Γ |-w A2 : wSort s ->
-    Σ ;;; Γ |-w wPack A1 A2 : wSort s
-
-| type_ProjT1 Γ A1 A2 p s :
-    Σ ;;; Γ |-w A1 : wSort s ->
-    Σ ;;; Γ |-w A2 : wSort s ->
-    Σ ;;; Γ |-w p : wPack A1 A2 ->
-    Σ ;;; Γ |-w wProjT1 p : A1
-
-| type_ProjT2 Γ A1 A2 p s :
-    Σ ;;; Γ |-w A1 : wSort s ->
-    Σ ;;; Γ |-w A2 : wSort s ->
-    Σ ;;; Γ |-w p : wPack A1 A2 ->
-    Σ ;;; Γ |-w wProjT2 p : A2
-
-| type_ProjTe Γ A1 A2 p s :
-    Σ ;;; Γ |-w A1 : wSort s ->
-    Σ ;;; Γ |-w A2 : wSort s ->
-    Σ ;;; Γ |-w p : wPack A1 A2 ->
-    Σ ;;; Γ |-w wProjTe p : wHeq A1 (wProjT1 p) A2 (wProjT2 p)
-
-| type_pack Γ A1 A2 u v w :
-    Σ ;;; Γ |-w u : A1 ->
-    Σ ;;; Γ |-w v : A2 ->
-    Σ ;;; Γ |-w w : wHeq A1 u A2 v ->
-    Σ ;;; Γ |-w wpack u v w : wPack A1 A2
 
 | type_Ax Γ id ty :
     wf Σ Γ ->

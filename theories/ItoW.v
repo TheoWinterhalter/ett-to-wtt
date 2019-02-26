@@ -32,7 +32,7 @@ Fixpoint tsl (t : sterm) : wterm :=
   | sJ A u P w v p => wJ (tsl A) (tsl u) (tsl P) (tsl w) (tsl v) (tsl p)
   | sTransport T1 T2 p t => wTransport (tsl T1) (tsl T2) (tsl p) (tsl t)
   | sBeta f t => wBeta (tsl f) (tsl t)
-  | sHeq A a B b => wHeq (tsl A) (tsl a) (tsl B) (tsl b)
+  (* | sHeq A a B b => wHeq (tsl A) (tsl a) (tsl B) (tsl b) *)
   (* | sHeqToEq p => _ *)
   (* | sHeqRefl A a => _ *)
   (* | sHeqSym p => _ *)
@@ -49,10 +49,10 @@ Fixpoint tsl (t : sterm) : wterm :=
   (* | sCongRefl pA pu => _ *)
   (* | sEqToHeq p => _ *)
   (* | sHeqTypeEq A B p => _ *)
-  | sPack A1 A2 => wPack (tsl A1) (tsl A2)
-  | sProjT1 p => wProjT1 (tsl p)
-  | sProjT2 p => wProjT2 (tsl p)
-  | sProjTe p => wProjTe (tsl p)
+  (* | sPack A1 A2 => wPack (tsl A1) (tsl A2) *)
+  (* | sProjT1 p => wProjT1 (tsl p) *)
+  (* | sProjT2 p => wProjT2 (tsl p) *)
+  (* | sProjTe p => wProjTe (tsl p) *)
   | sAx id => wAx id
   | _ => wAx "todo"
   end.
@@ -229,10 +229,11 @@ Proof.
   - give_up.
   - give_up.
   - give_up.
-  - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst).
-    cbn. eapply type_ProjT1 with (A4 := tsl A2) ; try assumption ; try ih.
-  - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst).
-    cbn. eapply type_ProjT2 with (A3 := tsl A1) ; try assumption ; try ih.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
+  - give_up.
   - unfold t', A'. econstructor.
     + assumption.
     + eapply tsl_lookup. assumption.

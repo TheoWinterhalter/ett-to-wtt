@@ -220,7 +220,8 @@ Fixpoint fullquote (t : term)
           a' <- fullquote a ;;
           B' <- fullquote B ;;
           b' <- fullquote b ;;
-          ret (wHeq A' a' B' b')
+          (* ret (wHeq A' a' B' b') *)
+          raise (InstanciationNotHandeled c l)
         | _ => raise (InstanciationNotHandeled c l)
         end
 
@@ -229,7 +230,8 @@ Fixpoint fullquote (t : term)
         | [A; B] =>
           A' <- fullquote A ;;
           B' <- fullquote B ;;
-          ret (wPack A' B')
+          (* ret (wPack A' B') *)
+          raise (InstanciationNotHandeled c l)
         | _ => raise (InstanciationNotHandeled c l)
         end
 
@@ -241,7 +243,8 @@ Fixpoint fullquote (t : term)
           u' <- fullquote u ;;
           v' <- fullquote v ;;
           p' <- fullquote p ;;
-          ret (wpack u' v' p')
+          (* ret (wpack u' v' p') *)
+          raise (InstanciationNotHandeled c l)
         | _ => raise (InstanciationNotHandeled c l)
         end
 
@@ -249,7 +252,8 @@ Fixpoint fullquote (t : term)
         match l with
         | [A; B; u] =>
           u' <- fullquote u ;;
-          ret (wProjT1 u')
+          (* ret (wProjT1 u') *)
+          raise (InstanciationNotHandeled c l)
         | _ => raise (InstanciationNotHandeled c l)
         end
 
@@ -257,7 +261,8 @@ Fixpoint fullquote (t : term)
         match l with
         | [A; B; u] =>
           u' <- fullquote u ;;
-          ret (wProjT2 u')
+          (* ret (wProjT2 u') *)
+          raise (InstanciationNotHandeled c l)
         | _ => raise (InstanciationNotHandeled c l)
         end
 
@@ -265,7 +270,8 @@ Fixpoint fullquote (t : term)
         match l with
         | [A; B; u] =>
           u' <- fullquote u ;;
-          ret (wProjTe u')
+          (* ret (wProjTe u') *)
+          raise (InstanciationNotHandeled c l)
         | _ => raise (InstanciationNotHandeled c l)
         end
 

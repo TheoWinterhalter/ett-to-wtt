@@ -255,12 +255,10 @@ Proof.
                 try apply weak_glob_type ;
                 eassumption
                ).
-      - eapply type_ProjT2 with (A3 := A1).
-        all: apply weak_glob_type ; eassumption.
-      - eapply type_Ax.
-        + eapply weak_glob_wf ; eassumption.
-        + cbn. erewrite ident_neq_fresh by eassumption.
-          assumption.
+      eapply type_Ax.
+      - eapply weak_glob_wf ; eassumption.
+      - cbn. erewrite ident_neq_fresh by eassumption.
+        assumption.
     }
 
   (* weak_glob_wf *)
@@ -479,18 +477,7 @@ Proof.
             with (lift #|Δ| #|Ξ| (wRefl A0 u)).
           rewrite <- substP1. reflexivity.
       - cbn. eapply type_TransportBeta ; eih.
-      - cbn. eapply type_ProjT1Beta ; eih.
-      - cbn. eapply type_ProjT2Beta ; eih.
       - cbn. eapply type_PairEta ; eih.
-      - cbn. eapply type_Heq ; eih.
-      - cbn. eapply type_HeqPair ; eih.
-      - cbn. eapply type_HeqTy ; eih.
-      - cbn. eapply type_HeqTm ; eih.
-      - cbn. eapply type_Pack ; eih.
-      - cbn. eapply @type_ProjT1 with (A2 := lift #|Δ| #|Ξ| A2) ; eih.
-      - cbn. eapply @type_ProjT2 with (A1 := lift #|Δ| #|Ξ| A1) ; eih.
-      - cbn. eapply type_ProjTe ; eih.
-      - cbn. eapply type_pack ; eih.
       - cbn. erewrite lift_ax_type by eassumption.
         eapply type_Ax.
         + now apply wf_lift.
@@ -770,18 +757,7 @@ Proof.
             with ((wRefl A0 u0){ 0 + #|Δ| := u}).
           rewrite <- substP4. reflexivity.
       - cbn. eapply type_TransportBeta ; esh.
-      - cbn. eapply type_ProjT1Beta ; esh.
-      - cbn. eapply type_ProjT2Beta ; esh.
       - cbn. eapply type_PairEta ; esh.
-      - cbn. eapply type_Heq ; esh.
-      - cbn. eapply type_HeqPair ; esh.
-      - cbn. eapply type_HeqTy ; esh.
-      - cbn. eapply type_HeqTm ; esh.
-      - cbn. eapply type_Pack ; esh.
-      - cbn. eapply @type_ProjT1 with (A2 := A2{#|Δ| := u}) ; esh.
-      - cbn. eapply @type_ProjT2 with (A1 := A1{#|Δ| := u}) ; esh.
-      - cbn. eapply type_ProjTe ; esh.
-      - cbn. eapply type_pack ; esh.
       - cbn. erewrite subst_ax_type by eassumption.
         eapply type_Ax.
         + now eapply wf_subst.
@@ -880,40 +856,6 @@ Proof.
   dependent induction h.
   - eexists. repeat split ; eassumption.
   - destruct IHh as [? [? [? [? ?]]]].
-    eexists. repeat split ; try eassumption.
-    transitivity (nl A) ; eauto.
-Defined.
-
-Lemma inversion_Heq :
-  forall {Σ Γ A a B b T},
-    Σ ;;; Γ |-w wHeq A a B b : T ->
-    exists s,
-      Σ ;;; Γ |-w A : wSort s /\
-      Σ ;;; Γ |-w B : wSort s /\
-      Σ ;;; Γ |-w a : A /\
-      Σ ;;; Γ |-w b : B /\
-      nl T = nlSort s.
-Proof.
-  intros Σ Γ A a B b T h.
-  dependent induction h.
-  - eexists. repeat split ; eassumption.
-  - destruct IHh as [? [? [? [? [? ?]]]]].
-    eexists. repeat split ; try eassumption.
-    transitivity (nl A) ; eauto.
-Defined.
-
-Lemma inversion_Pack :
-  forall {Σ Γ A1 A2 T},
-    Σ ;;; Γ |-w wPack A1 A2 : T ->
-    exists s,
-      Σ ;;; Γ |-w A1 : wSort s /\
-      Σ ;;; Γ |-w A2 : wSort s /\
-      nl T = nlSort s.
-Proof.
-  intros Σ Γ A1 A2 T h.
-  dependent induction h.
-  - eexists. repeat split ; eassumption.
-  - destruct IHh as [? [? [? ?]]].
     eexists. repeat split ; try eassumption.
     transitivity (nl A) ; eauto.
 Defined.
@@ -1166,14 +1108,6 @@ Proof.
     econstructor ; try eassumption.
     econstructor ; try eassumption.
     econstructor. eapply typing_wf. eassumption.
-  - destruct IHtyping3. destruct (inversion_Heq H2) as [? [? [? [? [? ?]]]]].
-    eexists. econstructor ; try eassumption.
-    econstructor ; try eassumption.
-    econstructor ; eassumption.
-  - destruct IHtyping3. destruct (inversion_Heq H2) as [? [? [? [? [? ?]]]]].
-    eexists. econstructor ; try eassumption.
-    eapply type_ProjT2 with (A3 := A1) ; try eassumption.
-    econstructor ; eassumption.
   - destruct IHtyping as [s hs].
     destruct (inversion_Sum hs) as [? [? [? [? ?]]]].
     eexists. econstructor.
@@ -1182,25 +1116,6 @@ Proof.
       * econstructor ; eassumption.
       * econstructor ; eassumption.
     + econstructor ; try eassumption. reflexivity.
-  - eexists. apply type_Sort. apply (typing_wf H).
-  - destruct IHtyping3. destruct (inversion_Eq H3) as [? [? [? [? ?]]]].
-    eexists. econstructor ; try eassumption.
-  - eexists. econstructor ; try eassumption.
-    econstructor ; try eassumption.
-    apply (typing_wf H).
-  - destruct IHtyping. destruct (inversion_Heq H0) as [? [? [? [? [? ?]]]]].
-    eexists. econstructor ; try eassumption.
-    econstructor ; try eassumption.
-    econstructor ; eassumption.
-  - eexists. econstructor ; try eassumption.
-    apply (typing_wf H).
-  - eexists. eassumption.
-  - eexists. eassumption.
-  - eexists. econstructor ; try eassumption.
-    + econstructor ; eassumption.
-    + eapply type_ProjT2 with (A3 := A1) ; eassumption.
-  - destruct IHtyping3. destruct (inversion_Heq H2) as [? [? [? [? [? ?]]]]].
-    eexists. econstructor ; eassumption.
   - destruct (typed_ax_type hg H0) as [s hh].
     exists s. change (wSort s) with (lift #|Γ| #|@nil wterm| (wSort s)).
     replace ty with (lift #|Γ| #|@nil wterm| ty)
