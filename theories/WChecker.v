@@ -326,7 +326,7 @@ Ltac rewih :=
   | [ h : exists _, _ |- _ ] =>
     let e := fresh "e" in
     destruct h as [? [e ?]] ;
-    rewrite e
+    rewrite ?e
   end.
 
 Ltac cbn_nl :=
@@ -397,14 +397,14 @@ Proof.
   - exists (lift0 (S n) (safe_nth Γ (exist _ n isdecl))). split.
     + cbn. erewrite nth_error_safe_nth. reflexivity.
     + reflexivity.
-  - simpl.
-    repeat rewih.
-    repeat cbn_nl.
-    repeat inv_nl.
-    simpl.
-    unfold assert_eq.
-    unfold assert_true.
-    rewrite ?assert_eq_sort_refl.
+  - (* simpl. *)
+    (* repeat rewih. *)
+    (* repeat cbn_nl. *)
+    (* repeat inv_nl. *)
+    (* simpl. *)
+    (* unfold assert_eq. *)
+    (* unfold assert_true. *)
+    (* rewrite ?assert_eq_sort_refl. *)
 
     (* repeat (erewrite (proj2 eq_term_spec) ; [| shelve]). *)
     (* simpl. *)
@@ -412,6 +412,27 @@ Proof.
     (* + reflexivity. *)
     (* + repeat nleq. *)
     (* + *)
+    admit.
+  - admit.
+  - simpl. exists ty. split.
+    + assumption.
+    + reflexivity.
+  - rewih. eexists. split.
+    + reflexivity.
+    + transitivity (nl A) ; eauto.
+  Unshelve.
+  all: try assumption.
+  all: try solve [repeat nleq].
+  * transitivity (nl A) ; eauto.
+  * cbn. f_equal.
+    -- transitivity (nl A) ; eauto.
+    -- transitivity (nl B) ; eauto.
+  * cbn. f_equal.
+    -- transitivity (nl A) ; eauto.
+    -- f_equal.
+       ++ transitivity (nl B) ; eauto.
+       ++ assumption.
+       ++ assumption.
 Admitted.
 
 End Checking.
