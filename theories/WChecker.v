@@ -335,6 +335,10 @@ Ltac cbn_nl :=
     cbn in h
   | h : nl (wProd _ _ _) = _ |- _ =>
     cbn in h
+  | h : nl (wEq _ _ _) = _ |- _ =>
+    cbn in h
+  | h : nl (wSum _ _ _) = _ |- _ =>
+    cbn in h
   end.
 
 Ltac inv_nl :=
@@ -345,11 +349,26 @@ Ltac inv_nl :=
   | h : nlProd _ _ = nl ?t |- _ =>
     destruct t ; cbn in h ; try discriminate h ;
     inversion h ; subst ; clear h
+  | h : nlSum _ _ = nl ?t |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  | h : nlEq _ _ _ = nl ?t |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
   end.
 
 Ltac nleq :=
   repeat (try eapply nl_lift ; try eapply nl_subst) ;
   cbn ; auto ; f_equal ; eauto.
+
+Lemma assert_eq_sort_refl :
+  forall {s}, assert_eq_sort s s = Some tt.
+Proof.
+  intro s. unfold assert_eq_sort.
+  destruct (eq_dec s s).
+  - reflexivity.
+  - exfalso. apply n. reflexivity.
+Defined.
 
 Ltac co :=
   simpl ;
@@ -359,20 +378,13 @@ Ltac co :=
   simpl ;
   unfold assert_eq ;
   unfold assert_true ;
+  rewrite ?assert_eq_sort_refl ;
   repeat (erewrite (proj2 eq_term_spec) ; [| shelve]) ;
   simpl ;
   eexists ; split ; [
     reflexivity
   | repeat nleq
   ].
-
-(* Lemma sort_eq_dec_refl : *)
-(*   forall {s}, *)
-(*     eq_dec s s = left (eq_refl). *)
-(* Proof. *)
-(*   intros s. destruct (eq_dec s s). *)
-(*   - f_equal. *)
-
 
 Lemma wttinfer_complete :
   forall {Σ Γ t A},
@@ -391,15 +403,15 @@ Proof.
     repeat inv_nl.
     simpl.
     unfold assert_eq.
-    unfold assert_eq_sort.
     unfold assert_true.
+    rewrite ?assert_eq_sort_refl.
 
-    repeat (erewrite (proj2 eq_term_spec) ; [| shelve]).
-    simpl.
-    eexists. split.
-    + reflexivity.
-    + repeat nleq.
-    +
+    (* repeat (erewrite (proj2 eq_term_spec) ; [| shelve]). *)
+    (* simpl. *)
+    (* eexists. split. *)
+    (* + reflexivity. *)
+    (* + repeat nleq. *)
+    (* + *)
 Admitted.
 
 End Checking.
