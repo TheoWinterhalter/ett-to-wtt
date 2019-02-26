@@ -321,93 +321,85 @@ Proof.
   { cbn. auto with arith. }
 Defined.
 
-Lemma wttinfer_correct :
+Ltac rewih :=
+  match goal with
+  | [ h : exists _, _ |- _ ] =>
+    let e := fresh "e" in
+    destruct h as [? [e ?]] ;
+    rewrite e
+  end.
+
+Ltac cbn_nl :=
+  match goal with
+  | h : nl (wSort _) = _ |- _ =>
+    cbn in h
+  | h : nl (wProd _ _ _) = _ |- _ =>
+    cbn in h
+  end.
+
+Ltac inv_nl :=
+  match goal with
+  | h : nlSort _ = nl ?t |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  | h : nlProd _ _ = nl ?t |- _ =>
+    destruct t ; cbn in h ; try discriminate h ;
+    inversion h ; subst ; clear h
+  end.
+
+Ltac nleq :=
+  repeat (try eapply nl_lift ; try eapply nl_subst) ;
+  cbn ; auto ; f_equal ; eauto.
+
+Ltac co :=
+  simpl ;
+  repeat rewih ;
+  repeat cbn_nl ;
+  repeat inv_nl ;
+  simpl ;
+  unfold assert_eq ;
+  unfold assert_true ;
+  repeat (erewrite (proj2 eq_term_spec) ; [| shelve]) ;
+  simpl ;
+  eexists ; split ; [
+    reflexivity
+  | repeat nleq
+  ].
+
+(* Lemma sort_eq_dec_refl : *)
+(*   forall {s}, *)
+(*     eq_dec s s = left (eq_refl). *)
+(* Proof. *)
+(*   intros s. destruct (eq_dec s s). *)
+(*   - f_equal. *)
+
+
+Lemma wttinfer_complete :
   forall {Σ Γ t A},
     Σ ;;; Γ |-w t : A ->
     exists B, wttinfer Σ Γ t = Some B /\ nl A = nl B.
 Proof.
   intros Σ Γ t A h.
   induction h.
+  all: try solve [ co ].
   - exists (lift0 (S n) (safe_nth Γ (exist _ n isdecl))). split.
     + cbn. erewrite nth_error_safe_nth. reflexivity.
     + reflexivity.
-  - cbn. repeat eexists.
-  - cbn. destruct IHh1 as [? [e1 ?]]. rewrite e1.
-    destruct IHh2 as [? [e2 ?]]. rewrite e2.
-    repeat match goal with
-    | h : nl (wSort _) = _ |- _ =>
-      cbn in h
-    end.
-    repeat match goal with
-    | h : nlSort ?s = nl ?t |- _ =>
-      destruct t ; cbn in h ; try discriminate h ;
-      inversion h ; subst ; clear h
-    end.
-    cbn. eexists. split.
-    + reflexivity.
-    + cbn. reflexivity.
-  - cbn.
-    destruct IHh1 as [? [e1 ?]]. rewrite e1.
-    destruct IHh2 as [? [e2 ?]]. rewrite e2.
-    repeat match goal with
-    | h : nl (wSort _) = _ |- _ =>
-      cbn in h
-    end.
-    repeat match goal with
-    | h : nlSort ?s = nl ?t |- _ =>
-      destruct t ; cbn in h ; try discriminate h ;
-      inversion h ; subst ; clear h
-    end.
-    cbn. eexists. split.
-    + reflexivity.
-    + cbn. f_equal ; eauto.
-  - cbn.
-    destruct IHh1 as [? [e1 ?]]. rewrite e1.
-    destruct IHh2 as [? [e2 ?]]. rewrite e2.
-    repeat match goal with
-    | h : nl (wSort _) = _ |- _ =>
-      cbn in h
-    | h : nl (wProd _ _ _) = _ |- _ =>
-      cbn in h
-    end.
-    repeat match goal with
-    | h : nlSort _ = nl ?t |- _ =>
-      destruct t ; cbn in h ; try discriminate h ;
-      inversion h ; subst ; clear h
-    | h : nlProd _ _ = nl ?t |- _ =>
-      destruct t ; cbn in h ; try discriminate h ;
-      inversion h ; subst ; clear h
-    end.
-    cbn.
-    unfold assert_eq. unfold assert_true.
-    erewrite (proj2 eq_term_spec) by (transitivity (nl A) ; eauto).
-    cbn.
+  - simpl.
+    repeat rewih.
+    repeat cbn_nl.
+    repeat inv_nl.
+    simpl.
+    unfold assert_eq.
+    unfold assert_eq_sort.
+    unfold assert_true.
+
+    repeat (erewrite (proj2 eq_term_spec) ; [| shelve]).
+    simpl.
     eexists. split.
     + reflexivity.
-    + eapply nl_subst ; eauto.
-  - cbn.
-    destruct IHh1 as [? [e1 ?]]. rewrite e1.
-    destruct IHh2 as [? [e2 ?]]. rewrite e2.
-    repeat match goal with
-    | h : nl (wSort _) = _ |- _ =>
-      cbn in h
-    | h : nl (wProd _ _ _) = _ |- _ =>
-      cbn in h
-    end.
-    repeat match goal with
-    | h : nlSort _ = nl ?t |- _ =>
-      destruct t ; cbn in h ; try discriminate h ;
-      inversion h ; subst ; clear h
-    | h : nlProd _ _ = nl ?t |- _ =>
-      destruct t ; cbn in h ; try discriminate h ;
-      inversion h ; subst ; clear h
-    end.
-    cbn.
-    unfold assert_eq. unfold assert_true.
-    cbn.
-    eexists. split.
-    + reflexivity.
-    + cbn. reflexivity.
+    + repeat nleq.
+    +
 Admitted.
 
 End Checking.
