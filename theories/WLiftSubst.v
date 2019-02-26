@@ -33,14 +33,7 @@ Fixpoint lift `{Sort_notion : Sorts.notion} n k t : wterm :=
   | wFunext f g p => wFunext (lift n k f) (lift n k g) (lift n k p)
   | wJBeta u P w => wJBeta (lift n k u) (lift n (S (S k)) P) (lift n k w)
   | wTransportBeta A u => wTransportBeta (lift n k A) (lift n k u)
-  | wProjT1Beta u v w => wProjT1Beta (lift n k u) (lift n k v) (lift n k w)
-  | wProjT2Beta u v w => wProjT2Beta (lift n k u) (lift n k v) (lift n k w)
   | wPairEta p => wPairEta (lift n k p)
-  | wPack A1 A2 => wPack (lift n k A1) (lift n k A2)
-  | wProjT1 p => wProjT1 (lift n k p)
-  | wProjT2 p => wProjT2 (lift n k p)
-  | wProjTe p => wProjTe (lift n k p)
-  | wpack u v w => wpack (lift n k u) (lift n k v) (lift n k w)
   | wSort s => wSort s
   | wAx id => wAx id
   end.
@@ -80,14 +73,7 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
   | wFunext f g p => wFunext (subst t k f) (subst t k g) (subst t k p)
   | wJBeta u P w => wJBeta (subst t k u) (subst t (S (S k)) P) (subst t k w)
   | wTransportBeta A u => wTransportBeta (subst t k A) (subst t k u)
-  | wProjT1Beta u v w => wProjT1Beta (subst t k u) (subst t k v) (subst t k w)
-  | wProjT2Beta u v w => wProjT2Beta (subst t k u) (subst t k v) (subst t k w)
   | wPairEta p => wPairEta (subst t k p)
-  | wPack A1 A2 => wPack (subst t k A1) (subst t k A2)
-  | wProjT1 p => wProjT1 (subst t k p)
-  | wProjT2 p => wProjT2 (subst t k p)
-  | wProjTe p => wProjTe (subst t k p)
-  | wpack u v w => wpack (subst t k u) (subst t k v) (subst t k w)
   | wSort s => wSort s
   | wAx id => wAx id
   end.
@@ -153,14 +139,7 @@ Fixpoint closed_above k t :=
   | wTransportBeta A t =>
     closed_above k A &&
     closed_above k t
-  | wProjT1Beta u v w => closed_above k u && closed_above k v && closed_above k w
-  | wProjT2Beta u v w => closed_above k u && closed_above k v && closed_above k w
   | wPairEta p => closed_above k p
-  | wPack A1 A2 => closed_above k A1 && closed_above k A2
-  | wProjT1 p => closed_above k p
-  | wProjT2 p => closed_above k p
-  | wProjTe p => closed_above k p
-  | wpack u v w => closed_above k u && closed_above k v && closed_above k w
   | wAx id => true
   end.
 
