@@ -459,6 +459,95 @@ Proof.
   { cbn. auto with arith. }
 Defined.
 
+Lemma wttinfer_correct :
+  forall {Σ Γ t A},
+    Σ ;;; Γ |-w t : A ->
+    exists B, wttinfer Σ Γ t = Some B /\ nl A = nl B.
+Proof.
+  intros Σ Γ t A h.
+  induction h.
+  - exists (lift0 (S n) (safe_nth Γ (exist _ n isdecl))). split.
+    + cbn. erewrite nth_error_safe_nth. reflexivity.
+    + reflexivity.
+  - cbn. repeat eexists.
+  - cbn. destruct IHh1 as [? [e1 ?]]. rewrite e1.
+    destruct IHh2 as [? [e2 ?]]. rewrite e2.
+    repeat match goal with
+    | h : nl (wSort _) = _ |- _ =>
+      cbn in h
+    end.
+    repeat match goal with
+    | h : nlSort ?s = nl ?t |- _ =>
+      destruct t ; cbn in h ; try discriminate h ;
+      inversion h ; subst ; clear h
+    end.
+    cbn. eexists. split.
+    + reflexivity.
+    + cbn. reflexivity.
+  - cbn.
+    destruct IHh1 as [? [e1 ?]]. rewrite e1.
+    destruct IHh2 as [? [e2 ?]]. rewrite e2.
+    repeat match goal with
+    | h : nl (wSort _) = _ |- _ =>
+      cbn in h
+    end.
+    repeat match goal with
+    | h : nlSort ?s = nl ?t |- _ =>
+      destruct t ; cbn in h ; try discriminate h ;
+      inversion h ; subst ; clear h
+    end.
+    cbn. eexists. split.
+    + reflexivity.
+    + cbn. f_equal ; eauto.
+  - cbn.
+    destruct IHh1 as [? [e1 ?]]. rewrite e1.
+    destruct IHh2 as [? [e2 ?]]. rewrite e2.
+    repeat match goal with
+    | h : nl (wSort _) = _ |- _ =>
+      cbn in h
+    | h : nl (wProd _ _ _) = _ |- _ =>
+      cbn in h
+    end.
+    repeat match goal with
+    | h : nlSort _ = nl ?t |- _ =>
+      destruct t ; cbn in h ; try discriminate h ;
+      inversion h ; subst ; clear h
+    | h : nlProd _ _ = nl ?t |- _ =>
+      destruct t ; cbn in h ; try discriminate h ;
+      inversion h ; subst ; clear h
+    end.
+    cbn.
+    unfold assert_eq. unfold assert_true.
+    erewrite (proj2 eq_term_spec) by (transitivity (nl A) ; eauto).
+    cbn.
+    eexists. split.
+    + reflexivity.
+    + eapply nl_subst ; eauto.
+  - cbn.
+    destruct IHh1 as [? [e1 ?]]. rewrite e1.
+    destruct IHh2 as [? [e2 ?]]. rewrite e2.
+    repeat match goal with
+    | h : nl (wSort _) = _ |- _ =>
+      cbn in h
+    | h : nl (wProd _ _ _) = _ |- _ =>
+      cbn in h
+    end.
+    repeat match goal with
+    | h : nlSort _ = nl ?t |- _ =>
+      destruct t ; cbn in h ; try discriminate h ;
+      inversion h ; subst ; clear h
+    | h : nlProd _ _ = nl ?t |- _ =>
+      destruct t ; cbn in h ; try discriminate h ;
+      inversion h ; subst ; clear h
+    end.
+    cbn.
+    unfold assert_eq. unfold assert_true.
+    cbn.
+    eexists. split.
+    + reflexivity.
+    + cbn. reflexivity.
+Admitted.
+
 End Checking.
 
 Section PolymorphicSorts.
