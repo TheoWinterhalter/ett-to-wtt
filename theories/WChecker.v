@@ -395,6 +395,15 @@ Ltac inv_nl :=
     inversion h ; subst ; clear h
   end.
 
+Lemma assert_eq_sort_refl :
+  forall {s}, assert_eq_sort s s = Some tt.
+Proof.
+  intro s. unfold assert_eq_sort.
+  destruct (eq_dec s s).
+  - reflexivity.
+  - exfalso. apply n. reflexivity.
+Defined.
+
 Lemma wttinfer_rename_ctx :
   forall {Σ Γ Δ t A},
     wttinfer Σ Γ t = Some A ->
@@ -403,7 +412,18 @@ Lemma wttinfer_rename_ctx :
 Proof.
   intros Σ Γ Δ t A h eq. revert Γ Δ A h eq.
   induction t ; intros Γ Δ A h eq.
-  all: try solve [ (* go h ; eexists ; split ; [ reflexivity | repeat nleq ] *) ].
+  all: try solve [
+    go h ; simpl ;
+    repeat rewwtt ;
+    repeat (cbn_nl ; inv_nl) ;
+    simpl ;
+    unfold assert_eq ;
+    unfold assert_true ;
+    rewrite ?assert_eq_sort_refl ;
+    repeat (erewrite (proj2 eq_term_spec) ; [| shelve]) ;
+    simpl ;
+    eexists ; split ; [ reflexivity | repeat nleq ]
+  ].
   - simpl in h. simpl. revert h. case_eq (nth_error Γ n).
     + intros B e h. inversion h. subst. clear h.
       destruct (nth_error_rename e eq) as [? [ee ?]].
@@ -412,11 +432,7 @@ Proof.
       * reflexivity.
       * eapply nl_lift. assumption.
     + intros e h. discriminate h.
-  - go h ; eexists ; split ; [ reflexivity | repeat nleq ].
-  - go h. simpl. repeat rewwtt. repeat (cbn_nl ; inv_nl). simpl.
-    eexists. split.
-    + reflexivity.
-    + repeat nleq.
+  - simpl in h. simpl.
 Admitted.
 
 Ltac rewih :=
@@ -426,15 +442,6 @@ Ltac rewih :=
     destruct h as [? [e ?]] ;
     rewrite ?e
   end.
-
-Lemma assert_eq_sort_refl :
-  forall {s}, assert_eq_sort s s = Some tt.
-Proof.
-  intro s. unfold assert_eq_sort.
-  destruct (eq_dec s s).
-  - reflexivity.
-  - exfalso. apply n. reflexivity.
-Defined.
 
 Ltac co :=
   simpl ;
