@@ -347,45 +347,24 @@ Ltac nleq :=
   cbn ; auto ; f_equal ; eauto.
 
 Ltac rewwtt :=
-  match goal with
-  | h : wttinfer _ _ ?t = _ |- context [ wttinfer _ _ ?t ] =>
-    rewrite h
-  end.
-
-Lemma wttinfer_rename_ctx :
-  forall {Σ Γ Δ t A},
-    wttinfer Σ Γ t = Some A ->
-    nlctx Γ = nlctx Δ ->
-    exists B, wttinfer Σ Δ t = Some B /\ nl A = nl B.
-Proof.
-  intros Σ Γ Δ t A h eq. revert Γ Δ A h eq.
-  induction t ; intros Γ Δ A h eq.
-  all: try solve [ (* go h ; eexists ; split ; [ reflexivity | repeat nleq ] *) ].
-  - simpl in h. simpl. revert h. case_eq (nth_error Γ n).
-    + intros B e h. inversion h. subst. clear h.
-      destruct (nth_error_rename e eq) as [? [ee ?]].
-      rewrite ee.
-      eexists. split.
-      * reflexivity.
-      * eapply nl_lift. assumption.
-    + intros e h. discriminate h.
-  - go h ; eexists ; split ; [ reflexivity | repeat nleq ].
-  - go h. simpl.
-    Fail rewwtt.
-    Fail rewrite H1.
-    (* Need to combine with IHt1 as well. *)
-
-    (* eexists. split. *)
-    (* + reflexivity. *)
-    (* + repeat nleq. *)
-Admitted.
-
-Ltac rewih :=
-  match goal with
-  | [ h : exists _, _ |- _ ] =>
-    let e := fresh "e" in
-    destruct h as [? [e ?]] ;
-    rewrite ?e
+  lazymatch goal with
+  | ih : _ -> _ -> _ -> _ -> _ -> exists _, wttinfer _ _ ?t = _ /\ _,
+    h : wttinfer _ ?Γ ?t = _,
+    e : nlctx ?Γ = nlctx ?Δ
+    |- context [ wttinfer _ ?Δ ?t ] =>
+      let eq := fresh "eq" in
+      destruct (ih _ _ _ h e) as [? [eq ?]] ;
+      rewrite eq
+  | ih : _ -> _ -> _ -> _ -> _ -> exists _, wttinfer _ _ ?t = _ /\ _,
+    h : wttinfer _ ?Γ ?t = _
+    |- context [ wttinfer _ ?Δ ?t ] =>
+      let e := fresh "e" in
+      assert (nlctx Γ = nlctx Δ) as e ; [
+        repeat nleq
+      | let eq := fresh "eq" in
+        destruct (ih _ _ _ h e) as [? [eq ?]] ;
+        rewrite eq
+      ]
   end.
 
 Ltac cbn_nl :=
@@ -414,6 +393,38 @@ Ltac inv_nl :=
   | h : nlEq _ _ _ = nl ?t |- _ =>
     destruct t ; cbn in h ; try discriminate h ;
     inversion h ; subst ; clear h
+  end.
+
+Lemma wttinfer_rename_ctx :
+  forall {Σ Γ Δ t A},
+    wttinfer Σ Γ t = Some A ->
+    nlctx Γ = nlctx Δ ->
+    exists B, wttinfer Σ Δ t = Some B /\ nl A = nl B.
+Proof.
+  intros Σ Γ Δ t A h eq. revert Γ Δ A h eq.
+  induction t ; intros Γ Δ A h eq.
+  all: try solve [ (* go h ; eexists ; split ; [ reflexivity | repeat nleq ] *) ].
+  - simpl in h. simpl. revert h. case_eq (nth_error Γ n).
+    + intros B e h. inversion h. subst. clear h.
+      destruct (nth_error_rename e eq) as [? [ee ?]].
+      rewrite ee.
+      eexists. split.
+      * reflexivity.
+      * eapply nl_lift. assumption.
+    + intros e h. discriminate h.
+  - go h ; eexists ; split ; [ reflexivity | repeat nleq ].
+  - go h. simpl. repeat rewwtt. repeat (cbn_nl ; inv_nl). simpl.
+    eexists. split.
+    + reflexivity.
+    + repeat nleq.
+Admitted.
+
+Ltac rewih :=
+  match goal with
+  | [ h : exists _, _ |- _ ] =>
+    let e := fresh "e" in
+    destruct h as [? [e ?]] ;
+    rewrite ?e
   end.
 
 Lemma assert_eq_sort_refl :
