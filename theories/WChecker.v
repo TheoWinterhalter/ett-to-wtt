@@ -321,6 +321,17 @@ Proof.
   { cbn. auto with arith. }
 Defined.
 
+Lemma wttinfer_rename_ctx :
+  forall {Σ Γ Δ t A},
+    wttinfer Σ Γ t = Some A ->
+    nlctx Γ = nlctx Δ ->
+    exists B, wttinfer Σ Δ t = Some B /\ nl A = nl B.
+Proof.
+  intros Σ Γ Δ t A h eq. revert Γ Δ A h eq.
+  induction t ; intros Γ Δ A h eq.
+  - simpl in h.
+Admitted.
+
 Ltac rewih :=
   match goal with
   | [ h : exists _, _ |- _ ] =>
@@ -397,23 +408,49 @@ Proof.
   - exists (lift0 (S n) (safe_nth Γ (exist _ n isdecl))). split.
     + cbn. erewrite nth_error_safe_nth. reflexivity.
     + reflexivity.
-  - (* simpl. *)
-    (* repeat rewih. *)
-    (* repeat cbn_nl. *)
-    (* repeat inv_nl. *)
-    (* simpl. *)
-    (* unfold assert_eq. *)
-    (* unfold assert_true. *)
-    (* rewrite ?assert_eq_sort_refl. *)
-
-    (* repeat (erewrite (proj2 eq_term_spec) ; [| shelve]). *)
-    (* simpl. *)
-    (* eexists. split. *)
-    (* + reflexivity. *)
-    (* + repeat nleq. *)
-    (* + *)
-    admit.
-  - admit.
+  - simpl.
+    repeat rewih.
+    assert (nlctx (Γ,, A) = nlctx (Γ,, x)) as eq.
+    { cbn. f_equal. assumption. }
+    destruct (wttinfer_rename_ctx e0 eq) as [? [e3 ?]].
+    rewrite e3.
+    repeat cbn_nl.
+    repeat inv_nl.
+    simpl.
+    unfold assert_eq.
+    unfold assert_true.
+    rewrite ?assert_eq_sort_refl.
+    repeat (erewrite (proj2 eq_term_spec) ; [| shelve]).
+    simpl.
+    eexists. split.
+    + reflexivity.
+    + cbn. f_equal.
+      * eapply nl_subst ; try reflexivity.
+        transitivity (nl x0) ; eauto.
+      * repeat nleq.
+  - simpl.
+    repeat rewih.
+    assert (nlctx ((Γ,, A),, wEq (↑ A) (↑ u) (wRel 0))
+            = nlctx ((Γ,, x2),, wEq (↑ x2) (↑ u) (wRel 0))) as eq.
+    { cbn. f_equal.
+      - f_equal. assumption.
+      - f_equal. eapply nl_lift. assumption.
+    }
+    destruct (wttinfer_rename_ctx e1 eq) as [? [e3 ?]].
+    rewrite e3.
+    repeat cbn_nl.
+    repeat inv_nl.
+    repeat cbn_nl.
+    repeat inv_nl.
+    simpl.
+    unfold assert_eq.
+    unfold assert_true.
+    rewrite ?assert_eq_sort_refl.
+    repeat (erewrite (proj2 eq_term_spec) ; [| shelve]).
+    simpl.
+    eexists. split.
+    + reflexivity.
+    + repeat nleq.
   - simpl. exists ty. split.
     + assumption.
     + reflexivity.
@@ -433,7 +470,10 @@ Proof.
        ++ transitivity (nl B) ; eauto.
        ++ assumption.
        ++ assumption.
-Admitted.
+  * etransitivity ; [| eassumption].
+    eapply nl_subst ; try reflexivity.
+    nleq.
+Defined.
 
 End Checking.
 
