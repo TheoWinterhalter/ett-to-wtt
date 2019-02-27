@@ -433,7 +433,38 @@ Proof.
       * eapply nl_lift. assumption.
     + intros e h. discriminate h.
   - simpl in h. simpl.
-Admitted.
+    eexists. split.
+    + eassumption.
+    + reflexivity.
+  Unshelve.
+  all: repeat match goal with
+              | h : eq_term _ _ = true |- _ =>
+                apply eq_term_spec in h
+              end.
+  all: try solve [
+    match goal with
+    | h : nl ?x = nl ?y |- nl _ = nl ?y =>
+      transitivity (nl x) ; eauto
+    end
+  ].
+  * transitivity (nl w0_1) ; eauto. transitivity (nl w) ; eauto.
+  * transitivity (nl w0) ; eauto.
+    transitivity (nl (wProd nAnon w1_1 w1_2)) ; eauto.
+    nleq.
+  * transitivity (nl w) ; eauto.
+    match goal with
+    | h : nl ?x = nl ?y |- nl _ = nl ?y =>
+      transitivity (nl x) ; eauto
+    end.
+    cbn. f_equal.
+    -- eauto.
+    -- f_equal. eauto.
+  * repeat match goal with
+    | h : nl ?x = nl ?y |- nl _ = nl ?y =>
+      transitivity (nl x) ; eauto
+    end.
+    repeat nleq.
+Defined.
 
 Ltac rewih :=
   match goal with
