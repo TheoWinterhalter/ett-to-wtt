@@ -37,6 +37,7 @@ Inductive wterm : Type :=
 | wPairEta (p : wterm)
 (* External axioms *)
 | wAx (id : ident)
+| wDelta (id : ident)
 .
 
 Fixpoint mkApps u l :=

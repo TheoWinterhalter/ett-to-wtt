@@ -36,6 +36,7 @@ Fixpoint lift `{Sort_notion : Sorts.notion} n k t : wterm :=
   | wPairEta p => wPairEta (lift n k p)
   | wSort s => wSort s
   | wAx id => wAx id
+  | wDelta id => wDelta id
   end.
 
 Notation lift0 n t := (lift n 0 t).
@@ -76,6 +77,7 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
   | wPairEta p => wPairEta (subst t k p)
   | wSort s => wSort s
   | wAx id => wAx id
+  | wDelta id => wDelta id
   end.
 
 Notation subst0 t u := (subst t 0 u).
@@ -141,6 +143,7 @@ Fixpoint closed_above k t :=
     closed_above k t
   | wPairEta p => closed_above k p
   | wAx id => true
+  | wDelta id => true
   end.
 
 Definition closed t := closed_above 0 t = true.

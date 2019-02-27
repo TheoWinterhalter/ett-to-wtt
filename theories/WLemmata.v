@@ -220,23 +220,23 @@ Proof.
 Defined.
 
 Fact ident_neq_fresh :
-  forall {Σ id ty d},
-    lookup_glob Σ id = Some ty ->
+  forall {Σ id d d'},
+    lookup_glob Σ id = Some d' ->
     fresh_glob (dname d) Σ ->
     ident_eq id (dname d) = false.
 Proof.
-  intro Σ. induction Σ ; intros id ty d h hf.
+  intro Σ. induction Σ ; intros id d d' h hf.
   - cbn in h. discriminate h.
   - cbn in h. dependent destruction hf.
     case_eq (ident_eq id (dname d0)) ;
     intro e ; rewrite e in h.
     + inversion h as [ h' ]. subst. clear h.
       destruct (ident_eq_spec id (dname d)).
-      * subst. destruct (ident_eq_spec (dname d) (dname d0)).
+      * subst. destruct (ident_eq_spec (dname d) (dname d')).
         -- exfalso. easy.
         -- easy.
       * reflexivity.
-    + eapply IHΣ ; eassumption.
+    + eapply IHΣ; eassumption.
 Defined.
 
 Fixpoint weak_glob_type {Σ Γ t A} (h : Σ ;;; Γ |-w t : A) :
@@ -250,15 +250,19 @@ with weak_glob_wf {Σ Γ} (h : wf Σ Γ) :
     wf (d::Σ) Γ.
 Proof.
   (* weak_glob_type *)
-  - { dependent destruction h ; intros d fd.
+  - { dependent destruction h ; intros d' fd'.
       all: try (econstructor ; try apply weak_glob_wf ;
                 try apply weak_glob_type ;
                 eassumption
                ).
-      eapply type_Ax.
-      - eapply weak_glob_wf ; eassumption.
-      - cbn. erewrite ident_neq_fresh by eassumption.
-        assumption.
+      + eapply type_Ax.
+        * eapply weak_glob_wf ; eassumption.
+        * cbn. erewrite ident_neq_fresh by eassumption.
+          assumption.
+      + eapply type_Delta.
+        * eapply weak_glob_wf ; eassumption.
+        * cbn. erewrite ident_neq_fresh by eassumption.
+          assumption.
     }
 
   (* weak_glob_wf *)
@@ -292,21 +296,21 @@ Proof.
   reflexivity.
 Defined.
 
-Fact typed_ax_type :
+Fact typed_ax_body :
   forall {Σ}, type_glob Σ ->
-  forall {id ty},
-    lookup_glob Σ id = Some ty ->
-    isType Σ [] ty.
+  forall {id d},
+    lookup_glob Σ id = Some d ->
+    Σ ;;; [] |-w dbody d : dtype d.
 Proof.
-  intros Σ hg. dependent induction hg ; intros id ty h.
+  intros Σ hg. dependent induction hg ; intros id d' h.
   - cbn in h. discriminate h.
   - cbn in h.
     case_eq (ident_eq id (dname d)).
     + intro e. rewrite e in h. inversion h. subst.
-      eapply weak_glob_isType ; eassumption.
+      eapply weak_glob_type ; eassumption.
     + intro e. rewrite e in h.
       specialize (IHhg _ _ h).
-      eapply weak_glob_isType ; eassumption.
+      eapply weak_glob_type ; eassumption.
 Defined.
 
 Fact type_ctxempty_closed :
@@ -315,20 +319,146 @@ Fact type_ctxempty_closed :
     closed t.
 Proof.
   intros Σ t T h.
-  unfold closed. eapply @type_ctx_closed_above with (Γ := []). eassumption.
+  eapply @type_ctx_closed_above with (Γ := []). eassumption.
 Defined.
+
+Fact isType_ctxempty_closed : forall {Σ T}, isType Σ [] T -> closed T.
+Proof.
+  intros Σ T h. destruct h.
+  eapply type_ctxempty_closed; eassumption.
+Defined.
+
+Lemma isType_lookup_glob {Σ}
+  : type_glob Σ -> forall id d, lookup_glob Σ id = Some d -> isType Σ [] (dtype d).
+Proof.
+  intros wΣ. induction wΣ.
+  - intros id d H; inversion H.
+  - cbn; intros id d0. case_eq (ident_eq id (dname d)).
+    + intros _ e; inversion e; subst.
+      eapply weak_glob_isType; eassumption.
+    + intros _ H. eapply weak_glob_isType.
+      eapply IHwΣ; eassumption. assumption.
+Defined.
+
+(* Lemma closed_above_lookup_glob {Σ} *)
+(*   : type_glob Σ -> forall id d, lookup_glob Σ id = Some d -> closed (dtype d). *)
+(* Proof. *)
+(*   intros wΣ. induction wΣ. *)
+(*   - intros id d H; inversion H. *)
+(*   - cbn; intros id d0. case_eq (ident_eq id (dname d)). *)
+(*     intros _ e; inversion e; subst; assumption. *)
+(*     intros _ H. eapply IHwΣ. eassumption. *)
+(* Defined. *)
+
+Lemma closed_above_safe_nth:
+  forall (Σ : wglobal_context) (Γ : wcontext),
+    wf Σ Γ -> forall (n : nat) (isdecl : n < #|Γ|), closed_above #|Γ|
+      (lift0 (S n) (safe_nth Γ (exist (fun n0 : nat => n0 < #|Γ|) n isdecl))) = true.
+Proof.
+  intros Σ Γ H. induction H.
+  - cbn; intros n isdecl. bang.
+  - intros [] isdecl.
+    + cbn.
+      change (S #|Γ|) with (1+ #|Γ|)%nat.
+      erewrite closed_above_lift by omega.
+      now eapply type_ctx_closed_above.
+    + cbn in *. specialize (IHwf n (lt_S_n _ _ isdecl)).
+      erewrite <- (closed_above_lift (n := 1) (k := 0)) in IHwf by omega.
+      rewrite liftP3 in IHwf by omega.
+      erewrite safe_nth_irr; eassumption.
+Defined.
+
+
+Ltac tcca :=
+  match goal with
+  | |- _ && _ = _ => apply andb_true_intro; split
+  | |- closed_above _ (_ {_ := _}) = _ =>
+    eapply closed_above_subst; [omega|cbn|cbn]
+  | _ => reflexivity
+  | _ => eassumption
+  | H : _ ;;; _ |-w ?A : _ |- closed_above _ ?A = _ =>
+    eapply type_ctx_closed_above in H
+  | H : forall _ _, _ -> _ -> closed_above _ ?A = _ |- closed_above _ ?A = _ =>
+    eapply H;[|eassumption]; omega
+  | H0 : nl ?t = nl ?A , H : forall _ _ _, closed_above _ ?t = _ -> _ |- closed_above _ ?A = _ =>
+    eapply (H _ H0); try eassumption
+  | H : _ && _ = _ |- _ => apply andb_prop in H; destruct H
+  | _ => rewrite Nat.sub_0_r
+  | H : None = Some _ |- _ => inversion H
+  end.
+
+Fact closed_above_nk t : forall n k, n <= k ->
+  closed_above n t = true -> closed_above k t = true.
+Proof.
+  induction t; intros; cbn -[leb] in *; repeat tcca.
+  apply leb_complete in H0.
+  apply leb_correct.
+  omega.
+Defined.
+
+Fact closed_above_nl t : forall u, nl t = nl u -> forall n,
+      closed_above n t = true -> closed_above n u = true.
+Proof.
+  induction t; cbn -[leb] in *; intros [] e k IH; inversion e;
+    cbn -[leb]; repeat tcca.
+  subst; assumption.
+Qed.
+
+Fact type_ctx_closed_above' :
+  forall {Σ Γ t T},
+    type_glob Σ ->
+    Σ ;;; Γ |-w t : T ->
+    closed_above #|Γ| T = true.
+Proof.
+  intros Σ Γ t T wΣ h.
+  induction h; cbn in *; try repeat tcca.
+  - eapply closed_above_safe_nth; eassumption.
+  - eapply closed_above_nk with (n := 0). omega.
+    eapply isType_ctxempty_closed, isType_lookup_glob; eassumption.
+  - eapply closed_above_nk with (n := 0). omega.
+    eapply isType_ctxempty_closed, isType_lookup_glob; eassumption.
+  - eapply closed_above_nk with (n := 0). omega.
+    eapply type_ctxempty_closed.
+    eapply typed_ax_body. eassumption. eassumption.
+  - eapply closed_above_nl; eassumption.
+Qed.
+
+Fact type_ctxempty_closed' :
+  forall {Σ t T},
+    type_glob Σ ->
+    Σ ;;; [] |-w t : T ->
+    closed T.
+Proof.
+  intros Σ t T wΣ h.
+  eapply @type_ctx_closed_above' with (Γ := []); eassumption.
+Defined.
+
+
+
 
 Fact lift_ax_type :
   forall {Σ},
     type_glob Σ ->
-    forall {id ty},
-      lookup_glob Σ id = Some ty ->
-      forall n k, lift n k ty = ty.
+    forall {id d},
+      lookup_glob Σ id = Some d ->
+      forall n k, lift n k (dtype d) = dtype d.
 Proof.
   intros Σ hg id ty isd n k.
-  destruct (typed_ax_type hg isd).
   eapply closed_lift.
-  eapply type_ctxempty_closed. eassumption.
+  eapply type_ctxempty_closed'. eassumption. eapply type_Ax.
+  constructor. eassumption.
+Defined.
+
+Fact lift_ax_body :
+  forall {Σ},
+    type_glob Σ ->
+    forall {id d},
+      lookup_glob Σ id = Some d ->
+      forall n k, lift n k (dbody d) = dbody d.
+Proof.
+  intros Σ hg id ty isd n k.
+  eapply closed_lift.
+  eapply type_ctxempty_closed. eapply typed_ax_body; eassumption.
 Defined.
 
 Ltac ih h :=
@@ -482,6 +612,10 @@ Proof.
         eapply type_Ax.
         + now apply wf_lift.
         + assumption.
+      - cbn. erewrite lift_ax_type, lift_ax_body by eassumption.
+        eapply type_Delta.
+        + now apply wf_lift.
+        + assumption.
       - eapply type_rename.
         + eih.
         + eapply nl_lift. assumption.
@@ -537,14 +671,26 @@ Defined.
 Fact subst_ax_type :
   forall {Σ},
     type_glob Σ ->
-    forall {id ty},
-      lookup_glob Σ id = Some ty ->
-      forall n u, ty{ n := u } = ty.
+    forall {id d},
+      lookup_glob Σ id = Some d ->
+      forall n u, (dtype d){ n := u } = dtype d.
 Proof.
-  intros Σ hg id ty isd n k.
-  destruct (typed_ax_type hg isd).
+  intros Σ hg id d isd n k.
   eapply closed_subst.
-  eapply type_ctxempty_closed. eassumption.
+  eapply type_ctxempty_closed'. eassumption. eapply type_Ax.
+  constructor. eassumption.
+Defined.
+
+Fact subst_ax_body :
+  forall {Σ},
+    type_glob Σ ->
+    forall {id d},
+      lookup_glob Σ id = Some d ->
+      forall n u, (dbody d){ n := u } = dbody d.
+Proof.
+  intros Σ hg id d isd n k.
+  eapply closed_subst.
+  eapply type_ctxempty_closed. eapply typed_ax_body; eassumption.
 Defined.
 
 (* Substitution in context *)
@@ -760,6 +906,10 @@ Proof.
       - cbn. eapply type_PairEta ; esh.
       - cbn. erewrite subst_ax_type by eassumption.
         eapply type_Ax.
+        + now eapply wf_subst.
+        + assumption.
+      - cbn. erewrite subst_ax_type, subst_ax_body by eassumption.
+        eapply type_Delta.
         + now eapply wf_subst.
         + assumption.
       - eapply type_rename.
@@ -1025,9 +1175,9 @@ Lemma istype_type :
   forall {Σ Γ t T},
     type_glob Σ ->
     Σ ;;; Γ |-w t : T ->
-    exists s, Σ ;;; Γ |-w T : wSort s.
+    isType Σ Γ T.
 Proof.
-  intros Σ Γ t T hg H.
+  unfold isType. intros Σ Γ t T hg H.
   induction H.
   - revert n isdecl. induction H ; intros n isdecl.
     + cbn in isdecl. easy.
@@ -1116,21 +1266,27 @@ Proof.
       * econstructor ; eassumption.
       * econstructor ; eassumption.
     + econstructor ; try eassumption. reflexivity.
-  - destruct (typed_ax_type hg H0) as [s hh].
-    exists s. change (wSort s) with (lift #|Γ| #|@nil wterm| (wSort s)).
-    replace ty with (lift #|Γ| #|@nil wterm| ty)
-      by (erewrite lift_ax_type by eassumption ; reflexivity).
-    eapply meta_ctx_conv.
-    + eapply @type_lift with (Γ := []) (Ξ := []) (Δ := Γ).
-      * assumption.
-      * assumption.
-      * rewrite nil_cat. assumption.
-    + cbn. apply nil_cat.
+  - pose proof (isType_lookup_glob hg _ _ H0).
+    destruct H1 as [s HH]; exists s.
+    pose proof (@type_lift _ [] Γ [] _ _ HH hg). cbn in H1.
+    rewrite nil_cat in H1.
+    now erewrite lift_ax_type in H1 by eassumption.
+  - pose proof (isType_lookup_glob hg _ _ H0).
+    destruct H1 as [s HH]; exists (Sorts.eq_sort s).
+    assert (Σ;;; [] |-w wEq (dtype d) (wAx id) (dbody d)
+                     : wSort (Sorts.eq_sort s)). {
+      econstructor. assumption.
+      eapply type_Ax. constructor. assumption.
+      eapply typed_ax_body; eassumption.
+    }
+    pose proof (@type_lift _ [] Γ [] _ _ H1 hg). cbn in H2.
+    rewrite nil_cat in H2.
+    erewrite lift_ax_body in H2 by eassumption.
+    now erewrite lift_ax_type in H2 by eassumption.
   - destruct IHtyping. eexists.
     eapply rename_typed ; try eassumption.
     + reflexivity.
     + eapply typing_wf. eassumption.
   Unshelve. constructor.
 Defined.
-
 End Lemmata.

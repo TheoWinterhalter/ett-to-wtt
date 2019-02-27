@@ -22,17 +22,12 @@ Notation " Γ ,, d " := (wsnoc Γ d) (at level 20, d at next level) : w_scope.
 (** Global contexts of axioms
     Basically a list of ITT types.
  *)
-Record glob_decl := { dname : ident ; dtype : wterm }.
+Record glob_decl := { dname : ident ; dtype : wterm ; dbody : wterm }.
 
 Definition wglobal_context : Type := list glob_decl.
 
-Fixpoint lookup_glob (Σ : wglobal_context) (id : ident) : option wterm :=
-  match Σ with
-  | nil => None
-  | d :: Σ =>
-    if ident_eq id (dname d) then Some (dtype d)
-    else lookup_glob Σ id
-  end.
+Definition lookup_glob (Σ : wglobal_context) (id : ident) :=
+  List.find (fun d => ident_eq id (dname d)) Σ.
 
 End Prelim.
 
@@ -162,10 +157,15 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w wPairEta p
              : wEq (wSum n' A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p
 
-| type_Ax Γ id ty :
+| type_Ax Γ id d :
     wf Σ Γ ->
-    lookup_glob Σ id = Some ty ->
-    Σ ;;; Γ |-w wAx id : ty
+    lookup_glob Σ id = Some d ->
+    Σ ;;; Γ |-w wAx id : dtype d
+
+| type_Delta Γ id d :
+    wf Σ Γ ->
+    lookup_glob Σ id = Some d ->
+    Σ ;;; Γ |-w wDelta id : wEq (dtype d) (wAx id) (dbody d)
 
 | type_rename Γ t A B :
     Σ ;;; Γ |-w t : A ->
@@ -214,6 +214,7 @@ Inductive type_glob : wglobal_context -> Type :=
     type_glob Σ ->
     fresh_glob (dname d) Σ ->
     isType Σ [] (dtype d) ->
+    Σ ;;; [] |-w dbody d : dtype d ->
     type_glob (d :: Σ).
 
 End Global.

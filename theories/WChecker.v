@@ -148,7 +148,9 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     let '(A,B) := T in
     ret (wEq (wSum nAnon A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p)
   | wAx id =>
-    lookup_glob Σ id
+    option_map dtype (lookup_glob Σ id)
+  | wDelta id =>
+    option_map (fun d => wEq (dtype d) (wAx id) (dbody d)) (lookup_glob Σ id)
   end.
 
 Lemma type_Beta' :
@@ -319,6 +321,14 @@ Proof.
   all: try solve [ constructor ].
   { cbn. auto with arith. }
   { cbn. auto with arith. }
+  - cbn in eq. remember (lookup_glob Σ id) as o; destruct o.
+    + inversion eq; subst. constructor. assumption.
+      symmetry; assumption.
+    + inversion eq.
+  - cbn in eq. remember (lookup_glob Σ id) as o; destruct o.
+    + cbn in eq. inversion eq; subst. constructor. assumption.
+      symmetry; assumption.
+    + inversion eq.
 Defined.
 
 Lemma nth_error_rename :
@@ -544,8 +554,11 @@ Proof.
     eexists. split.
     + reflexivity.
     + repeat nleq.
-  - simpl. exists ty. split.
-    + assumption.
+  - simpl. exists (dtype d). split.
+    + rewrite_assumption; reflexivity.
+    + reflexivity.
+  - simpl. exists (wEq (dtype d) (wAx id) (dbody d)). split.
+    + rewrite_assumption; reflexivity.
     + reflexivity.
   - rewih. eexists. split.
     + reflexivity.
@@ -633,6 +646,7 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wTransportBeta A t => wTransportBeta (f A) (f t)
     | wPairEta p => wPairEta (f p)
     | wAx id => wAx id
+    | wDelta id => wDelta id
     end.
 
 Fixpoint instantiate_sorts_ctx `{ S : Sorts.notion }
@@ -690,21 +704,23 @@ Proof.
     + cbn. erewrite IHΓ. reflexivity.
 Defined.
 
-Fixpoint instantiate_sorts_glob `{ S : Sorts.notion } inst
+
+Definition instantiate_sorts_decl `{ S : Sorts.notion } inst
+           (d : @glob_decl psort_notion) : @glob_decl S :=
+  {| dname := d.(dname) ;
+     dtype := instantiate_sorts inst d.(dtype) ;
+     dbody := instantiate_sorts inst d.(dbody)
+  |}.
+
+Definition instantiate_sorts_glob `{ S : Sorts.notion } inst
            (Σ : @wglobal_context psort_notion) : @wglobal_context S :=
-  match Σ with
-  | d :: Σ =>
-    {| dname := d.(dname) ;
-       dtype := instantiate_sorts inst d.(dtype)
-    |} :: instantiate_sorts_glob inst Σ
-  | nil => nil
-  end.
+  map (instantiate_sorts_decl inst) Σ.
 
 Lemma instantiate_sorts_lookup_glob :
-  forall `{ S : Sorts.notion } inst (Σ : @wglobal_context psort_notion) id ty,
-    lookup_glob Σ id = Some ty ->
+  forall `{ S : Sorts.notion } inst (Σ : @wglobal_context psort_notion) id d,
+    lookup_glob Σ id = Some d ->
     let Σ' := instantiate_sorts_glob inst Σ in
-    lookup_glob Σ' id = Some (instantiate_sorts inst ty).
+    lookup_glob Σ' id = Some (instantiate_sorts_decl inst d).
 Proof.
   intros S inst Σ id ty h Σ'.
   induction Σ.
@@ -853,8 +869,12 @@ Proof.
            ++ reflexivity.
     + rewrite 2!instantiate_sorts_subst in IHh3. eapply IHh3. assumption.
     + eapply IHh4 ; assumption.
-  - cbn. unfold A'. econstructor ; try assumption.
-    eapply instantiate_sorts_lookup_glob. assumption.
+  - eapply meta_conv. econstructor. assumption.
+    eapply instantiate_sorts_lookup_glob. eassumption.
+    reflexivity.
+  - eapply meta_conv. econstructor. assumption.
+    eapply instantiate_sorts_lookup_glob. eassumption.
+    reflexivity.
   - eapply type_rename.
     + eapply IHh. assumption.
     + unfold A'. eapply nl_instantiate_sorts. assumption.

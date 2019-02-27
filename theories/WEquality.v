@@ -34,6 +34,7 @@ Inductive nlterm : Type :=
 | nlPairEta (p : nlterm)
 (* External axioms *)
 | nlAx (id : ident)
+| nlDelta (id : ident)
 .
 
 Fixpoint nl (t : wterm) : nlterm :=
@@ -58,6 +59,7 @@ Fixpoint nl (t : wterm) : nlterm :=
   | wTransportBeta A t => nlTransportBeta (nl A) (nl t)
   | wPairEta p => nlPairEta (nl p)
   | wAx id => nlAx id
+  | wDelta id => nlDelta id
   end.
 
 Section nldec.
