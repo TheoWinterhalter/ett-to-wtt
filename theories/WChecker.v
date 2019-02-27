@@ -321,6 +321,37 @@ Proof.
   { cbn. auto with arith. }
 Defined.
 
+Lemma nth_error_rename :
+  forall {Γ Δ n A},
+    nth_error Γ n = Some A ->
+    nlctx Γ = nlctx Δ ->
+    exists B, nth_error Δ n = Some B /\ nl A = nl B.
+Proof.
+  intros Γ Δ n A h eq. revert Δ n A h eq.
+  induction Γ ; intros Δ n A h eq.
+  - destruct n ; simpl in h ; discriminate.
+  - destruct Δ ; simpl in eq ; try discriminate eq.
+    destruct n.
+    + cbn in h. inversion h. subst. clear h.
+      inversion eq.
+      cbn. eexists. split.
+      * reflexivity.
+      * assumption.
+    + cbn in h. cbn. eapply IHΓ.
+      * assumption.
+      * inversion eq. reflexivity.
+Defined.
+
+Ltac nleq :=
+  repeat (try eapply nl_lift ; try eapply nl_subst) ;
+  cbn ; auto ; f_equal ; eauto.
+
+Ltac rewwtt :=
+  match goal with
+  | h : wttinfer _ _ ?t = _ |- context [ wttinfer _ _ ?t ] =>
+    rewrite h
+  end.
+
 Lemma wttinfer_rename_ctx :
   forall {Σ Γ Δ t A},
     wttinfer Σ Γ t = Some A ->
@@ -329,7 +360,24 @@ Lemma wttinfer_rename_ctx :
 Proof.
   intros Σ Γ Δ t A h eq. revert Γ Δ A h eq.
   induction t ; intros Γ Δ A h eq.
-  - simpl in h.
+  all: try solve [ (* go h ; eexists ; split ; [ reflexivity | repeat nleq ] *) ].
+  - simpl in h. simpl. revert h. case_eq (nth_error Γ n).
+    + intros B e h. inversion h. subst. clear h.
+      destruct (nth_error_rename e eq) as [? [ee ?]].
+      rewrite ee.
+      eexists. split.
+      * reflexivity.
+      * eapply nl_lift. assumption.
+    + intros e h. discriminate h.
+  - go h ; eexists ; split ; [ reflexivity | repeat nleq ].
+  - go h. simpl.
+    Fail rewwtt.
+    Fail rewrite H1.
+    (* Need to combine with IHt1 as well. *)
+
+    (* eexists. split. *)
+    (* + reflexivity. *)
+    (* + repeat nleq. *)
 Admitted.
 
 Ltac rewih :=
@@ -367,10 +415,6 @@ Ltac inv_nl :=
     destruct t ; cbn in h ; try discriminate h ;
     inversion h ; subst ; clear h
   end.
-
-Ltac nleq :=
-  repeat (try eapply nl_lift ; try eapply nl_subst) ;
-  cbn ; auto ; f_equal ; eauto.
 
 Lemma assert_eq_sort_refl :
   forall {s}, assert_eq_sort s s = Some tt.
