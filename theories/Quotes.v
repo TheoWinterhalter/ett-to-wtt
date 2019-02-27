@@ -42,9 +42,9 @@ Definition ap@{i j} {A : Type@{i}} {B : Type@{j}} (f : A -> B) {x y} (p : x = y)
   : f x = f y
   := transport (fun y => f x = f y) p 1.
 
-(* Definition coe@{i i1} {A B : Type@{i}} (p : eq@{i1} A B) : A -> B *)
-  (* := fun x => transport (fun T => T) p x. *)
-Axiom coe@{i i1} : forall {A B : Type@{i}} (p : eq@{i1} A B), A -> B.
+Definition coe@{i i1} {A B : Type@{i}} (p : eq@{i1} A B) : A -> B
+  := fun x => transport (fun T => T) p x.
+(* Axiom coe@{i i1} : forall {A B : Type@{i}} (p : eq@{i1} A B), A -> B. *)
 
 Definition transportβ@{i j} {A : Type@{i}} (P : A -> Type@{j}) {x} (u : P x)
   : transport@{i j} P 1 u = u
@@ -52,8 +52,8 @@ Definition transportβ@{i j} {A : Type@{i}} (P : A -> Type@{j}) {x} (u : P x)
 
 Definition coeβ@{i i1} {A : Type@{i}} (x : A)
   : coe@{i i1} 1 x = x
-  (* := transportβ (fun T => T) x. *)
-. Admitted.
+  := transportβ (fun T => T) x.
+(* . Admitted. *)
 
 Tactic Notation "etransitivity" := refine (_ @ _).
 Tactic Notation "symmetry" := refine (_^).
@@ -84,10 +84,10 @@ Notation "( x ; y )" := (existT _ x y).
 Notation "x .1" := (projT1 x) (at level 3, format "x '.1'").
 Notation "x .2" := (projT2 x) (at level 3, format "x '.2'").
 
-(* Axiom projT1β@{i j} : forall {A : Type@{i}} (P : A -> Type@{j}) x y, *)
-(*     eq@{i} (existT P x y).1 x. *)
-(* Axiom projT2β@{i j} : forall {A : Type@{i}} (P : A -> Type@{j}) x y, *)
-(*     eq@{j} (transport P (projT1β _ _ _) (existT P x y).2) y. *)
+Axiom projT1β@{i j} : forall {A : Type@{i}} (P : A -> Type@{j}) x y,
+    eq@{i} (existT P x y).1 x.
+Axiom projT2β@{i j} : forall {A : Type@{i}} (P : A -> Type@{j}) x y,
+    eq@{j} (transport P (projT1β _ _ _) (existT P x y).2) y.
 Axiom Ση@{i j ij} : forall {A : Type@{i}} (P : A -> Type@{j}) (z : {x : A & P x}),
     eq@{ij} (z.1; z.2) z.
 
@@ -107,9 +107,7 @@ Definition sigT_rec@{i j k} {A : Type@{i}} (P : A -> Type@{j})
   := fun z => H z.1 z.2.
   (* := sigT_rect@{i j ij k} P (fun _ => Q) H. *)
 
-
 Tactic Notation "exists" uconstr(x) := refine (existT _ x _).
-Tactic Notation "dheq" := refine (sigT_rec _ _ _).
 
 
 
@@ -199,27 +197,28 @@ Defined.
 
 
 Definition Pack@{i i1} (A1 A2 : Type@{i}) : Type@{i1}
-  (* := exists (x1 : A1)(x2 : A2), heq@{i i1} x1 x2. *)
-. Admitted.
+  := exists (x1 : A1)(x2 : A2), heq@{i i1} x1 x2.
+(* . Admitted. *)
 Definition pack@{i i1} {A1 A2 : Type@{i}} (x1 : A1) (x2 : A2) (e: heq @{i i1} x1 x2)
   : Pack@{i i1} A1 A2
-  (* := (x1; (x2; e)). *)
-. Admitted.
+  := (x1; (x2; e)).
+(* . Admitted. *)
 Definition ProjT1@{i i1} {A1 A2 : Type@{i}} (z : Pack@{i i1} A1 A2) : A1
-  (* := z.1. *)
-. Admitted.
+  := z.1.
+(* . Admitted. *)
 Definition ProjT2@{i i1} {A1 A2 : Type@{i}} (z : Pack@{i i1} A1 A2) : A2
-  (* := z.2.1. *)
-. Admitted.
+  := z.2.1.
+(* . Admitted. *)
 Definition ProjTe@{i i1} {A1 A2 : Type@{i}} (z : Pack@{i i1} A1 A2)
   : heq@{i i1} (ProjT1 z) (ProjT2 z)
-  (* := z.2.2. *)
-. Admitted.
+  := z.2.2.
+(* . Admitted. *)
 
 
-Definition transport_sigma_const {X A}{B : A -> X -> Type} {x x'} (p : x = x' :> X)
+Definition transport_sigma_const@{i j ij} {X A : Type@{i}}{B : A -> X -> Type@{j}} {x x'} (p : x = x' :> X)
            (u : exists a, B a x)
-  : transport (fun x => exists a, B a x) p u = (u.1; transport (B u.1) p u.2).
+  : transport@{i ij} (fun x => sigT@{i j} (fun a => B a x)) p u
+    = (u.1; transport (B u.1) p u.2).
 Proof.
   revert u.
   refine (J (fun x' p => forall u, transport (fun x => exists a, B a x) p u = (u.1; transport (B u.1) p u.2)) p _); clear x' p.
@@ -231,18 +230,20 @@ Defined.
 
 Definition ProjT1β@{i i1} {A1 A2 : Type@{i}} (x1 : A1) (x2 : A2) (e: x1 ≅ x2)
  : ProjT1 (pack@{i i1} x1 x2 e) = x1
-  (* := projT1β _ _ _. *)
-. Admitted.
+  := projT1β _ _ _.
+(* . Admitted. *)
+
 Definition ProjT2β@{i i1} {A1 A2 : Type@{i}} (x1 : A1) (x2 : A2) (e: x1 ≅ x2)
  : ProjT2 (pack@{i i1} x1 x2 e) = x2.
-(* Proof. *)
-(*   unfold ProjT2. *)
-(*   pose proof ((transport_sigma_const _ _)^ *)
-(*               @ projT2β (fun x1 => exists x2, heq x1 x2) x1 (x2; e)). *)
-(*   refine (_ @ ap projT1 X @ projT1β _ _ _). *)
-(*   symmetry; eapply projT1β. *)
-(* Defined. *)
-Admitted.
+Proof.
+  unfold ProjT2.
+  pose proof ((transport_sigma_const _ _)^
+              @ projT2β (fun x1 => exists x2, heq x1 x2) x1 (x2; e)).
+  refine (_ @ ap projT1 X @ projT1β _ _ _).
+  symmetry; eapply projT1β.
+Defined.
+(* Admitted. *)
+
 (* Definition ProjTeβ@{i i1} {A1 A2 : Type@{i}} (x1 : A1) (x2 : A2) (e: x1 ≅ x2) *)
 (*  : ProjTe (pack@{i i1} x1 x2 e) ≅ e. *)
 

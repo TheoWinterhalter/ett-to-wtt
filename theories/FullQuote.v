@@ -8,8 +8,9 @@ Require Import util Sorts WAst WLiftSubst WTyping WChecker WLemmata Quotes.
 From TypingFlags Require Import Loader.
 Import MonadNotation ListNotations.
 
+Axiom myadmit : forall {A}, A.
 
-Inductive fq_error :=
+Inductive fq_error {S : notion} :=
 | NotEnoughFuel
 | NotHandled (t : term)
 | TypingError (msg : string) (e : type_error) (Γ : context) (t : term)
@@ -21,39 +22,25 @@ Inductive fq_error :=
 | NotEnoughSorts
 | InstanciationNotHandeled (c : string) (l : list term)
 | MsgError (msg : string)
+| InferenceFailed (id : string) (e : i_error)
 .
 
-Inductive fq_result A :=
-| Success : A -> fq_result A
-| Error : fq_error -> fq_result A.
-
-Arguments Success {_} _.
-Arguments Error {_} _.
-
-Instance fq_monad : Monad fq_result :=
-  {| ret A a := Success a ;
-     bind A B m f :=
-       match m with
-       | Success a => f a
-       | Error e => Error e
-       end
-  |}.
-
-Instance monad_exc : MonadExc fq_error fq_result :=
-  { raise A e := Error e;
-    catch A m f :=
-      match m with
-      | Success a => m
-      | Error t => f t
-      end
-  }.
-
+Definition fq_result {S : notion} := result fq_error.
 
 Local Existing Instance psort_notion.
-Definition tsl_univ (univs : assoc sort) (u : universe) :=
+(* Definition tsl_univ (univs : assoc sort) (u : universe) := *)
+(*   match u with *)
+(*   | [ pair (Level.Level l) (false) ] => *)
+(*     match assoc_at l univs with *)
+(*     | Some t => Success t *)
+(*     | None  => Error NotEnoughSorts *)
+(*     end *)
+(*   | _ => Error AlgebraicUniverse *)
+(*   end. *)
+Definition tsl_univ (univs : list sort) (u : universe) :=
   match u with
-  | [ pair (Level.Level l) (false) ] =>
-    match assoc_at l univs with
+  | [ pair (Level.Var n) (false) ] =>
+    match nth_error univs n with
     | Some t => Success t
     | None  => Error NotEnoughSorts
     end
@@ -64,7 +51,7 @@ Definition tsl_univ (univs : assoc sort) (u : universe) :=
 Section fq.
 Unset Guard Checking.
 
-Context (constt : assoc wterm) (univs : assoc sort).
+Context (constt : assoc wterm) (univs : list sort).
 
 Fixpoint fullquote (t : term)
          {struct t}
@@ -171,12 +158,10 @@ Fixpoint fullquote (t : term)
       else if eq_string c "Translation.Quotes.Jβ" then
         match l with
         | [A; u; tLambda _ _ (tLambda _ _ P); t] =>
-          A' <- fullquote A ;;
           u' <- fullquote u ;;
           P' <- fullquote P ;;
           t' <- fullquote t ;;
-          (* ret (wJBeta A' u' P' t' v' p' l') *)
-          ret (wRel 999)
+          ret (wJBeta u' P' t')
         | _ => raise (InstanciationNotHandeled c l)
         end
 
@@ -213,68 +198,6 @@ Fixpoint fullquote (t : term)
         | _ => raise (InstanciationNotHandeled c l)
         end
 
-      else if eq_string c "Translation.Quotes.heq" then
-        match l with
-        | [A; a; B; b] =>
-          A' <- fullquote A ;;
-          a' <- fullquote a ;;
-          B' <- fullquote B ;;
-          b' <- fullquote b ;;
-          (* ret (wHeq A' a' B' b') *)
-          raise (InstanciationNotHandeled c l)
-        | _ => raise (InstanciationNotHandeled c l)
-        end
-
-      else if eq_string c "Translation.Quotes.Pack" then
-        match l with
-        | [A; B] =>
-          A' <- fullquote A ;;
-          B' <- fullquote B ;;
-          (* ret (wPack A' B') *)
-          raise (InstanciationNotHandeled c l)
-        | _ => raise (InstanciationNotHandeled c l)
-        end
-
-      else if eq_string c "Translation.Quotes.pack" then
-        match l with
-        | [A; B; u; v; p] =>
-          A' <- fullquote A ;;
-          B' <- fullquote B ;;
-          u' <- fullquote u ;;
-          v' <- fullquote v ;;
-          p' <- fullquote p ;;
-          (* ret (wpack u' v' p') *)
-          raise (InstanciationNotHandeled c l)
-        | _ => raise (InstanciationNotHandeled c l)
-        end
-
-      else if eq_string c "Translation.Quotes.ProjT1" then
-        match l with
-        | [A; B; u] =>
-          u' <- fullquote u ;;
-          (* ret (wProjT1 u') *)
-          raise (InstanciationNotHandeled c l)
-        | _ => raise (InstanciationNotHandeled c l)
-        end
-
-      else if eq_string c "Translation.Quotes.ProjT2" then
-        match l with
-        | [A; B; u] =>
-          u' <- fullquote u ;;
-          (* ret (wProjT2 u') *)
-          raise (InstanciationNotHandeled c l)
-        | _ => raise (InstanciationNotHandeled c l)
-        end
-
-      else if eq_string c "Translation.Quotes.ProjTe" then
-        match l with
-        | [A; B; u] =>
-          u' <- fullquote u ;;
-          (* ret (wProjTe u') *)
-          raise (InstanciationNotHandeled c l)
-        | _ => raise (InstanciationNotHandeled c l)
-        end
-
       else match assoc_at c constt with
       | Some t =>
         l' <- monad_map fullquote l ;;
@@ -297,38 +220,238 @@ Set Guard Checking.
 End fq.
 
 
-(* Quote Recursively Definition qq := cong_prod. *)
 
-(* Definition qheq := *)
-(*   Eval compute in *)
-(*   match Typing.lookup_env (Datatypes.fst qq) "Translation.Quotes.heq" with *)
-(*   | Some (ConstantDecl _ d) => match d.(cst_body) with *)
-(*                               | Some t => t *)
-(*                               | None => tRel 87 *)
-(*                               end *)
-(*   | _ => tRel 90 *)
+Quote Recursively Definition all_constants :=
+  (cong_prod, cong_lambda, cong_app, cong_sum, cong_pi1, cong_pi2,
+   cong_eq, cong_refl).
+
+Fixpoint keep_unknown_constants gdecls :=
+  match gdecls with
+  | [] => empty
+  | (ConstantDecl kn {| cst_body := Some t; cst_type := A |}) :: gdecls
+    => acons kn (t , A) (keep_unknown_constants gdecls)
+  | _ :: gdecls => keep_unknown_constants gdecls
+  end.
+
+Definition unknown_constants :=
+  keep_unknown_constants (Datatypes.fst all_constants).
+
+
+Definition tsl_constant TC univs c :=
+  let body :=
+      match assoc_at c unknown_constants with
+      | Some (t , _) => t
+      | _ => tRel 90
+      end in
+  let bodyᵗ :=
+      match fullquote TC univs body with
+      | Success t => t
+      | Error e => wRel 212
+      end in
+  acons c bodyᵗ TC.
+
+Fixpoint keys {A} (l : assoc A) :=
+  match l with
+  | empty => []
+  | acons key data t => key :: (keys t)
+  end.
+
+Eval compute in (keys unknown_constants).
+
+
+Definition TC :=
+  (* Eval compute in *)
+  (let TC := empty in                 
+  let TC := tsl_constant TC [pvar 0; pvar 1] "Translation.Quotes.transport" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.coe" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.heq" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.Pack" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT1" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT2" in
+  let TC := tsl_constant TC [pvar 0] "Translation.Quotes.concat" in
+  let TC := tsl_constant TC [pvar 0; pvar 1] "Translation.Quotes.transportβ" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.coeβ" in
+  let TC := tsl_constant TC [pvar 0] "Translation.Quotes.inverse" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.coeβ'" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.heq_to_eq" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.pack" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.heq_refl" in
+  let TC := tsl_constant TC [pvar 0; pvar 1] "Translation.Quotes.ap" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT1β" in
+  let TC := tsl_constant TC [pvar 0; pvar 1; psum_sort (pvar 0) (pvar 1)] "Translation.Quotes.transport_sigma_const" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT2β" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0); pvar 1; psucc (pvar 1); psucc (psucc (pvar 1)); psucc (pprod_sort (pvar 0) (pvar 1))] "Translation.Quotes.heq_to_eq_fam" in
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_prod" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.eq_to_heq" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.sigT_rec" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.heq_trans" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.heq_apD" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_lambda" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_app" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_sum" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_pi1" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_pi2" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_eq" in *)
+  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_refl" in *)
+  TC).
+
+
+Definition tsl_constant' TC univs c :=
+  let typ :=
+      match assoc_at c unknown_constants with
+      | Some (t , A) => A
+      | _ => tRel 90
+      end in
+  match fullquote TC univs typ with
+  | Success t => t
+  | Error e => wRel 212
+  end.
+
+Eval lazy in (assoc_at "Translation.Quotes.transport" TC).
+
+Definition wtransport := (wLambda (nNamed "A") (wSort (pvar 0))
+            (wLambda (nNamed "P") (wProd nAnon (wRel 0) (wSort (pvar 1)))
+               (wLambda (nNamed "x") (wRel 1)
+                  (wLambda (nNamed "y") (wRel 2)
+                     (wLambda (nNamed "p") (wEq (wRel 3) (wRel 1) (wRel 0))
+                        (wLambda (nNamed "u") (wApp (wRel 3) (wRel 2))
+                           (wJ (wRel 5) (wRel 3) (wApp (wRel 6) (wRel 1)) 
+                              (wRel 0) (wRel 2) (wRel 1)))))))).
+
+Eval lazy in (tsl_constant' TC [pvar 0; pvar 1] "Translation.Quotes.transport").
+
+Definition wtransport_type := wProd (nNamed "A") (wSort (pvar 0))
+         (wProd (nNamed "P") (wProd nAnon (wRel 0) (wSort (pvar 1)))
+            (wProd (nNamed "x") (wRel 1)
+               (wProd (nNamed "y") (wRel 2)
+                  (wProd (nNamed "p") (wEq (wRel 3) (wRel 1) (wRel 0))
+                     (wProd (nNamed "u") (wApp (wRel 3) (wRel 2))
+                        (wApp (wRel 4) (wRel 2))))))).
+
+(* Lemma heq_sort {Σ} : Σ ;;; [] |-w wtransport : wtransport_type. *)
+
+
+
+(* Eval hnf in (assoc_at "Translation.Quotes.heq_to_eq_fam" TC). *)
+
+(* Definition infer_type_cst (Σ : wglobal_context) TC cst := *)
+(*   match assoc_at cst TC with *)
+(*   | Some t  =>  *)
+(*     match wttinfer Σ [] t with *)
+(*     | Some t => t *)
+(*     | None => wRel 48 *)
+(*     end *)
+(*   | None => wRel 77 *)
 (*   end. *)
 
-(* Definition sHeq0 := *)
-(*   Eval compute in *)
-(*   match fullquote empty [pvar 0; pvar 0] qheq with *)
-(*   | Success t => t *)
-(*   | Error e => wRel 212 *)
+(* Program Definition try_enrich_Σ (Σ : wglobal_context) (wΣ : type_glob Σ) TC cst *)
+(*   : {Σ' & type_glob Σ'} := *)
+(*   match assoc_at cst TC with *)
+(*   | Some t  =>  *)
+(*     match wttinfer Σ [] t with *)
+(*     | Some typ => Specif.existT _ (Build_glob_decl cst typ :: Σ) _ *)
+(*     | None => Specif.existT _ Σ wΣ *)
+(*     end *)
+(*   | None => Specif.existT _ Σ wΣ *)
 (*   end. *)
+(* Next Obligation. *)
+(*   simple refine (let X := wttinfer_sound Σ [] t typ _ wΣ *)
+(*                  (wf_nil _) in _). *)
+(*   now symmetry. *)
+(*   econstructor. assumption. apply myadmit. *)
+(*   eapply istype_type; eassumption. *)
+(* Defined. *)
 
-(* Definition sHeq0_type := *)
-(*   Eval compute in *)
-(*   match wttinfer [] [] sHeq0 with *)
-(*   | Some t => t *)
-(*   | None => wRel 48 *)
-(*   end. *)
+Notation "'exists' x .. y , p" := (pp_sigT (fun x => .. (pp_sigT (fun y => p)) ..))
+  (at level 200, x binder, right associativity,
+   format "'[' 'exists'  '/  ' x  ..  y ,  '/  ' p ']'")
+  : type_scope.
 
-(* Definition type_sHeq0 := *)
-(*   wttinfer_sound [] [] sHeq0 sHeq0_type Logic.eq_refl type_glob_nil *)
-(*                  (wf_nil _). *)
+Program Definition try_tsl_cst (Σ : wglobal_context) (wΣ : type_glob Σ)
+                       (TC : assoc wterm) (cst : string)
+  : fq_result ((exists t A, Σ ;;; [] |-w t : A) * (exists Σ', type_glob Σ')) :=
+  match assoc_at cst TC with
+  | Some t  => 
+    match wttinfer Σ [] t with
+    | Success typ => Success (( t ; typ ; _) , (Build_glob_decl cst typ t :: Σ; _))
+    | Error e => Error (InferenceFailed cst e)
+    end
+  | None => Error (MsgError (cst ++ " not found in the tsl ctx"))
+  end.
+Next Obligation.
+  simple refine (wttinfer_sound Σ [] t typ _ wΣ (wf_nil _)).
+  now symmetry.
+Defined.
+Next Obligation.
+  simple refine (let X := wttinfer_sound Σ [] t typ _ wΣ
+                 (wf_nil _) in _).
+  now symmetry.
+  econstructor. assumption. apply myadmit.
+  cbn. eassumption.
+Defined.
 
-(* Definition sHeq A a B b s *)
-(*   := mkApps (instantiate_sorts (fun _ => s) sHeq0) [A; a; B; b]. *)
+Fixpoint TC_to_Σ (Σ : wglobal_context) (TC : assoc wterm) : wglobal_context :=
+  match TC with
+  | empty => Σ
+  | acons cst t TC =>
+    let Σ' := TC_to_Σ Σ TC in
+    match wttinfer Σ' [] t with
+    | Success typ => Build_glob_decl cst typ t :: Σ'
+    | Error _ => Σ'
+    end
+  end.
+
+(* Eval lazy in (TC_to_Σ [] TC). *)
+
+Definition wcoe :=
+  Eval lazy in (assoc_at "Translation.Quotes.coe" TC).
+Set Printing Universes.
+Eval compute in ((assoc_at "Translation.Quotes.coe" unknown_constants)).
+Eval lazy in (fullquote TC [pvar 12; pvar 13] (tLambda (nNamed "A") (tSort [(Level.Var 1, false)%core])
+            (tLambda (nNamed "B") (tSort [(Level.Var 0, false)%core])
+               (tLambda (nNamed "p")
+                  (tApp (tConst "Translation.Quotes.eq" [Level.Var 1])
+                     [tSort [(Level.Var 0, false)%core]; tRel 1; tRel 0])
+                  (tLambda (nNamed "x") (tRel 2)
+                     (tApp
+                        (tConst "Translation.Quotes.transport"
+                           [Level.Var 1; Level.Var 0])
+                        [tSort [(Level.Var 0, false)%core];
+                        tLambda (nNamed "T") (tSort [(Level.Var 0, false)%core])
+                          (tRel 0); tRel 3; tRel 2; tRel 1; 
+                        tRel 0])))))).
+Eval unfold coe, transport in @coe.
+Definition wcoe_type :=
+  Eval lazy in
+  match wcoe with
+  | Some t  => wttinfer (TC_to_Σ [] TC) [] t
+  | None => raise (Msg "you made a mistake!")
+  end.
+
+
+Eval compute in
+    (try_tsl_cst [] type_glob_nil TC "Translation.Quotes.transport").
+
+  let TC := tsl_constant TC [pvar 0; pvar 1] "Translation.Quotes.transport" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.coe" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.heq" in
+  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.Pack" in
+
+Definition sHeq0_type :=
+  Eval compute in
+  match assoc_at "Translation.Quotes.heq_to_eq_fam" TC with
+  | Some t  => 
+    match wttinfer [] [] t with
+    | Some t => t
+    | None => wRel 48
+    end.
+
+Definition type_sHeq0 :=
+  wttinfer_sound [] [] sHeq0 sHeq0_type Logic.eq_refl type_glob_nil
+                 (wf_nil _).
+
+Definition sHeq A a B b s
+  := mkApps (instantiate_sorts (fun _ => s) sHeq0) [A; a; B; b].
 
 Require Import Template.All.
 Definition get_level (T : Type) : TemplateMonad string := t <- tmQuote T ;;
