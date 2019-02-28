@@ -2,7 +2,7 @@
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega ROmega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import utils Typing.
+From Template Require Import utils Typing monad_utils.
 
 Set Primitive Projections.
 Open Scope type_scope.
@@ -452,3 +452,30 @@ Fixpoint assoc_at {A} (key : string) (t : assoc A) {struct t} : option A :=
   | empty => None
   | acons k a r => if string_dec key k then Some a else assoc_at key r
   end.
+
+
+(* Error monad *)
+Inductive result E A :=
+| Success : A -> result E A
+| Error : E -> result E A.
+
+Arguments Success {_ _} _.
+Arguments Error {_ _} _.
+
+Instance error_monad E : Monad (result E) :=
+  {| ret A a := Success a ;
+     bind A B m f :=
+       match m with
+       | Success a => f a
+       | Error e => Error e
+       end
+  |}.
+
+Instance monad_exc E : MonadExc E (result E) :=
+  { raise A e := Error e;
+    catch A m f :=
+      match m with
+      | Success a => m
+      | Error t => f t
+      end
+  }.

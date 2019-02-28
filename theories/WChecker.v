@@ -11,51 +11,55 @@ Section Checking.
 
 Context `{Sort_notion : Sorts.notion}.
 
-Definition getsort (T : wterm) : option sort :=
+Inductive i_error :=
+  | NotEqTerms (u v : wterm) | Msg (s : string).
+
+Definition i_result := result i_error.
+
+Definition getsort (T : wterm) : i_result sort :=
   match T with
   | wSort s => ret s
-  | _ => None
+  | _ => raise (Msg "get_sort")
   end.
 
-Definition getprod (T : wterm) : option (wterm * wterm) :=
+Definition getprod (T : wterm) : i_result (wterm * wterm) :=
   match T with
   | wProd n A B => ret (A,B)
-  | _ => None
+  | _ => raise (Msg "getprod")
   end.
 
-Definition getsum (T : wterm) : option (wterm * wterm) :=
+Definition getsum (T : wterm) : i_result (wterm * wterm) :=
   match T with
   | wSum n A B => ret (A,B)
-  | _ => None
+  | _ => raise (Msg "getsum")
   end.
 
-Definition geteq (T : wterm) : option (wterm * wterm * wterm) :=
+Definition geteq (T : wterm) : i_result (wterm * wterm * wterm) :=
   match T with
   | wEq A u v => ret (A,u,v)
-  | _ => None
+  | _ => raise (Msg "geteq")
   end.
 
-Definition gettransport (t : wterm) : option (wterm * wterm * wterm * wterm) :=
+Definition gettransport (t : wterm) : i_result (wterm * wterm * wterm * wterm) :=
   match t with
   | wTransport A B e t => ret (A,B,e,t)
-  | _ => None
+  | _ => raise (Msg "gettransport")
   end.
 
-Definition assert_true (b : bool) : option unit :=
-  if b then ret tt else None.
+Definition assert_eq (u v : wterm) : i_result unit :=
+  if eq_term u v then ret tt else raise (NotEqTerms u v).
 
-Definition assert_eq (u v : wterm) :=
-  assert_true (eq_term u v).
-
-Definition assert_eq_sort (s1 s2 : sort) : option unit :=
-  if Sorts.eq_dec s1 s2 then ret tt else None.
+Definition assert_eq_sort (s1 s2 : sort) : i_result unit :=
+  if Sorts.eq_dec s1 s2 then ret tt else raise (Msg "assert_eq_sort").
 
 Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
-  : option wterm :=
+  : i_result wterm :=
   match t with
   | wRel n =>
-     A <- nth_error Γ n ;;
-     ret (lift0 (S n) A)
+     match nth_error Γ n with
+     | Some A => ret (lift0 (S n) A)
+     | None => raise (Msg "unboud rel")
+     end
   | wSort s =>
     ret (wSort (succ s))
   | wProd n A B =>
@@ -148,9 +152,15 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     let '(A,B) := T in
     ret (wEq (wSum nAnon A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p)
   | wAx id =>
-    option_map dtype (lookup_glob Σ id)
+    match lookup_glob Σ id with
+    | Some d => ret (dtype d)
+    | None  => raise (Msg ("unknown constant: " ++ id))
+    end
   | wDelta id =>
-    option_map (fun d => wEq (dtype d) (wAx id) (dbody d)) (lookup_glob Σ id)
+    match lookup_glob Σ id with
+    | Some d => ret (wEq (dtype d) (wAx id) (dbody d))
+    | None  => raise (Msg ("unknown constant: " ++ id))
+    end
   end.
 
 Lemma type_Beta' :
@@ -170,7 +180,6 @@ Ltac deal_assert_eq :=
   match goal with
   | h : assert_eq ?t ?u = _ |- _ =>
     unfold assert_eq in h ;
-    unfold assert_true in h ;
     revert h ;
     case_eq (eq_term t u) ; try (intros ? h ; discriminate h) ;
     intros
@@ -267,7 +276,7 @@ Ltac rih :=
 
 Lemma wttinfer_sound :
   forall Σ Γ t A,
-    wttinfer Σ Γ t = Some A ->
+    wttinfer Σ Γ t = Success A ->
     type_glob Σ ->
     wf Σ Γ ->
     Σ ;;; Γ |-w t : A.
@@ -321,14 +330,6 @@ Proof.
   all: try solve [ constructor ].
   { cbn. auto with arith. }
   { cbn. auto with arith. }
-  - cbn in eq. remember (lookup_glob Σ id) as o; destruct o.
-    + inversion eq; subst. constructor. assumption.
-      symmetry; assumption.
-    + inversion eq.
-  - cbn in eq. remember (lookup_glob Σ id) as o; destruct o.
-    + cbn in eq. inversion eq; subst. constructor. assumption.
-      symmetry; assumption.
-    + inversion eq.
 Defined.
 
 Lemma nth_error_rename :
@@ -406,7 +407,7 @@ Ltac inv_nl :=
   end.
 
 Lemma assert_eq_sort_refl :
-  forall {s}, assert_eq_sort s s = Some tt.
+  forall {s}, assert_eq_sort s s = Success tt.
 Proof.
   intro s. unfold assert_eq_sort.
   destruct (eq_dec s s).
@@ -416,9 +417,9 @@ Defined.
 
 Lemma wttinfer_rename_ctx :
   forall {Σ Γ Δ t A},
-    wttinfer Σ Γ t = Some A ->
+    wttinfer Σ Γ t = Success A ->
     nlctx Γ = nlctx Δ ->
-    exists B, wttinfer Σ Δ t = Some B /\ nl A = nl B.
+    exists B, wttinfer Σ Δ t = Success B /\ nl A = nl B.
 Proof.
   intros Σ Γ Δ t A h eq. revert Γ Δ A h eq.
   induction t ; intros Γ Δ A h eq.
@@ -428,7 +429,6 @@ Proof.
     repeat (cbn_nl ; inv_nl) ;
     simpl ;
     unfold assert_eq ;
-    unfold assert_true ;
     rewrite ?assert_eq_sort_refl ;
     repeat (erewrite (proj2 eq_term_spec) ; [| shelve]) ;
     simpl ;
@@ -442,6 +442,10 @@ Proof.
       * reflexivity.
       * eapply nl_lift. assumption.
     + intros e h. discriminate h.
+  - simpl in h. simpl.
+    eexists. split.
+    + eassumption.
+    + reflexivity.
   - simpl in h. simpl.
     eexists. split.
     + eassumption.
@@ -491,7 +495,6 @@ Ltac co :=
   repeat inv_nl ;
   simpl ;
   unfold assert_eq ;
-  unfold assert_true ;
   rewrite ?assert_eq_sort_refl ;
   repeat (erewrite (proj2 eq_term_spec) ; [| shelve]) ;
   simpl ;
@@ -503,7 +506,7 @@ Ltac co :=
 Lemma wttinfer_complete :
   forall {Σ Γ t A},
     Σ ;;; Γ |-w t : A ->
-    exists B, wttinfer Σ Γ t = Some B /\ nl A = nl B.
+    exists B, wttinfer Σ Γ t = Success B /\ nl A = nl B.
 Proof.
   intros Σ Γ t A h.
   induction h.
@@ -521,7 +524,6 @@ Proof.
     repeat inv_nl.
     simpl.
     unfold assert_eq.
-    unfold assert_true.
     rewrite ?assert_eq_sort_refl.
     repeat (erewrite (proj2 eq_term_spec) ; [| shelve]).
     simpl.
@@ -547,7 +549,6 @@ Proof.
     repeat inv_nl.
     simpl.
     unfold assert_eq.
-    unfold assert_true.
     rewrite ?assert_eq_sort_refl.
     repeat (erewrite (proj2 eq_term_spec) ; [| shelve]).
     simpl.
