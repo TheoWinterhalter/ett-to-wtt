@@ -42,10 +42,10 @@ Defined.
 Inductive univ := sType (n : nat) | sProp.
 Local Instance fixed_sorts : notion := {|
   sort := univ ;
-  succ s := 
-    match s with 
+  succ s :=
+    match s with
     | sType n => sType (S n)
-    | sProp => sProp
+    | sProp => sType 0
     end ;
   prod_sort s1 s2 :=
     match s1, s2 with
@@ -71,8 +71,8 @@ Defined.
 Inductive twolevel := F (n : nat) | U (n : nat).
 Local Instance twolevel_sorts : notion := {|
   sort := twolevel ;
-  succ s := 
-    match s with 
+  succ s :=
+    match s with
     | U n => U (S n)
     | F n => F (S n)
     end ;
@@ -101,4 +101,3 @@ Proof.
   - intros s z e.
     destruct s, z ; inversion e ; eauto.
 Defined.
-
