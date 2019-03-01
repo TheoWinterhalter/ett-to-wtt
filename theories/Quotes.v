@@ -33,7 +33,7 @@ Definition inverse@{i} {A : Type@{i}} {x y : A} (p : x = y) : y = x
   := transport (fun x' => x' = x) p 1.
 
 Definition concat@{i} {A : Type@{i}} {x y z : A} (p : x = y) (q : y = z) : x = z
-  := transport (eq x) q (transport (fun y => x = y) p 1).
+  := transport (eq x) q p.
 
 Notation "p @ q" := (concat p q) (at level 20).
 Notation "p ^" := (inverse p) (at level 3, format "p '^'").

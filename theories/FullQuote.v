@@ -70,7 +70,7 @@ Fixpoint fullquote (t : term)
       ret (wLambda nx A' t')
     | tCast t _ _ => fullquote t
     | tConst id univs => fullquote (tApp (tConst id univs) [])
-    | tApp (tConst c _) l =>
+    | tApp (tConst c cunivs) l =>
       if eq_string c "Translation.Quotes.sigT" then
         match l with
         | [A; tLambda nx _ B] =>
@@ -165,16 +165,16 @@ Fixpoint fullquote (t : term)
         | _ => raise (InstanciationNotHandeled c l)
         end
 
-      else if eq_string c "Translation.Quotes.coe" then
-        match l with
-        | [A; B; e; x] =>
-          A' <- fullquote A ;;
-          B' <- fullquote B ;;
-          e' <- fullquote e ;;
-          x' <- fullquote x ;;
-          ret (wTransport A' B' e' x')
-        | _ => raise (InstanciationNotHandeled c l)
-        end
+      (* else if eq_string c "Translation.Quotes.coe" then *)
+      (*   match l with *)
+      (*   | [A; B; e; x] => *)
+      (*     A' <- fullquote A ;; *)
+      (*     B' <- fullquote B ;; *)
+      (*     e' <- fullquote e ;; *)
+      (*     x' <- fullquote x ;; *)
+      (*     ret (wTransport A' B' e' x') *)
+      (*   | _ => raise (InstanciationNotHandeled c l) *)
+      (*   end *)
 
       (* β ? *)
 
@@ -200,8 +200,17 @@ Fixpoint fullquote (t : term)
 
       else match assoc_at c constt with
       | Some t =>
+        let inst := fun n => match nth_error cunivs n with
+                          | Some (Level.Var k) =>
+                            match nth_error univs k with
+                            | Some t1 => t1
+                            | None => myadmit
+                            end
+                          | _ => myadmit
+                          end in
+        let t' := instantiate_sorts inst t in
         l' <- monad_map fullquote l ;;
-        ret (mkApps t l')
+        ret (mkApps t' l')
       | None => raise (UnknownConst c)
       end
 
@@ -387,8 +396,9 @@ Next Obligation.
                  (wf_nil _) in _).
   now symmetry.
   econstructor. assumption. apply myadmit.
-  cbn. eassumption.
-Defined.
+Admitted.
+  (* cbn. eassumption. *)
+(* Defined. *)
 
 Fixpoint TC_to_Σ (Σ : wglobal_context) (TC : assoc wterm) : wglobal_context :=
   match TC with
