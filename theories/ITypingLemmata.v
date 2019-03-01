@@ -1327,12 +1327,12 @@ Proof.
     + eapply type_App ; try eassumption.
       eapply type_Lambda ; eassumption.
     + eapply typing_subst ; eassumption.
-  - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H).
+  - eexists. apply type_Sort. apply (typing_wf H).
   - eexists. apply type_Eq ; eassumption.
-  - exists s. apply type_Heq ; assumption.
-  - exists s. apply type_Heq ; assumption.
-  - exists s. apply type_Heq ; assumption.
-  - exists s. apply type_Heq. all: try assumption.
+  - eexists. eapply type_Heq ; eassumption.
+  - eexists. eapply type_Heq ; eassumption.
+  - eexists. eapply type_Heq ; eassumption.
+  - eexists. apply type_Heq. all: try eassumption.
     eapply type_Transport ; eassumption.
   - eexists.
     apply type_Heq.
@@ -1345,10 +1345,10 @@ Proof.
     + apply type_Prod ; assumption.
     + eapply type_Lambda ; eassumption.
     + eapply type_Lambda ; eassumption.
-  - exists z. apply type_Heq.
-    + change (sSort z) with ((sSort z){ 0 := v1 }).
+  - eexists. apply type_Heq.
+    + lift_sort.
       eapply typing_subst ; eassumption.
-    + change (sSort z) with ((sSort z){ 0 := v2 }).
+    + lift_sort.
       eapply typing_subst ; eassumption.
     + eapply type_App ; eassumption.
     + eapply type_App ; eassumption.
@@ -1391,13 +1391,13 @@ Proof.
     + apply type_Eq ; assumption.
     + eapply type_Refl ; eassumption.
     + eapply type_Refl ; eassumption.
-  - exists s. apply type_Heq ; assumption.
+  - eexists. eapply type_Heq ; eassumption.
   - eexists. eapply type_Eq ; try assumption.
     apply type_Sort. apply (typing_wf H).
-  - exists (Sorts.succ s). apply type_Sort. apply (typing_wf H).
+  - eexists. apply type_Sort. apply (typing_wf H).
   - exists s. assumption.
   - exists s. assumption.
-  - exists s. apply type_Heq ; try assumption.
+  - eexists. apply type_Heq ; try eassumption.
     + eapply type_ProjT1 ; eassumption.
     + eapply @type_ProjT2 with (A1 := A1) ; eassumption.
   - destruct (typed_ax_type hg H0) as [s hh].

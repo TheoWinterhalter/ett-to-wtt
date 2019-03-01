@@ -11,6 +11,8 @@ Class notion := {
   prod_sort : sort -> sort -> sort ;
   sum_sort : sort -> sort -> sort ;
   eq_sort : sort -> sort ;
+  heq_sort : sort -> sort ;
+  pack_sort : sort -> sort ;
   eq_dec : forall s z : sort, {s = z} + {s <> z} ;
   succ_inj : forall s z, succ s = succ z -> s = z
 }.
@@ -21,6 +23,8 @@ Local Instance nat_sorts : notion := {|
   prod_sort := Nat.max ;
   sum_sort := Nat.max ;
   eq_sort s := s ;
+  heq_sort s := S s ;
+  pack_sort s := s ;
   eq_dec := Nat.eq_dec
 |}.
 Proof.
@@ -32,7 +36,9 @@ Local Instance type_in_type : notion := {|
   succ u := u ;
   prod_sort u v := tt ;
   sum_sort u v := tt ;
-  eq_sort s := tt
+  eq_sort s := tt ;
+  heq_sort s := tt ;
+  pack_sort s := tt
 |}.
 Proof.
   - intros [] []. left. reflexivity.
@@ -60,7 +66,17 @@ Local Instance fixed_sorts : notion := {|
     | sProp, sType n => sType n
     | sProp, sProp => sProp
     end ;
-  eq_sort s := s
+  eq_sort s := s ;
+  heq_sort s :=
+    match s with
+    | sType n => sType (S n)
+    | sProp => sType 0
+    end ;
+  pack_sort s :=
+    match s with
+    | sType n => sType (S n)
+    | sProp => sType 0
+    end
 |}.
 Proof.
   - intros s z. decide equality. decide equality.
@@ -94,6 +110,16 @@ Local Instance twolevel_sorts : notion := {|
     match s with
     | U n => U n
     | F n => U n
+    end ;
+  heq_sort s :=
+    match s with
+    | U n => U (S n)
+    | F n => U (S n)
+    end ;
+  pack_sort s :=
+    match s with
+    | U n => U (S n)
+    | F n => U (S n)
     end
 |}.
 Proof.

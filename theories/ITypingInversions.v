@@ -221,7 +221,7 @@ Lemma inversionHeq :
       (Σ ;;; Γ |-i B : sSort s) /\
       (Σ ;;; Γ |-i a : A) /\
       (Σ ;;; Γ |-i b : B) /\
-      (nl (sSort s) = nl T).
+      (nl (sSort (heq_sort s)) = nl T).
 Proof.
   invtac.
 Defined.
@@ -232,7 +232,7 @@ Lemma inversionPack :
     exists s,
       (Σ ;;; Γ |-i A1 : sSort s) /\
       (Σ ;;; Γ |-i A2 : sSort s) /\
-      (nl (sSort s) = nl T).
+      (nl (sSort (pack_sort s)) = nl T).
 Proof.
   invtac.
 Defined.

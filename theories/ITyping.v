@@ -106,7 +106,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
     Σ ;;; Γ |-i B : sSort s ->
     Σ ;;; Γ |-i a : A ->
     Σ ;;; Γ |-i b : B ->
-    Σ ;;; Γ |-i sHeq A a B b : sSort s
+    Σ ;;; Γ |-i sHeq A a B b : sSort (heq_sort s)
 
 | type_HeqToEq Γ A u v p s :
     Σ ;;; Γ |-i p : sHeq A u A v ->
@@ -303,7 +303,7 @@ Inductive typing (Σ : sglobal_context) : scontext -> sterm -> sterm -> Prop :=
 | type_Pack Γ A1 A2 s :
     Σ ;;; Γ |-i A1 : sSort s ->
     Σ ;;; Γ |-i A2 : sSort s ->
-    Σ ;;; Γ |-i sPack A1 A2 : sSort s
+    Σ ;;; Γ |-i sPack A1 A2 : sSort (pack_sort s)
 
 | type_ProjT1 Γ A1 A2 p s :
     Σ ;;; Γ |-i p : sPack A1 A2 ->

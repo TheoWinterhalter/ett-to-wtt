@@ -593,6 +593,8 @@ Inductive psort :=
 | pprod_sort (s1 s2 : psort)
 | psum_sort (s1 s2 : psort)
 | peq_sort (s : psort)
+| pheq_sort (s : psort)
+| ppack_sort (s : psort)
 .
 
 Instance psort_notion : Sorts.notion := {|
@@ -600,6 +602,8 @@ Instance psort_notion : Sorts.notion := {|
   succ := psucc ;
   prod_sort := pprod_sort ;
   sum_sort := psum_sort ;
+  heq_sort := pheq_sort ;
+  pack_sort := ppack_sort ;
   eq_sort := peq_sort
 |}.
 Proof.
@@ -620,6 +624,8 @@ Fixpoint instantiate_sort `{ S : Sorts.notion }
   | psum_sort s1 s2 =>
     sum_sort (instantiate_sort inst s1) (instantiate_sort inst s2)
   | peq_sort s => eq_sort (instantiate_sort inst s)
+  | pheq_sort s => heq_sort (instantiate_sort inst s)
+  | ppack_sort s => pack_sort (instantiate_sort inst s)
   end.
 
 Definition instantiate_sorts `{ S : Sorts.notion }
