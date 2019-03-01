@@ -60,7 +60,7 @@ Fixpoint tsl (t : sterm) : wterm :=
 Fixpoint tsl_glob (Σ : sglobal_context) : wglobal_context :=
   match Σ with
   | d :: Σ =>
-    {| dname := d.(SCommon.dname) ; dtype := tsl d.(SCommon.dtype) |}
+    {| dname := d.(SCommon.dname) ; dtype := tsl d.(SCommon.dtype) ; dbody := ?? |}
     :: tsl_glob Σ
   | nil => nil
   end.
