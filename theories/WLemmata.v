@@ -2,7 +2,7 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import Ast utils Typing.
 From Translation
-Require Import util WAst WLiftSubst WTyping WEquality.
+Require Import util WAst WLiftSubst WTyping WTypingInversions WEquality.
 
 Section Lemmata.
 
@@ -959,73 +959,6 @@ Proof.
     + assumption.
   - assumption.
   - cbn. assumption.
-Defined.
-
-Lemma inversion_Prod :
-  forall {Σ Γ n A B T},
-    Σ ;;; Γ |-w wProd n A B : T ->
-    exists s1 s2,
-      Σ ;;; Γ |-w A : wSort s1 /\
-      Σ ;;; Γ,, A |-w B : wSort s2 /\
-      nl T = nlSort (Sorts.prod_sort s1 s2).
-Proof.
-  intros Σ Γ n A B T h.
-  dependent induction h.
-  - do 2 eexists. repeat split ; eassumption.
-  - destruct IHh as [s1 [s2 [? [? ?]]]].
-    do 2 eexists. repeat split ; try eassumption.
-    transitivity (nl A) ; eauto.
-Defined.
-
-Lemma inversion_Sum :
-  forall {Σ Γ n A B T},
-    Σ ;;; Γ |-w wSum n A B : T ->
-    exists s1 s2,
-      Σ ;;; Γ |-w A : wSort s1 /\
-      Σ ;;; Γ,, A |-w B : wSort s2 /\
-      nl T = nlSort (Sorts.sum_sort s1 s2).
-Proof.
-  intros Σ Γ n A B T h.
-  dependent induction h.
-  - do 2 eexists. repeat split ; eassumption.
-  - destruct IHh as [s1 [s2 [? [? ?]]]].
-    do 2 eexists. repeat split ; try eassumption.
-    transitivity (nl A) ; eauto.
-Defined.
-
-Lemma inversion_Eq :
-  forall {Σ Γ A u v T},
-    Σ ;;; Γ |-w wEq A u v : T ->
-    exists s,
-      Σ ;;; Γ |-w A : wSort s /\
-      Σ ;;; Γ |-w u : A /\
-      Σ ;;; Γ |-w v : A /\
-      nl T = nlSort (Sorts.eq_sort s).
-Proof.
-  intros Σ Γ A u v T h.
-  dependent induction h.
-  - eexists. repeat split ; eassumption.
-  - destruct IHh as [? [? [? [? ?]]]].
-    eexists. repeat split ; try eassumption.
-    transitivity (nl A) ; eauto.
-Defined.
-
-Lemma inversion_Transport :
-  forall {Σ Γ A B p t T},
-    Σ ;;; Γ |-w wTransport A B p t : T ->
-    exists s,
-      Σ ;;; Γ |-w A : wSort s /\
-      Σ ;;; Γ |-w B : wSort s /\
-      Σ ;;; Γ |-w p : wEq (wSort s) A B /\
-      Σ ;;; Γ |-w t : A /\
-      nl T = nl B.
-Proof.
-  intros Σ Γ A B p t T h.
-  dependent induction h.
-  - eexists. repeat split ; eassumption.
-  - destruct IHh as [? [? [? [? [? ?]]]]].
-    eexists. repeat split ; try eassumption.
-    transitivity (nl A) ; eauto.
 Defined.
 
 Ltac lift_sort :=

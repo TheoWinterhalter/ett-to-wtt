@@ -22,10 +22,12 @@ theories/WAst.v
 theories/WLiftSubst.v
 theories/WTyping.v
 theories/WEquality.v
+theories/WTypingInversions.v
 theories/WLemmata.v
 theories/WChecker.v
 
 theories/Quotes.v
+theories/Manual.v
 theories/FullQuote.v
 
 theories/ItoW.v
