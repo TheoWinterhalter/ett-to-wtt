@@ -3,10 +3,15 @@
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Template
 Require Import Ast utils monad_utils Typing Checker.
+From Equations Require Import Equations DepElimDec.
 From Translation
-Require Import util Sorts WAst WLiftSubst WTyping WChecker WLemmata Quotes.
+Require Import util Sorts WAst WEquality WLiftSubst WTyping WTypingInversions WChecker WLemmata Quotes.
 From TypingFlags Require Import Loader.
 Import MonadNotation ListNotations.
+
+Notation "⇑ t" := (lift 1 0 t) (at level 3, format "'⇑' t").
+Notation "A ↦ B" := (wProd nAnon A (↑ B)) (at level 30, right associativity).
+
 
 Ltac gitt_as H XX :=
   simple refine (let XX := istype_type _ H in _);
@@ -23,11 +28,12 @@ Ltac inverse H :=
     let XX := fresh "H" in
     gitt_as H XX;
     eapply inversion_Eq in XX;
-    let X1 := fresh "H" in
-    let X2 := fresh "H" in
-    let X3 := fresh "H" in
-    let s := fresh "s" in
-    destruct XX as [s [X1 [X2 [X3 _]]]]
+    destruct XX as [?s [?H [?H [?H _]]]]
+  | _ ;;; _ |-w _ : wProd _ _ _ =>
+    let XX := fresh "H" in
+    gitt_as H XX;
+    eapply inversion_Prod in XX;
+    destruct XX as [?s [?s [?H [?H _]]]]
   end.
 
 
@@ -111,6 +117,28 @@ Section Admissibles1.
     intros Hu HP Hw. gitt Hu.
     econstructor; eassumption.
   Defined.
+
+
+Open Scope w_scope.
+(* todo reuse existing notation *)
+Notation " Γ  ,,, Γ' " :=
+  (wapp_context Γ Γ')
+    (at level 25, Γ' at next level, left associativity) : w_scope.
+Definition inversion_lift {Γ Δ Ξ t A} :
+  Σ ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ |-w lift #|Δ| #|Ξ| t : lift #|Δ| #|Ξ| A
+  -> Σ ;;; Γ ,,, Ξ |-w t : A.
+Proof.
+Admitted.
+
+Corollary inversion_lift01 :
+  forall {Γ t A B},
+    Σ ;;; Γ ,, B |-w lift0 1 t : lift0 1 A ->
+    Σ ;;; Γ |-w t : A.
+Proof.
+  intros Γ t A B H. 
+  apply (@inversion_lift _ [ B ] nil). eassumption.
+Defined.
+
 End Admissibles1.
 
 Definition type_glob_cons {S : notion} Σ d :
@@ -132,8 +160,8 @@ Ltac ittintro :=
     | wRel ?n => refine (type_Rel _ _ n _ _)
     | wSort _ => eapply type_Sort
     | wProd _ _ _ => eapply type_Prod
-    | wLambda _ _ _ _ => eapply type_Lambda
-    | wApp _ _ _ _ => eapply type_App
+    | wLambda _ _ _ => eapply type_Lambda
+    | wApp _ _ => eapply type_App
     | wSum _ _ _ => eapply type_Sum
     | wPair _ _ _ _ => eapply type_Pair
     | wPi1 _ _ _ => eapply type_Pi1
@@ -171,11 +199,14 @@ Ltac ittcheck1 :=
     | |- _ => ittintro
     | |- _ => eapply meta_conv; [ittintro| try reflexivity]
     | |- ?Σ ;;; ?Γ |-w ↑ ?t : ?T => eapply meta_conv; [eapply typing_lift01|]
+    | |- ?Σ ;;; ?Γ |-w lift0 2 ?t : ?T => eapply meta_conv; [eapply typing_lift02|]
+    | |- ?Σ ;;; ?Γ |-w lift0 3 ?t : ?T => eapply meta_conv; [eapply typing_lift03|]
+    | |- ?Σ ;;; ?Γ |-w lift0 4 ?t : ?T => eapply meta_conv; [eapply typing_lift04|]
     | HH : ?Σ ;;; ?Γ |-w ?t : _ |- _ ;;; _ |-w ?t : _ =>
       eapply meta_conv; [eapply HH|]
     end
   | |- wf ?Σ ?Γ => first [ assumption | econstructor ]
-  | |- _ = _ => first [ reflexivity | now rewrite !lift_lift (* wrong if evars *) | shelve ]
+  | |- _ = _ => first [ simpl; reflexivity | now rewrite !lift_lift (* wrong if evars *) | shelve ]
   | |- type_glob _ => first [ assumption | glob ]
   | _ => fail "Not applicable"
   end.
@@ -234,6 +265,13 @@ Proof.
   all: cbn; now rewrite lift00.
 Defined.
 
+Definition lift_coe s A B p x n k
+  : lift n k (wcoe s A B p x)
+    = wcoe s (lift n k A) (lift n k B) (lift n k p) (lift n k x).
+Proof.
+  reflexivity.
+Defined.
+
 Definition subst_coe s A B p x n t
   : (wcoe s A B p x){n := t}
     = wcoe s (A{n := t}) (B{n := t}) (p{n := t}) (x{n := t}).
@@ -253,16 +291,28 @@ Definition wHeq s A a B b :=
   wSum (nNamed "e") (wEq (wSort s) A B)
        (wEq (↑ B) (wcoe s (↑ A) (↑ B) (wRel 0) (↑ a)) (↑ b)).
 
+Notation "'heq_sort' s" :=
+  (sum_sort (eq_sort (succ s)) (eq_sort s)) (at level 30).
+
 Definition type_heq Γ s A a B b :
       wf Σ Γ ->
       Σ ;;; Γ |-w A : wSort s ->
       Σ ;;; Γ |-w B : wSort s ->
       Σ ;;; Γ |-w a : A ->
       Σ ;;; Γ |-w b : B ->
-      Σ ;;; Γ |-w wHeq s A a B b : wSort (sum_sort (eq_sort (succ s)) (eq_sort s)).
+      Σ ;;; Γ |-w wHeq s A a B b : wSort (heq_sort s).
 Proof.
   intros HΓ HA HB Ha Hb; unfold wHeq.
   ittcheck.
+Defined.
+
+Definition lift_heq s A a B b n k
+  : lift n k (wHeq s A a B b)
+    = wHeq s (lift n k A) (lift n k a) (lift n k B) (lift n k b).
+Proof.
+  unfold wHeq; cbn -[wcoe].
+  rewrite lift_coe.
+  rewrite !(liftP2 _ 0 1) by omega. reflexivity.
 Defined.
 
 Definition subst_heq s A a B b n t
@@ -274,13 +324,119 @@ Proof.
   rewrite subst_coe. reflexivity.
 Defined.
 
+
+Lemma inversion_Heq :
+  forall {Γ A B a b T s},
+    Σ ;;; Γ |-w wHeq s A a B b : T ->
+      Σ ;;; Γ |-w A : wSort s /\
+      Σ ;;; Γ |-w a : A /\
+      Σ ;;; Γ |-w B : wSort s /\
+      Σ ;;; Γ |-w b : B /\
+      nl T = nlSort (heq_sort s).
+Proof.
+  intros Γ A B a b T s H. unfold wHeq in H.
+  eapply inversion_Sum in H. destruct H as [s1 [s2 [H1 [H2 eq]]]].
+  eapply inversion_Eq in H1. destruct H1 as [s' [H1 [H1' [H1'' eq']]]].
+  eapply inversion_Eq in H2. destruct H2 as [s'' [H2 [H2' [H2'' eq'']]]].
+  cbn in *. inversion eq'; inversion eq''; subst.
+  unfold wcoe, wtransport in H2'.
+  eapply inversionJ in H2'.
+  destruct H2' as [s1 [s2 [H3 [H3' [H3'' [H33 [H34 [H35 eq3]]]]]]]].
+  repeat split ; try eassumption.
+  - clear - H35 HΣ. cbn in H35. rewrite substP3, lift00 in H35 by omega.
+    eapply inversion_lift01; eassumption.
+  - eapply inversion_lift01; eassumption.
+  - etransitivity. eassumption.
+    admit.
+Admitted.
+
+Ltac inverse H ::=
+  lazymatch type of H with
+  | _ ;;; _ |-w _ : wEq _ _ _ =>
+    let XX := fresh "H" in
+    gitt_as H XX;
+    eapply inversion_Eq in XX;
+    destruct XX as [?s [?H [?H [?H _]]]]
+  | _ ;;; _ |-w _ : wProd _ _ _ =>
+    let XX := fresh "H" in
+    gitt_as H XX;
+    eapply inversion_Prod in XX;
+    destruct XX as [?s [?s [?H [?H _]]]]
+  | _ ;;; _ |-w _ : wHeq _ _ _ _ _ =>
+    let XX := fresh "H" in
+    gitt_as H XX;
+    eapply inversion_Heq in XX;
+    destruct XX as [?H [?H [?H [?H _]]]]
+  end.
+
+Definition wHeqPi1 s A a B b p :=
+  wPi1 (wEq (wSort s) A B) (wEq (↑ B) (wcoe s (↑ A) (↑ B) (wRel 0) (↑ a)) (↑ b)) p.
+
+Definition type_HeqPi1 Γ A a B b p s :
+    Σ ;;; Γ |-w p : wHeq s A a B b ->
+    Σ ;;; Γ |-w wHeqPi1 s A a B b p : wEq (wSort s) A B.
+Proof.
+  intros H. unfold wHeqPi1, wHeq in *. ittcheck.
+Defined.
+
+Definition lift_HeqPi1 A a B b p s n k :
+  lift n k (wHeqPi1 s A a B b p)
+  = wHeqPi1 s (lift n k A) (lift n k a) (lift n k B) (lift n k b) (lift n k p).
+Proof.
+  cbn.
+  rewrite !(liftP2 _ 0 1) by omega. reflexivity.
+Defined.
+
+Definition subst_HeqPi1 A a B b p s n t :
+  (wHeqPi1 s A a B b p){n := t}
+  = wHeqPi1 s (A{n := t}) (a{n := t}) (B{n := t}) (b{n := t}) (p{n := t}).
+Proof.
+  cbn. rewrite !(substP2 _ _ 0 1) by omega. reflexivity.
+Defined.
+
+Definition wHeqPi2 s A a B b p :=
+  wPi2 (wEq (wSort s) A B) (wEq (↑ B) (wcoe s (↑ A) (↑ B) (wRel 0) (↑ a)) (↑ b)) p.
+
+Definition type_HeqPi2 Γ A a B b p s :
+    Σ ;;; Γ |-w p : wHeq s A a B b ->
+    Σ ;;; Γ |-w wHeqPi2 s A a B b p : wEq B (wcoe s A B (wHeqPi1 s A a B b p) a) b.
+Proof.
+  intros H. unfold wHeqPi1, wHeqPi2, wHeq in *. ittcheck.
+  Unshelve.
+  cbn; substP3.
+Defined.
+
+Definition wHeqPair s A a B b p q :=
+  wPair (wEq (wSort s) A B) (wEq (↑ B) (wcoe s (↑ A) (↑ B) (wRel 0) (↑ a)) (↑ b))
+        p q.
+
+Definition type_HeqPair Γ A a B b p q s :
+    wf Σ Γ ->
+    Σ ;;; Γ |-w p : wEq (wSort s) A B ->
+    Σ ;;; Γ |-w q : wEq B (wcoe s A B p a ) b ->
+    Σ ;;; Γ |-w wHeqPair s A a B b p q : wHeq s A a B b.
+Proof.
+  intros HΓ H H0.
+  inverse H. inverse H0.
+  unfold wHeqPair, wHeq in *. ittcheck.
+  eapply inversionJ in H5.
+  destruct H5 as [?s1 [?s2 [?H3 [H3' [H3'' [H33 [H34 [H35 eq3]]]]]]]].
+  clear - H35. cbn in H35; now rewrite substP3, lift00 in H35 by omega.
+  Unshelve. cbn; substP3.
+Qed.
+
+Opaque wHeq wcoe wtransport wHeqPi1 wHeqPi2 wHeqPair.
 Ltac other_ittintro t ::=
   lazymatch t with
   | wtransport _ _ _ _ _ _ => eapply type_transport
   | wcoe _ _ _ _ _ => eapply type_coe
   | wHeq _ _ _ _ _ => eapply type_heq
+  | wHeqPi1 _ _ _ _ _ _ => eapply type_HeqPi1
+  | wHeqPi2 _ _ _ _ _ _ => eapply type_HeqPi2
+  | wHeqPair _ _ _ _ _ _ _ => eapply type_HeqPair
   | _ => fail "No introduction rule for" t
   end.
+
 
 
 Notation "'pack_sort' s" :=
@@ -298,6 +454,29 @@ Proof.
   intros HΓ HA1 HA2; unfold wPack.
   ittcheck.
 Defined.
+
+
+Definition wpack s A1 A2 u1 u2 p :=
+  wPair A1 (wSum (nNamed "x2") (↑ A2) (wHeq s (↑ (↑ A1)) (wRel 1) (↑ (↑ A2)) (wRel 0))) u1 (wPair A2 (wHeq s (↑ A1) (↑ u1) (↑ A2) (wRel 0)) u2 p).
+
+Definition type_pack Γ s A1 A2 u1 u2 p :
+    wf Σ Γ ->
+    Σ ;;; Γ |-w u1 : A1 ->
+    Σ ;;; Γ |-w u2 : A2 ->
+    Σ ;;; Γ |-w p : wHeq s A1 u1 A2 u2 ->
+    Σ ;;; Γ |-w wpack s A1 A2 u1 u2 p : wPack s A1 A2.
+(* Proof with try assumption. *)
+(*   intros H H0 H1 H2.  eexists. inverse H2. *)
+(*   eapply type_Pair... eassumption. *)
+(*   ittcheck. cbn. rewrite !lift_lift, subst_heq. substP3; cbn. *)
+(*   eapply type_Pair... eassumption. ittcheck. *)
+(*   rewrite subst_heq. substP3; cbn. rewrite lift00. eassumption. *)
+(* Defined. *)
+Proof.
+  intros H H0 H1 H2; unfold wpack. inverse H2. ittcheck.
+  Unshelve. shelve.
+  all: cbn; rewrite subst_heq, ?lift_lift; cbn; substP3.
+Qed.
 
 
 Definition wProjT1 s A1 A2 p :=
@@ -326,8 +505,8 @@ Definition type_ProjT2 Γ s A1 A2 p :
 Proof.
   intros H H0 H1; unfold wProjT2; ittcheck. 
   Unshelve. shelve.
-  cbn -[wHeq]. substP3.
-  rewrite subst_heq. cbn -[wHeq].
+  cbn; substP3.
+  rewrite subst_heq. cbn.
   rewrite !lift_lift.
   substP3.
 Defined.
@@ -346,26 +525,30 @@ Definition type_ProjTe Γ s A1 A2 p :
 Proof.
   intros H H0 H1; unfold wProjTe; ittcheck. 
   Unshelve. shelve.
-  - cbn -[wHeq]. substP3.
-    rewrite subst_heq. cbn -[wHeq].
+  - cbn. substP3.
+    rewrite subst_heq. cbn.
     rewrite !lift_lift. substP3.
   - rewrite subst_heq. substP3. apply f_equal.
-    cbn -[wHeq]. rewrite !lift00; reflexivity.
+    cbn. rewrite !lift00; reflexivity.
 Defined.
 
+Opaque wPack wpack wProjT1 wProjT2 wProjTe.
 Ltac other_ittintro t ::=
   lazymatch t with
   | wtransport _ _ _ _ _ _ => eapply type_transport
   | wcoe _ _ _ _ _ => eapply type_coe
   | wHeq _ _ _ _ _ => eapply type_heq
+  | wHeqPi1 _ _ _ _ _ _ => eapply type_HeqPi1
+  | wHeqPi2 _ _ _ _ _ _ => eapply type_HeqPi2
+  | wHeqPair _ _ _ _ _ _ _ => eapply type_HeqPair
   | wPack _ _ _ => eapply type_Pack
+  | wpack _ _ _ _ _ _ => eapply type_pack
   | wProjT1 _ _ _ _ => eapply type_ProjT1
   | wProjT2 _ _ _ _ => eapply type_ProjT2
   | wProjTe _ _ _ _ => eapply type_ProjTe
   | _ => fail "No introduction rule for" t
   end.
 
-Set Printing Implicit.
 
 Definition wconcat A x y z p q
   := wtransport A (wEq (↑ A) (↑ x) (wRel 0)) y z q p.
@@ -395,6 +578,32 @@ Proof.
   Unshelve. all: cbn; substP3.
 Defined.
 
+Definition wap A B f x y p :=
+  wtransport A (wEq ⇑B (wApp ⇑f ⇑x) (wApp ⇑f (wRel 0))) x y p (wRefl B (wApp f x)).
+
+Definition type_ap Γ A B f x y p :
+      wf Σ Γ ->
+      Σ ;;; Γ |-w f : A ↦ B ->
+      Σ ;;; Γ |-w p : wEq A x y ->
+      Σ ;;; Γ |-w wap A B f x y p : wEq B (wApp f x) (wApp f y).
+(* Proof with try assumption. *)
+(*   intros HΓ Hf Hp; unfold winverse. eexists. *)
+(*   inverse Hp. inverse Hf. *)
+(*   eapply meta_conv. *)
+(*   eapply type_transport with (P:=wEq ⇑B (wApp ⇑f ⇑x) (wApp ⇑f (wRel 0)))... *)
+(*   2: eassumption. *)
+(*   ittcheck. *)
+(*   all: cbn; substP3. eapply type_Refl; ittcheck. *)
+(*   Unshelve. *)
+(*   all: rewrite ?liftP3 by omega; substP3. *)
+(* Defined. *)
+Proof.
+  intros H H0 H1; unfold wap. inverse H0. inverse H1.
+  ittcheck.
+  Unshelve.
+  all: cbn; rewrite ?liftP3 by omega; substP3.
+Qed.
+
 
 Definition wcoeβ A t :=
   wJBeta A (wRel 1) t.
@@ -410,18 +619,207 @@ Proof.
   Unshelve. all: cbn; substP3.
 Defined.
 
-Definition wcoeβ' A t :=
+Ltac other_ittintro t ::=
+  lazymatch t with
+  | wtransport _ _ _ _ _ _ => eapply type_transport
+  | wcoe _ _ _ _ _ => eapply type_coe
+  | wHeq _ _ _ _ _ => eapply type_heq
+  | wHeqPi1 _ _ _ _ _ _ => eapply type_HeqPi1
+  | wHeqPi2 _ _ _ _ _ _ => eapply type_HeqPi2
+  | wHeqPair _ _ _ _ _ _ _ => eapply type_HeqPair
+  | wPack _ _ _ => eapply type_Pack
+  | wpack _ _ _ _ _ _ => eapply type_pack
+  | wProjT1 _ _ _ _ => eapply type_ProjT1
+  | wProjT2 _ _ _ _ => eapply type_ProjT2
+  | wProjTe _ _ _ _ => eapply type_ProjTe
+  | winverse _ _ _ _ => eapply type_inverse
+  | wconcat _ _ _ _ _ _ => eapply type_concat
+  | wap _ _ _ _ _ _ => eapply type_ap
+  | wcoeβ _ _ => eapply type_coeβ
+  | _ => fail "No introduction rule for" t
+  end.
 
+Definition wcoeβ' s A e t :=
+  wconcat A (wcoe s A A e t) (wcoe s A A (wRefl (wSort s) A) t) t (wtransport (wEq (wSort s) A A) (wEq (↑ A) (wcoe s (↑ A) (↑ A) (↑ e) (↑ t)) (wcoe s (↑ A) (↑ A) (wRel 0) (↑ t))) e (wRefl (wSort s) A) (wK (wSort s) A e) (wRefl A (wcoe s A A e t))) (wcoeβ A t).
 
-Definition  type_coeβ' Γ s A t :
+Definition  type_coeβ' Γ s A e t :
     wf Σ Γ ->
     Σ ;;; Γ |-w A : wSort s ->
+    Σ ;;; Γ |-w e : wEq (wSort s) A A ->
     Σ ;;; Γ |-w t : A ->
-    Σ ;;; Γ |-w wcoeβ A t
-             : wEq A (wcoe s A A (wRefl (wSort s) A) t) t.
+    Σ ;;; Γ |-w wcoeβ' s A e t : wEq A (wcoe s A A e t) t.
 Proof.
-  intros H H0 H1; unfold wcoeβ. ittcheck.
+  intros H H0 H1 H2. unfold wcoeβ'. ittcheck.
   Unshelve.
-  cbn; now rewrite substP3, lift00 by omega.
-  cbn; now rewrite substP3, lift00 by omega.
+  cbn. rewrite !subst_coe. cbn. substP3.
+  cbn. rewrite !subst_coe. cbn. substP3.
 Defined.
+
+Opaque winverse wconcat wap wcoeβ wcoeβ'.
+Ltac other_ittintro t ::=
+  lazymatch t with
+  | wtransport _ _ _ _ _ _ => eapply type_transport
+  | wcoe _ _ _ _ _ => eapply type_coe
+  | wHeq _ _ _ _ _ => eapply type_heq
+  | wHeqPi1 _ _ _ _ _ _ => eapply type_HeqPi1
+  | wHeqPi2 _ _ _ _ _ _ => eapply type_HeqPi2
+  | wHeqPair _ _ _ _ _ _ _ => eapply type_HeqPair
+  | wPack _ _ _ => eapply type_Pack
+  | wpack _ _ _ _ _ _ => eapply type_pack
+  | wProjT1 _ _ _ _ => eapply type_ProjT1
+  | wProjT2 _ _ _ _ => eapply type_ProjT2
+  | wProjTe _ _ _ _ => eapply type_ProjTe
+  | winverse _ _ _ _ => eapply type_inverse
+  | wconcat _ _ _ _ _ _ => eapply type_concat
+  | wap _ _ _ _ _ _ => eapply type_ap
+  | wcoeβ _ _ => eapply type_coeβ
+  | wcoeβ' _ _ _ _ => eapply type_coeβ'
+  | _ => fail "No introduction rule for" t
+  end.
+
+
+
+(* Definition type_HeqToEq Γ A u v p s : *)
+(*     wf Σ Γ -> *)
+(*     Σ ;;; Γ |-w p : wHeq s A u A v -> *)
+(* exists wHeqToEq, *)
+(*     Σ ;;; Γ |-w wHeqToEq : wEq A u v. *)
+(* Proof. *)
+(*   intros H H0. eexists. inverse H0. *)
+(*   eapply type_concat. assumption. *)
+(*   2: eapply type_HeqPi2; eassumption. *)
+(*   eapply type_inverse. assumption. *)
+(*   eapply type_coeβ'; ittcheck. *)
+(* Qed. *)
+
+Definition wHeqToEq A u v p s :=
+  wconcat A u (wcoe s A A (wHeqPi1 s A u A v p) u) v
+          (winverse A (wcoe s A A (wHeqPi1 s A u A v p) u) u
+                    (wcoeβ' s A (wHeqPi1 s A u A v p) u)) (wHeqPi2 s A u A v p).
+
+Definition type_HeqToEq Γ A u v p s :
+    wf Σ Γ ->
+    Σ ;;; Γ |-w p : wHeq s A u A v ->
+    Σ ;;; Γ |-w wHeqToEq A u v p s : wEq A u v.
+Proof.
+  intros H H0. inverse H0.
+  unfold wHeqToEq; ittcheck.
+Qed.
+
+
+Definition wEqToHeq s A u v p :=
+  wHeqPair s A u A v (wRefl (wSort s) A)
+           (wconcat A (wcoe s A A (wRefl (wSort s) A) u) u v (wcoeβ A u) p).
+
+Definition type_EqToHeq Γ A u v p s :
+    wf Σ Γ ->
+    Σ ;;; Γ |-w A : wSort s ->
+    Σ ;;; Γ |-w p : wEq A u v ->
+    Σ ;;; Γ |-w wEqToHeq s A u v p : wHeq s A u A v.
+Proof.
+  intros H H0 H1; unfold wEqToHeq. inverse H1. ittcheck.
+Qed.
+(* Proof with try assumption. *)
+(*   intros H H0 H1. eexists. inverse H1. *)
+(*   eapply type_HeqPair... eapply type_Refl... *)
+(*   eapply type_concat... eapply type_coeβ... *)
+(*   eassumption. *)
+(* Qed. *)
+
+
+Definition wHeqRefl s A a := wEqToHeq s A a a (wRefl A a).
+
+Definition type_HeqRefl Γ A a s :
+    wf Σ Γ ->
+    Σ ;;; Γ |-w A : wSort s ->
+    Σ ;;; Γ |-w a : A ->
+    Σ ;;; Γ |-w wHeqRefl s A a : wHeq s A a A a.
+Proof.
+  intros H H0 H1; unfold wHeqRefl; eapply type_EqToHeq; ittcheck.
+Qed.
+
+
+Definition type_HeqSym0 Γ A a B b p s :
+    wf Σ Γ ->
+    Σ ;;; Γ |-w p : wHeq s A a B b ->
+                   exists wHeqSym,
+    Σ ;;; Γ |-w wHeqSym : wHeq s B b A a.
+Proof with try assumption.
+  intros. eexists.
+  inverse H0.
+  refine ( let XX : Σ ;;; Γ |-w _ : wProd nAnon B (wProd nAnon (wEq ⇑B (wcoe s ⇑A ⇑B ⇑(wHeqPi1 s A a B b p) ⇑a) (wRel 0)) (wHeq s (lift 2 0 B) (wRel 1) (lift 2 0 A) (lift 2 0 a))) := _ in _).
+  eapply meta_conv. eapply type_App.
+  2: eapply type_HeqPi2; eassumption.
+  eapply meta_conv. eapply type_App.
+  exact XX. eassumption.
+  Opaque wHeq.
+  cbn; rewrite subst_heq, subst_coe; cbn; substP3.
+  rewrite subst_heq; cbn; substP3.
+  
+  Unshelve. 2: shelve.
+  rewrite lift_HeqPi1; cbn. eapply meta_conv.
+  eapply type_J...
+  2: eapply type_HeqPi1; eassumption.
+  Unshelve.
+  4: exact (wProd nAnon (wRel 1) (wProd nAnon (wEq (wRel 2) (wcoe s (lift0 3 A) (wRel 2) (wRel 1) (lift0 3 a)) (wRel 0)) (wHeq s (wRel 3) (wRel 1) (lift0 4 A) (lift0 4 a)))).
+  3: cbn; rewrite !subst_heq, !subst_coe; cbn; substP3; now rewrite lift_HeqPi1.
+  - ittcheck.
+  - cbn; rewrite !subst_heq, !subst_coe; cbn; substP3; cbn.
+    eapply type_Lambda. eassumption.
+    eapply type_Lambda. ittcheck.
+    eapply type_HeqPair. ittcheck.
+    + ittcheck. eapply type_Refl... ittcheck.
+    + eapply type_concat. ittcheck.
+      eapply type_coeβ; ittcheck.
+      eapply type_concat. ittcheck.
+      eapply type_inverse. ittcheck.
+      * eapply meta_conv. eapply type_Rel with (n := 0). ittcheck.
+        cbn. rewrite lift_coe. now rewrite !liftP3 by omega; cbn.
+      * rewrite !liftP3 by omega; cbn. eapply type_coeβ; ittcheck.
+
+    Unshelve.
+    all: try exact nAnon.
+    all: cbn; try omega.
+    all: now rewrite liftP3 by omega.
+Defined.
+
+Definition wHeqSym A a B b p s :=
+wApp (wApp (wJ (wSort s) A (wProd nAnon (wRel 1) (wProd nAnon (wEq (wRel 2) (wcoe s (lift0 3 A) (wRel 2) (wRel 1) (lift0 3 a)) (wRel 0)) (wHeq s (wRel 3) (wRel 1) (lift0 4 A) (lift0 4 a)))) (wLambda nAnon A (wLambda nAnon (wEq ⇑A (wcoe s ⇑A ⇑A (wRefl (wSort s) ⇑A) ⇑a) (wRel 0)) (wHeqPair s (lift0 2 A) (wRel 1) (lift0 2 A) (lift0 2 a) (wRefl (wSort s) (lift0 2 A)) (wconcat (lift0 2 A) (wcoe s (lift0 2 A) (lift0 2 A) (wRefl (wSort s) (lift0 2 A)) (wRel 1)) (wRel 1) (lift0 2 a) (wcoeβ (lift0 2 A) (wRel 1)) (wconcat (lift0 2 A) (wRel 1) (wcoe s (lift0 2 A) (lift0 2 A) (wRefl (wSort s) (lift0 2 A)) (lift0 2 a)) (lift0 2 a) (winverse (lift0 2 A) (wcoe s (lift0 2 A) (lift0 2 A) (wRefl (wSort s) (lift0 2 A)) (lift0 2 a)) (wRel 1) (wRel 0)) (wcoeβ (lift0 2 A) (lift0 2 a))))))) B (wHeqPi1 s A a B b p)) b) (wHeqPi2 s A a B b p).
+
+Definition type_HeqSym Γ A a B b p s :
+    wf Σ Γ ->
+    Σ ;;; Γ |-w p : wHeq s A a B b ->
+    Σ ;;; Γ |-w wHeqSym A a B b p s : wHeq s B b A a.
+Proof.
+  intros H H0; unfold wHeqSym. inverse H0. clear s0.
+  ittcheck.
+  Unshelve.
+
+  all: try exact nAnon.
+  all: simpl; rewrite ?lift_coe, ?lift_P3 by omega; simpl;
+    rewrite ?lift_lift by omega; try reflexivity; simpl.
+  rewrite !subst_coe, !subst_heq; cbn; substP3.
+  change (B = ⇑B {0 := wHeqPi1 s A a B b p}). substP3.
+  change (wEq B (wcoe s A B (wHeqPi1 s A a B b p) a) b = wEq (((lift0 2 B) {1 := wHeqPi1 s A a B b p}) {0 := b}) ((wcoe s (lift0 3 A) (wRel 2) (wRel 1) (lift0 3 a)) {2 := B} {1 := wHeqPi1 s A a B b p} {0 := b}) (lift0 0 b)).
+  rewrite !subst_coe. substP3.
+  change ((wHeq s (wRel 3) (wRel 1) (lift0 4 A) (lift0 4 a)){3:= B}{2 := wHeqPi1 s A a B b p}{1 := b}{0 := wHeqPi2 s A a B b p} = wHeq s B b A a).
+  rewrite !subst_heq. substP3.
+Qed.
+  
+(*   let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT1β" in *)
+(*   let TC := tsl_constant TC [pvar 0; pvar 1; psum_sort (pvar 0) (pvar 1)] "Translation.Quotes.transport_sigma_const" in *)
+(*   let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT2β" in *)
+(*   let TC := tsl_constant TC [pvar 0; psucc (pvar 0); pvar 1; psucc (pvar 1); psucc (psucc (pvar 1)); psucc (pprod_sort (pvar 0) (pvar 1))] "Translation.Quotes.heq_to_eq_fam" in *)
+
+
+
+(* | type_HeqTrans Γ A a B b C c p q s : *)
+(*     Σ ;;; Γ |-i p : sHeq A a B b -> *)
+(*     Σ ;;; Γ |-i q : sHeq B b C c -> *)
+(*     Σ ;;; Γ |-i a : A -> *)
+(*     Σ ;;; Γ |-i b : B -> *)
+(*     Σ ;;; Γ |-i c : C -> *)
+(*     Σ ;;; Γ |-i A : sSort s -> *)
+(*     Σ ;;; Γ |-i B : sSort s -> *)
+(*     Σ ;;; Γ |-i C : sSort s -> *)
+(*     Σ ;;; Γ |-i sHeqTrans p q : sHeq A a C c *)

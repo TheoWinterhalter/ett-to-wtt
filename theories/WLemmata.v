@@ -668,6 +668,43 @@ Proof.
   - eassumption.
 Defined.
 
+Corollary typing_lift03 :
+  forall {Σ Γ t A B s C s' D s''},
+    type_glob Σ ->
+    Σ ;;; Γ |-w t : A ->
+    Σ ;;; Γ |-w B : wSort s ->
+    Σ ;;; Γ ,, B |-w C : wSort s' ->
+    Σ ;;; Γ ,, B ,, C |-w D : wSort s'' ->
+    Σ ;;; Γ ,, B ,, C ,, D |-w lift0 3 t : lift0 3 A.
+Proof.
+  intros Σ Γ t A B s C s' D s'' hg ht hB hC.
+  assert (eq : forall t, lift0 3 t = lift0 2 (lift0 1 t)).
+  { intro u. rewrite lift_lift. reflexivity. }
+  rewrite !eq. eapply typing_lift02.
+  - assumption.
+  - eapply typing_lift01  ; eassumption.
+  - eassumption.
+Defined.
+
+Corollary typing_lift04 :
+  forall {Σ Γ t A B s C s' D s'' E s'''},
+    type_glob Σ ->
+    Σ ;;; Γ |-w t : A ->
+    Σ ;;; Γ |-w B : wSort s ->
+    Σ ;;; Γ ,, B |-w C : wSort s' ->
+    Σ ;;; Γ ,, B ,, C |-w D : wSort s'' ->
+    Σ ;;; Γ ,, B ,, C ,, D |-w E : wSort s''' ->
+    Σ ;;; Γ ,, B ,, C ,, D ,, E |-w lift0 4 t : lift0 4 A.
+Proof.
+  intros Σ Γ t A B s C s' D s'' E s''' hg ht hB hC.
+  assert (eq : forall t, lift0 4 t = lift0 2 (lift0 2 t)).
+  { intro u. rewrite lift_lift. reflexivity. }
+  rewrite !eq. eapply typing_lift02.
+  - assumption.
+  - eapply typing_lift02  ; eassumption.
+Defined.
+
+
 Fact subst_ax_type :
   forall {Σ},
     type_glob Σ ->

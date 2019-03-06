@@ -4,7 +4,7 @@ From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Template
 Require Import Ast utils monad_utils Typing Checker.
 From Translation
-Require Import util Sorts WAst WLiftSubst WTyping WChecker WLemmata Quotes.
+Require Import util Sorts WAst WLiftSubst WTyping WChecker WLemmata Quotes Manual.
 From TypingFlags Require Import Loader.
 Import MonadNotation ListNotations.
 
@@ -165,17 +165,6 @@ Fixpoint fullquote (t : term)
         | _ => raise (InstanciationNotHandeled c l)
         end
 
-      (* else if eq_string c "Translation.Quotes.coe" then *)
-      (*   match l with *)
-      (*   | [A; B; e; x] => *)
-      (*     A' <- fullquote A ;; *)
-      (*     B' <- fullquote B ;; *)
-      (*     e' <- fullquote e ;; *)
-      (*     x' <- fullquote x ;; *)
-      (*     ret (wTransport A' B' e' x') *)
-      (*   | _ => raise (InstanciationNotHandeled c l) *)
-      (*   end *)
-
       (* β ? *)
 
       else if eq_string c "Translation.Quotes.K" then
@@ -197,6 +186,56 @@ Fixpoint fullquote (t : term)
           ret (wFunext f' g' e')
         | _ => raise (InstanciationNotHandeled c l)
         end
+
+
+     (* *** defined constants *** *)
+
+      else if eq_string c "Translation.Quotes.transport" then
+        match l with
+        | [A; B; x; y; e; u] =>
+          A' <- fullquote A ;;
+          B' <- fullquote B ;;
+          x' <- fullquote x ;;
+          y' <- fullquote y ;;
+          e' <- fullquote e ;;
+          u' <- fullquote u ;;
+          ret (wtransport A' B' x' y' e' u')
+        | _ => raise (InstanciationNotHandeled c l)
+        end
+
+      else if eq_string c "Translation.Quotes.coe" then
+        match l with
+        | [A; B; e; x] =>
+          A' <- fullquote A ;;
+          B' <- fullquote B ;;
+          e' <- fullquote e ;;
+          x' <- fullquote x ;;
+          ret (wcoe (pvar 0) A' B' e' x')
+        | _ => raise (InstanciationNotHandeled c l)
+        end
+
+      else if eq_string c "Translation.Quotes.concat" then
+        match l with
+        | [A; x; y; z; p; q] =>
+          A' <- fullquote A ;;
+          x' <- fullquote x ;;
+          y' <- fullquote y ;;
+          z' <- fullquote z ;;
+          p' <- fullquote p ;;
+          q' <- fullquote q ;;
+          ret (wconcat A' x' y' z' p' q')
+        | _ => raise (InstanciationNotHandeled c l)
+        end
+
+      else if eq_string c "Translation.Quotes.coeβ" then
+        match l with
+        | [A; x] =>
+          A' <- fullquote A ;;
+          x' <- fullquote x ;;
+          ret (wcoeβ A' x')
+        | _ => raise (InstanciationNotHandeled c l)
+        end
+
 
       else match assoc_at c constt with
       | Some t =>
@@ -244,6 +283,29 @@ Fixpoint keep_unknown_constants gdecls :=
 
 Definition unknown_constants :=
   keep_unknown_constants (Datatypes.fst all_constants).
+
+Definition mkApp t u :=
+  match t with
+    | wLambda _ _ t => t { 0 := u}
+    | _ => wApp t u
+  end.
+
+Print Instances Monad.
+
+(* Instance qskdj : Monad fq_result. *)
+(* exact _. *)
+(* Defined. *)
+Opaque lift.
+Eval simpl in (fun s (A e x : wterm) => 
+              (match assoc_at "Translation.Quotes.coeβ'" unknown_constants with
+              | Some (t , _) => t' <- fullquote empty [s] t ;;
+                               let t' := mkApp t' A in
+                               let t' := mkApp t' e in
+                               let t' := mkApp t' x in
+                               ret t'
+              | _ => raise (MsgError "not found")
+              end : result fq_error wterm)).
+
 
 
 Definition tsl_constant TC univs c :=

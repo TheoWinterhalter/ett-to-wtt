@@ -159,6 +159,10 @@ Proof.
   etransitivity. symmetry; eassumption. apply coeβ.
 Defined.
 
+(* Opaque transport coe heq inverse concat coeβ coeβ'. *)
+(* Eval compute in heq_sym. *)
+
+
 Lemma heq_trans@{i i1} :
   forall {A B C : Type@{i}} (a : A) (b : B) (c : C),
     heq@{i i1} a b -> b ≅ c -> a ≅ c.
