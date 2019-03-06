@@ -262,6 +262,20 @@ Proof.
   all: apply ap. symmetry; apply ProjT1β. apply ProjT2β.
 Defined.
 
+Lemma heq_to_eq_fam'@{i i1 i2 j j1 j2 ij1 k i1j2k} {A1 A2 : Type@{i}}
+      {B1 : A1 -> Type@{j}} {B2 : A2 -> Type@{j}}
+      (hA : heq@{i1 i2} A1 A2)
+      (hB : forall (p : Pack@{i i1} A1 A2), heq@{j1 j2} (B1 (ProjT1 p)) (B2 (ProjT2 p)))
+      (P : forall (A : Type@{i})(B : A -> Type@{j}), Type@{k})
+      (P1 : P A1 B1)
+  : P A2 B2.
+Proof.
+  revert B2 hB. refine (transport@{i1 i1j2k} (fun A2: Type@{i} => forall B2 : A2 -> Type@{j}, (forall p : Pack@{i i1} A1 A2, B1 (ProjT1@{i i1} p) ≅ B2 (ProjT2@{i i1} p)) -> P A2 B2) (heq_to_eq hA) _).
+  intros B2 hB. refine (transport@{ij1 k} _ _ P1). apply funext; intro x.
+  refine (_ @ heq_to_eq (hB (pack x x (heq_refl x))) @ _).
+  all: apply ap. symmetry; apply ProjT1β. apply ProjT2β.
+Defined.
+
 
 Lemma cong_prod@{i i1 i2 j j1 j2 ij ij1 ij2} (A1 A2 : Type@{i})
       (B1 : A1 -> Type@{j}) (B2 : A2 -> Type@{j})
@@ -269,14 +283,7 @@ Lemma cong_prod@{i i1 i2 j j1 j2 ij ij1 ij2} (A1 A2 : Type@{i})
       (hB : forall (p : Pack@{i i1} A1 A2), heq@{j1 j2} (B1 (ProjT1 p)) (B2 (ProjT2 p)))
   : @heq@{ij1 ij2} Type@{ij} (forall x : A1, B1 x) Type@{ij} (forall y : A2, B2 y).
 Proof.
-  exists 1. etransitivity. eapply coeβ.
-  apply heq_to_eq in hA.
-  revert B2 hB.
-  refine (transport@{i1 ij1} (fun A2 : Type@{i} => forall B2 : A2 -> Type@{j},
-                     (forall p, B1 (ProjT1 p) ≅ B2 (ProjT2 p)) ->
-                     @eq Type@{ij} (forall x, B1 x) (forall y : A2, B2 y)) hA _).
-  intros B2 hB. apply heq_to_eq_fam in hB.
-  refine (ap@{ij1 _} (B:=Type@{ij})(fun B : A1 -> Type@{j} => forall x, B x) hB).
+  refine (heq_to_eq_fam'@{i i1 i2 j j1 j2 ij1 ij2 ij2} hA hB (fun A2 B2 => @heq@{ij1 ij2} Type@{ij} (forall x : A1, B1 x) Type@{ij} (forall y : A2, B2 y)) _). eapply heq_refl.
 Defined.
 
 
@@ -288,16 +295,9 @@ Lemma cong_lambda@{i i1 i2 j j1 j2 ij ij1 ij2} (A1 A2 : Type@{i})
       (hf : forall (p : Pack@{i i1} A1 A2), f1 (ProjT1 p) ≅ f2 (ProjT2 p))
   : heq@{ij ij1} (fun x => f1 x) (fun x => f2 x).
 Proof.
-  apply heq_to_eq in hA.
-  revert B2 hB f2 hf.
-  refine (transport@{i1 ij1} (fun A2 : Type@{i} => forall B2 : A2 -> Type@{j}, (forall p : Pack@{i i1} A1 A2, B1 (ProjT1@{i i1} p) ≅ B2 (ProjT2@{i i1} p)) -> forall (f2 : forall x : A2, B2 x), (forall p : Pack@{i i1} A1 A2, f1 (ProjT1@{i i1} p) ≅ f2 (ProjT2@{i i1} p)) -> (fun x : A1 => f1 x) ≅ (fun x : A2 => f2 x)) hA _).
-  clear A2 hA; intros B2 hB. apply heq_to_eq_fam in hB.
-  refine (transport@{ij1 ij2} (fun B2 : A1 -> Type@{j} =>  forall (f2 : forall x : A1, B2 x),
-  (forall p : Pack@{i i1} A1 A1, f1 (ProjT1@{i i1} p) ≅ f2 (ProjT2@{i i1} p)) ->
-  (fun x : A1 => f1 x) ≅ (fun x : A1 => f2 x)) hB _).
-  clear hB B2; intros f2 hf.
-  apply eq_to_heq, funext.
-  intro x.
+  revert f1 f2 hf.
+  refine (heq_to_eq_fam'@{i i1 i2 j j1 j2 ij1 ij2 ij2} hA hB (fun A2 B2 =>   forall (f1 : forall x : A1, B1 x) (f2 : forall x : A2, B2 x), (forall p : Pack@{i i1} A1 A2, f1 (ProjT1@{i i1} p) ≅ f2 (ProjT2@{i i1} p)) -> (fun x : A1 => f1 x) ≅ (fun x : A2 => f2 x) ) _).
+  intros f1 f2 hf. apply eq_to_heq. apply funext; intro x.
   specialize (hf (pack x x (heq_refl x))).
   assert (hf' : f1 x ≅ f2 x). {
     eapply heq_trans. 2:eapply heq_trans.
