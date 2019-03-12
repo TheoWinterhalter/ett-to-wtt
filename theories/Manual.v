@@ -805,6 +805,118 @@ Proof.
   change ((wHeq s (wRel 3) (wRel 1) (lift0 4 A) (lift0 4 a)){3:= B}{2 := wHeqPi1 s A a B b p}{1 := b}{0 := wHeqPi2 s A a B b p} = wHeq s B b A a).
   rewrite !subst_heq. substP3.
 Qed.
+
+Opaque wHeqToEq wEqToHeq wHeqRefl wHeqSym.
+Ltac other_ittintro t ::=
+  lazymatch t with
+  | wtransport _ _ _ _ _ _ => eapply type_transport
+  | wcoe _ _ _ _ _ => eapply type_coe
+  | wHeq _ _ _ _ _ => eapply type_heq
+  | wHeqPi1 _ _ _ _ _ _ => eapply type_HeqPi1
+  | wHeqPi2 _ _ _ _ _ _ => eapply type_HeqPi2
+  | wHeqPair _ _ _ _ _ _ _ => eapply type_HeqPair
+  | wPack _ _ _ => eapply type_Pack
+  | wpack _ _ _ _ _ _ => eapply type_pack
+  | wProjT1 _ _ _ _ => eapply type_ProjT1
+  | wProjT2 _ _ _ _ => eapply type_ProjT2
+  | wProjTe _ _ _ _ => eapply type_ProjTe
+  | winverse _ _ _ _ => eapply type_inverse
+  | wconcat _ _ _ _ _ _ => eapply type_concat
+  | wap _ _ _ _ _ _ => eapply type_ap
+  | wcoeβ _ _ => eapply type_coeβ
+  | wcoeβ' _ _ _ _ => eapply type_coeβ'
+  | wHeqToEq _ _ _ _ _  => eapply type_HeqToEq
+  | wEqToHeq _ _ _ _ _  => eapply type_EqToHeq
+  | wHeqRefl _ _ _  => eapply type_HeqRefl
+  | wHeqSym _ _ _ _ _ _  => eapply type_HeqSym
+  | _ => fail "No introduction rule for" t
+  end.
+
+Definition type_smld Γ s z k A1 A2 B1 B2 pA pB P P1 :
+    wf Σ Γ ->
+    Σ ;;; Γ ,, A1 |-w B1 : wSort z ->
+    Σ ;;; Γ ,, A2 |-w B2 : wSort z ->
+    Σ ;;; Γ |-w pA : wHeq (succ s) (wSort s) A1 (wSort s) A2 ->
+    Σ ;;; Γ ,, (wPack s A1 A2)
+    |-w pB : wHeq (succ z)
+                 (wSort z) ((lift 1 1 B1){ 0 := wProjT1 s ⇑A1 ⇑A2 (wRel 0) })
+                 (wSort z) ((lift 1 1 B2){ 0 := wProjT2 s ⇑A1 ⇑A2 (wRel 0) }) ->
+    Σ ;;; Γ ,, wSort s ,, (wRel 0 ↦ wSort z) |-w P : wSort k ->
+    Σ ;;; Γ |-w P1 : P { 1 := A1 } { 0 := wLambda nAnon A1 B1 } ->
+exists P2,
+    Σ ;;; Γ |-w P2 : P { 1 := A2 } { 0 := wLambda nAnon A2 B2 }.
+Admitted.
+
+
+Lemma subst_rel0 t : forall k, (lift 1 (1 + k)%nat t) {k := wRel 0} = t.
+  induction t; intro k; cbn.
+  { destruct n. cbn. case_eq k; reflexivity.
+    nat_case; cbn; nat_case; cbn; try reflexivity.
+    now rewrite e2, Nat.add_0_r. }
+  all: repeat hyp rewrite; try reflexivity.
+Defined.
+
+
+Definition type_CongProd Γ s z nx ny A1 A2 B1 B2 pA pB :
+    wf Σ Γ ->
+    Σ ;;; Γ ,, A1 |-w B1 : wSort z ->
+    Σ ;;; Γ ,, A2 |-w B2 : wSort z ->
+    Σ ;;; Γ |-w pA : wHeq (succ s) (wSort s) A1 (wSort s) A2 ->
+    Σ ;;; Γ ,, (wPack s A1 A2)
+    |-w pB : wHeq (succ z)
+                 (wSort z) ((lift 1 1 B1){ 0 := wProjT1 s ⇑A1 ⇑A2 (wRel 0) })
+                 (wSort z) ((lift 1 1 B2){ 0 := wProjT2 s ⇑A1 ⇑A2 (wRel 0) }) ->
+exists XX,
+    Σ ;;; Γ |-w XX :
+    wHeq (succ (Sorts.prod_sort s z))
+         (wSort (Sorts.prod_sort s z)) (wProd nx A1 B1)
+         (wSort (Sorts.prod_sort s z)) (wProd ny A2 B2).
+Proof.
+  intros HΓ H H0 H1 H2. 
+  eexists. inverse H1. clear s0 H3 H5.
+  eapply meta_conv.
+  unshelve eapply type_smld with (P := wHeq (succ (Sorts.prod_sort s z))
+         (wSort (Sorts.prod_sort s z)) (lift0 2 (wProd nx A1 B1))
+         (wSort (Sorts.prod_sort s z)) (wProd ny (wRel 1) (wApp (wRel 1) (wRel 0)))).
+  14-15: eassumption. 3-5: eassumption. shelve. shelve.
+  ittcheck. admit.
+  rewrite !subst_heq; cbn. substP3.
+
+  pose proof (type_Beta Σ HΣ (Γ ,, A1) ⇑A1 (wRel 88) (lift 1 1 B1) (wRel 0)).
+  eapply meta_conv.
+  eapply type_transport with (P := wHeq (succ (prod_sort s z)) (wSort (prod_sort s z)) ⇑(wProd nx A1 B1) (wSort (prod_sort s z)) (wRel 0)).
+  assumption. shelve.
+
+
+Γ , A ⊢ B1 : wSort s
+Γ , A ⊢ B2 : wSort s
+Γ , A ⊢ pB : wEq (wSort s) B1 B2
+
+Γ ⊢ ? : wEq (wSort ...) (wProd A B1) (wProd A B2)
+
+  cbn in H3. rewrite subst_rel0 in H3.
+  pose proof (substP3 B1 (wRel 0) 0 0 1).  cbn in H4. in H3. by omega.
+  change ()
+
+
+
+
+Lemma heq_to_eq_fam'@{i i1 i2 j j1 j2 ij1 k i1j2k} {A1 A2 : Type@{i}}
+      {B1 : A1 -> Type@{j}} {B2 : A2 -> Type@{j}}
+      (hA : heq@{i1 i2} A1 A2)
+      (hB : forall (p : Pack@{i i1} A1 A2), heq@{j1 j2} (B1 (ProjT1 p)) (B2 (ProjT2 p)))
+      (P : forall (A : Type@{i})(B : A -> Type@{j}), Type@{k})
+      (P1 : P A1 B1)
+  : P A2 B2.
+Proof.
+  revert B2 hB. refine (transport@{i1 i1j2k} (fun A2: Type@{i} => forall B2 : A2 -> Type@{j}, (forall p : Pack@{i i1} A1 A2, B1 (ProjT1@{i i1} p) ≅ B2 (ProjT2@{i i1} p)) -> P A2 B2) (heq_to_eq hA) _).
+  intros B2 hB. refine (transport@{ij1 k} _ _ P1). apply funext; intro x.
+  refine (_ @ heq_to_eq (hB (pack x x (heq_refl x))) @ _).
+  all: apply ap. symmetry; apply ProjT1β. apply ProjT2β.
+Defined.
+
+
+
   
 (*   let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT1β" in *)
 (*   let TC := tsl_constant TC [pvar 0; pvar 1; psum_sort (pvar 0) (pvar 1)] "Translation.Quotes.transport_sigma_const" in *)
