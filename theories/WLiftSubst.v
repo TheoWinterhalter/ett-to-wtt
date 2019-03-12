@@ -34,6 +34,8 @@ Fixpoint lift `{Sort_notion : Sorts.notion} n k t : wterm :=
   | wJBeta u P w => wJBeta (lift n k u) (lift n (S (S k)) P) (lift n k w)
   | wTransportBeta A u => wTransportBeta (lift n k A) (lift n k u)
   | wPairEta p => wPairEta (lift n k p)
+  | wProdExt A p => wProdExt (lift n k A) (lift n (S k) p)
+  | wSumExt A p => wSumExt (lift n k A) (lift n (S k) p)
   | wSort s => wSort s
   | wAx id => wAx id
   | wDelta id => wDelta id
@@ -75,6 +77,8 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
   | wJBeta u P w => wJBeta (subst t k u) (subst t (S (S k)) P) (subst t k w)
   | wTransportBeta A u => wTransportBeta (subst t k A) (subst t k u)
   | wPairEta p => wPairEta (subst t k p)
+  | wProdExt A p => wProdExt (subst t k A) (subst t (S k) p)
+  | wSumExt A p => wSumExt (subst t k A) (subst t (S k) p)
   | wSort s => wSort s
   | wAx id => wAx id
   | wDelta id => wDelta id
@@ -142,6 +146,8 @@ Fixpoint closed_above k t :=
     closed_above k A &&
     closed_above k t
   | wPairEta p => closed_above k p
+  | wProdExt A p => closed_above k A && closed_above (S k) p
+  | wSumExt A p => closed_above k A && closed_above (S k) p
   | wAx id => true
   | wDelta id => true
   end.

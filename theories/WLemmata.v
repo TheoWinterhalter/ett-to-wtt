@@ -608,6 +608,8 @@ Proof.
           rewrite <- substP1. reflexivity.
       - cbn. eapply type_TransportBeta ; eih.
       - cbn. eapply type_PairEta ; eih.
+      - cbn. eapply type_ProdExt ; eih.
+      - cbn. eapply type_SumExt ; eih.
       - cbn. erewrite lift_ax_type by eassumption.
         eapply type_Ax.
         + now apply wf_lift.
@@ -941,6 +943,8 @@ Proof.
           rewrite <- substP4. reflexivity.
       - cbn. eapply type_TransportBeta ; esh.
       - cbn. eapply type_PairEta ; esh.
+      - cbn. eapply type_ProdExt ; esh.
+      - cbn. eapply type_SumExt ; esh.
       - cbn. erewrite subst_ax_type by eassumption.
         eapply type_Ax.
         + now eapply wf_subst.
@@ -1236,6 +1240,18 @@ Proof.
       * econstructor ; eassumption.
       * econstructor ; eassumption.
     + econstructor ; try eassumption. reflexivity.
+  - destruct IHtyping1 as [? h].
+    destruct (inversion_Eq h) as [? [? [? [? ?]]]].
+    eexists. econstructor.
+    + econstructor. eapply typing_wf ; eassumption.
+    + econstructor ; assumption.
+    + econstructor ; assumption.
+  - destruct IHtyping1 as [? h].
+    destruct (inversion_Eq h) as [? [? [? [? ?]]]].
+    eexists. econstructor.
+    + econstructor. eapply typing_wf ; eassumption.
+    + econstructor ; assumption.
+    + econstructor ; assumption.
   - pose proof (isType_lookup_glob hg _ _ H0).
     destruct H1 as [s HH]; exists s.
     pose proof (@type_lift _ [] Γ [] _ _ HH hg). cbn in H1.

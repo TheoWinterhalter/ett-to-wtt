@@ -157,6 +157,16 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w wPairEta p
              : wEq (wSum n' A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p
 
+| type_ProdExt Γ A B1 B2 n1 n2 p s1 s2 :
+    Σ ;;; Γ,, A |-w p : wEq (wSort s2) B1 B2 ->
+    Σ ;;; Γ |-w A : wSort s1 ->
+    Σ ;;; Γ |-w wProdExt A p : wEq (wSort (prod_sort s1 s2)) (wProd n1 A B1) (wProd n2 A B2)
+
+| type_SumExt Γ A B1 B2 n1 n2 p s1 s2 :
+    Σ ;;; Γ,, A |-w p : wEq (wSort s2) B1 B2 ->
+    Σ ;;; Γ |-w A : wSort s1 ->
+    Σ ;;; Γ |-w wSumExt A p : wEq (wSort (sum_sort s1 s2)) (wSum n1 A B1) (wSum n2 A B2)
+
 | type_Ax Γ id d :
     wf Σ Γ ->
     lookup_glob Σ id = Some d ->

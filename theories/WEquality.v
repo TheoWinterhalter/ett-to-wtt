@@ -32,6 +32,8 @@ Inductive nlterm : Type :=
 | nlJBeta (u P w : nlterm)
 | nlTransportBeta (A t : nlterm)
 | nlPairEta (p : nlterm)
+| nlProdExt (A p : nlterm)
+| nlSumExt (A p : nlterm)
 (* External axioms *)
 | nlAx (id : ident)
 | nlDelta (id : ident)
@@ -58,6 +60,8 @@ Fixpoint nl (t : wterm) : nlterm :=
   | wJBeta u P w => nlJBeta (nl u) (nl P) (nl w)
   | wTransportBeta A t => nlTransportBeta (nl A) (nl t)
   | wPairEta p => nlPairEta (nl p)
+  | wProdExt A p => nlProdExt (nl A) (nl p)
+  | wSumExt A p => nlSumExt (nl A) (nl p)
   | wAx id => nlAx id
   | wDelta id => nlDelta id
   end.

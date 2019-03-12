@@ -35,6 +35,8 @@ Inductive wterm : Type :=
 | wJBeta (u P w : wterm)
 | wTransportBeta (A t : wterm)
 | wPairEta (p : wterm)
+| wProdExt (A p : wterm)
+| wSumExt (A p : wterm)
 (* External axioms *)
 | wAx (id : ident)
 | wDelta (id : ident)

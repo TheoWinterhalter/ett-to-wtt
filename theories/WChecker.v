@@ -151,6 +151,18 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     T <- getsum =<< wttinfer Σ Γ p ;;
     let '(A,B) := T in
     ret (wEq (wSum nAnon A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p)
+  | wProdExt A p =>
+    s1 <- getsort =<< wttinfer Σ Γ A ;;
+    E <- geteq =<< wttinfer Σ (Γ,, A) p ;;
+    let '(S2,B1,B2) := E in
+    s2 <- getsort S2 ;;
+    ret (wEq (wSort (prod_sort s1 s2)) (wProd nAnon A B1) (wProd nAnon A B2))
+  | wSumExt A p =>
+    s1 <- getsort =<< wttinfer Σ Γ A ;;
+    E <- geteq =<< wttinfer Σ (Γ,, A) p ;;
+    let '(S2,B1,B2) := E in
+    s2 <- getsort S2 ;;
+    ret (wEq (wSort (sum_sort s1 s2)) (wSum nAnon A B1) (wSum nAnon A B2))
   | wAx id =>
     match lookup_glob Σ id with
     | Some d => ret (dtype d)
@@ -247,8 +259,8 @@ Ltac go eq :=
   intros ;
   inversion eq ; subst ; clear eq ;
   repeat deal_assert_eq ;
-  repeat deal_getsort ;
   repeat deal_geteq ;
+  repeat deal_getsort ;
   repeat deal_gettransport ;
   repeat deal_getprod ;
   repeat deal_getsum ;
@@ -427,6 +439,7 @@ Proof.
     go h ; simpl ;
     repeat rewwtt ;
     repeat (cbn_nl ; inv_nl) ;
+    repeat inv_nl ;
     simpl ;
     unfold assert_eq ;
     rewrite ?assert_eq_sort_refl ;
@@ -652,6 +665,8 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wJBeta u P w => wJBeta (f u) (f P) (f w)
     | wTransportBeta A t => wTransportBeta (f A) (f t)
     | wPairEta p => wPairEta (f p)
+    | wProdExt A p => wProdExt (f A) (f p)
+    | wSumExt A p => wSumExt (f A) (f p)
     | wAx id => wAx id
     | wDelta id => wDelta id
     end.
@@ -876,6 +891,14 @@ Proof.
            ++ reflexivity.
     + rewrite 2!instantiate_sorts_subst in IHh3. eapply IHh3. assumption.
     + eapply IHh4 ; assumption.
+  - cbn. econstructor.
+    + eapply IHh1. cbn. econstructor ; try assumption.
+      eapply IHh2. assumption.
+    + eapply IHh2. assumption.
+  - cbn. econstructor.
+    + eapply IHh1. cbn. econstructor ; try assumption.
+      eapply IHh2. assumption.
+    + eapply IHh2. assumption.
   - eapply meta_conv. econstructor. assumption.
     eapply instantiate_sorts_lookup_glob. eassumption.
     reflexivity.
