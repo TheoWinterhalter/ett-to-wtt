@@ -39,6 +39,14 @@ Ltac inverse H :=
 
 Section Admissibles1.
   Context {S : notion} Σ (HΣ : type_glob Σ).
+
+  Definition type_Lambda Γ n n' t A B :
+      Σ ;;; Γ ,, A |-w t : B ->
+      Σ ;;; Γ |-w wLambda n A t : wProd n' A B.
+  Proof.
+    intros H. pose proof (typing_wf H).
+    inversion H0. now eapply type_Lambda.
+  Defined.
    
   Definition type_Pair Γ n A B u v s2 :
       Σ ;;; Γ |-w u : A ->
@@ -124,10 +132,60 @@ Open Scope w_scope.
 Notation " Γ  ,,, Γ' " :=
   (wapp_context Γ Γ')
     (at level 25, Γ' at next level, left associativity) : w_scope.
-Definition inversion_lift {Γ Δ Ξ t A} :
-  Σ ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ |-w lift #|Δ| #|Ξ| t : lift #|Δ| #|Ξ| A
-  -> Σ ;;; Γ ,,, Ξ |-w t : A.
+
+
+Lemma inverse_lift t u n k
+  : lift n k t = lift n k u -> t = u.
 Proof.
+  revert k u; induction t; intros k u; cbn.
+  { case_eq (k <=? n0); intro eq.
+    + destruct u; intros e; inversion e as [e']. revert e'.
+      case_eq (k <=? n1); intro eq'. inversion 1.
+      apply Nat.add_cancel_l in H0. now rewrite H0.
+      inversion 1. subst.
+      eapply leb_iff_conv in eq'.
+      eapply leb_complete in eq. omega.
+    + destruct u; intros e; inversion e as [e']. revert e'.
+      case_eq (k <=? n1); intro eq'. inversion 1. subst.
+      eapply leb_iff_conv in eq.
+      eapply leb_complete in eq'. omega.
+      easy.
+  }
+  all: destruct u; intros e; inversion e as [e'];
+      try (destruct (k <=? n0); inversion e'); try reflexivity.
+  all: try erewrite IHt by eassumption.
+  all: try erewrite IHt1 by eassumption.
+  all: try erewrite IHt2 by eassumption.
+  all: try erewrite IHt3 by eassumption.
+  all: try erewrite IHt4 by eassumption.
+  all: try erewrite IHt5 by eassumption.
+  all: try erewrite IHt6 by eassumption.
+  all: try reflexivity.
+Qed.
+
+Fixpoint inversion_lift {Γ Δ Ξ t A}
+  (h : Σ ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ |-w lift #|Δ| #|Ξ| t : lift #|Δ| #|Ξ| A)
+  {struct h} : Σ ;;; Γ ,,, Ξ |-w t : A
+with inversion_lift_wf {Γ Δ Ξ}
+  (h : wf Σ (Γ ,,, Δ ,,, lift_context #|Δ| Ξ)) {struct h} :
+  wf Σ (Γ ,,, Ξ).
+Proof.
+  { dependent destruction h.
+    - destruct t; inversion H1. clear H1.
+      cbn in H0. admit.
+    - destruct t; inversion H1. destruct (#|Ξ| <=? n); inversion H3.
+      destruct A; inversion H0. destruct (#|Ξ| <=? n); inversion H4.
+      now constructor.
+    - destruct t; inversion H0. destruct (#|Ξ| <=? n0); inversion H2.
+      destruct A; inversion H. destruct (#|Ξ| <=? n0); inversion H5.
+      subst. constructor. easy. eapply inversion_lift with (Ξ := Ξ ,, t1).
+      cbn; eassumption.
+    - destruct t; inversion H0. destruct (#|Ξ| <=? n0); inversion H2.
+      destruct A; inversion H. destruct (#|Ξ| <=? n0); inversion H5.
+      subst. eapply inverse_lift in H6; rewrite H6.
+      eapply type_Lambda. eapply inversion_lift with (Ξ := Ξ ,, t1).
+      cbn; eassumption.
+    - destruct t; inversion H0. destruct (#|Ξ| <=? n0); inversion H2.
 Admitted.
 
 Corollary inversion_lift01 :
@@ -455,6 +513,14 @@ Proof.
   ittcheck.
 Defined.
 
+Definition lift_Pack s A1 A2 n k :
+  lift n k (wPack s A1 A2) = wPack s (lift n k A1) (lift n k A2).
+Proof.
+  unfold wPack; cbn.
+  rewrite lift_heq; cbn.
+  now rewrite !(liftP2 _ 0 1) by omega.
+Qed.
+
 
 Definition wpack s A1 A2 u1 u2 p :=
   wPair A1 (wSum (nNamed "x2") (↑ A2) (wHeq s (↑ (↑ A1)) (wRel 1) (↑ (↑ A2)) (wRel 0))) u1 (wPair A2 (wHeq s (↑ A1) (↑ u1) (↑ A2) (wRel 0)) u2 p).
@@ -497,6 +563,18 @@ Definition wProjT2 s A1 A2 p :=
        (wPi2 A1 (wSum (nNamed "x2") (↑ A2)
                 (wHeq s (↑ (↑ A1)) (wRel 1) (↑ (↑ A2)) (wRel 0))) p).
 
+Definition subst_ProjT1 s A1 A2 p n t
+  : (wProjT1 s A1 A2 p) {n := t}
+    = wProjT1 s (A1 { n := t}) (A2 { n := t}) (p { n := t}).
+Proof.
+  cbn; eapply (f_equal (fun X => wPi1 _ X _)).
+  rewrite (substP2 _ _ 0 1 n) by omega. eapply f_equal.
+  rewrite subst_heq; cbn.
+  rewrite !(substP2 _ _ 0 1 (Datatypes.S n)) by omega.
+  now rewrite !(substP2 _ _ 0 1 n) by omega.
+Qed.
+
+
 Definition type_ProjT2 Γ s A1 A2 p :
     Σ ;;; Γ |-w p : wPack s A1 A2 ->
     Σ ;;; Γ |-w A1 : wSort s ->
@@ -510,6 +588,19 @@ Proof.
   rewrite !lift_lift.
   substP3.
 Defined.
+
+Definition subst_ProjT2 s A1 A2 p n t
+  : (wProjT2 s A1 A2 p) {n := t}
+    = wProjT2 s (A1 { n := t}) (A2 { n := t}) (p { n := t}).
+Proof. unfold wProjT2.
+  cbn.
+  rewrite !(substP2 _ _ 0 1 n) by omega.
+  rewrite !subst_heq; cbn.
+  rewrite !lift_heq; cbn.
+  rewrite !(substP2 _ _ 0 1 (Datatypes.S n)) by omega.
+  rewrite !(substP2 _ _ 0 1 n) by omega.
+  rewrite !(substP2 _ _ 1 1 (Datatypes.S n)) by omega.
+Admitted.
 
 Definition wProjTe s A1 A2 p :=
   wPi2 A2 (wHeq s (↑ A1) (↑ (wProjT1 s A1 A2 p)) (↑ A2) (wRel 0))
@@ -765,8 +856,7 @@ Proof with try assumption.
   3: cbn; rewrite !subst_heq, !subst_coe; cbn; substP3; now rewrite lift_HeqPi1.
   - ittcheck.
   - cbn; rewrite !subst_heq, !subst_coe; cbn; substP3; cbn.
-    eapply type_Lambda. eassumption.
-    eapply type_Lambda. ittcheck.
+    eapply type_Lambda. eapply type_Lambda. ittcheck.
     eapply type_HeqPair. ittcheck.
     + ittcheck. eapply type_Refl... ittcheck.
     + eapply type_concat. ittcheck.
@@ -806,7 +896,19 @@ Proof.
   rewrite !subst_heq. substP3.
 Qed.
 
-Opaque wHeqToEq wEqToHeq wHeqRefl wHeqSym.
+Axiom wHeqTrans : forall (A a B b C c p q : wterm)(s : sort), wterm.
+
+Definition type_HeqTrans Γ A a B b C c p q s :
+    wf Σ Γ ->
+    Σ ;;; Γ |-w p : wHeq s A a B b ->
+    Σ ;;; Γ |-w q : wHeq s B b C c ->
+    Σ ;;; Γ |-w wHeqTrans A a B b C c p q s : wHeq s A a C c.
+Proof.
+Admitted.
+
+
+
+Opaque wHeqToEq wEqToHeq wHeqRefl wHeqSym wHeqTrans.
 Ltac other_ittintro t ::=
   lazymatch t with
   | wtransport _ _ _ _ _ _ => eapply type_transport
@@ -829,8 +931,11 @@ Ltac other_ittintro t ::=
   | wEqToHeq _ _ _ _ _  => eapply type_EqToHeq
   | wHeqRefl _ _ _  => eapply type_HeqRefl
   | wHeqSym _ _ _ _ _ _  => eapply type_HeqSym
+  | wHeqSym _ _ _ _ _ _ _ _ _  => eapply type_HeqTrans
   | _ => fail "No introduction rule for" t
   end.
+
+
 
 Definition type_smld Γ s z k A1 A2 B1 B2 pA pB P P1 :
     wf Σ Γ ->
@@ -845,6 +950,85 @@ Definition type_smld Γ s z k A1 A2 B1 B2 pA pB P P1 :
     Σ ;;; Γ |-w P1 : P { 1 := A1 } { 0 := wLambda nAnon A1 B1 } ->
 exists P2,
     Σ ;;; Γ |-w P2 : P { 1 := A2 } { 0 := wLambda nAnon A2 B2 }.
+Proof with try assumption.
+  intros HΓ HB1 HB2 HA12 HB12 HP HP1.
+  eexists. inverse HA12. clear s0 HA0 HA2. rename HA3 into HA2.
+  (* assert (isType Σ Γ ((P {1 := A2}) {0 := wLambda nAnon A2 B2})). { *)
+  (*   eexists. eapply meta_conv. eapply typing_subst2; try eassumption. *)
+  (*   2: reflexivity. cbn. rewrite lift00. *)
+  (*   ittcheck. } *)
+  refine (let XX : Σ ;;; Γ |-w _ : wProd nAnon (A2 ↦ wSort z)
+          ((wProd nAnon ⇑(wPack s A1 A2) (wHeq (succ z) (wSort z)
+          ((lift 2 1 B1) {0 := wProjT1 s (lift0 2 A1) (lift0 2 A2) (wRel 0)}) 
+          (wSort z) (wApp (wRel 1) (wProjT2 s (lift0 2 A1) (lift0 2 A2) (wRel 0)))))
+             ↦ (⇑((P {1 := A2}) {0 := wLambda nAnon A2 B2})))
+              := _ in _).
+  - eapply meta_conv. eapply type_App.
+    eapply meta_conv. eapply type_App. exact XX.
+    all: clear XX.
+    + eapply type_Lambda; eassumption.
+    + cbn; rewrite !subst_heq; cbn; substP3. 
+    + eapply type_Lambda. eapply type_HeqTrans. ittcheck.
+      eapply meta_conv. exact HB12.
+      * apply (f_equal (fun X => wHeq _ _ X _ _)).
+      rewrite (substP4 _ _ _ 0 1); cbn.
+      rewrite (substP3 _ _ 1 2 1) by omega.
+      rewrite subst_ProjT1; cbn.
+      now rewrite !(substP3 _ _ 0) by omega.
+      * eapply type_EqToHeq; ittcheck.
+        rewrite subst_ProjT2; cbn.
+        rewrite !(substP3 _ _ 0 1 1) by omega.
+        eapply meta_conv. eapply type_inverse. ittcheck.
+        eapply type_Beta with (A := ⇑A2) (t := lift 1 1 B2)
+                              (u := wProjT2 s ⇑A1 ⇑A2 (wRel 0)); ittcheck.
+      eapply (@type_lift S Σ Γ [_] [_]); ittcheck. reflexivity.
+    + rewrite lift_lift; cbn.
+      rewrite !(substP3 _ _ 0) by omega.
+      now rewrite lift00.
+
+      Unshelve. all: try exact nAnon. 2: shelve. 2: apply lift_Pack.
+      eapply meta_conv.
+      eapply type_HeqToEq in HA12; try assumption.
+      eapply type_transport with (P := lift 1 1 (wProd nAnon (wRel 0 ↦ wSort z) (wProd nAnon ⇑(wPack s A1 (wRel 0)) (wHeq (succ z) (wSort z) ((lift 2 1 B1) {0 := wProjT1 s (lift0 2 A1) (lift0 2 (wRel 0)) (wRel 0)}) (wSort z) (wApp (wRel 1) (wProjT2 s (lift0 2 A1) (lift0 2 (wRel 0)) (wRel 0)))) ↦ ⇑((P {1 := (wRel 0)}) {0 := wLambda nAnon (wRel 0) B2})))).
+      assumption. 2: exact HA12.
+      * cbn. rewrite !lift_Pack, !lift_heq, !lift_lift; cbn.
+        admit.
+      * cbn. rewrite !lift_Pack, !lift_heq, !lift_lift, !lift00; cbn.
+        repeat eapply type_Lambda.
+      *
+ ittcheck.
+        rewrite !lift_Pack. ittcheck; cbn. admit.
+        ittcheck. admit.
+      eapply (@type_lift S Σ _ [_] [_; _]); ittcheck. reflexivity.
+  .
+
+      eapply type_Lambda. eapply type_Lambda. 
+
+  cbn. eapply type_heq.
+  ittcheck.
+  eapply type_App.
+
+   (forall p : Pack@{i i1} A1 A2, B1 (ProjT1@{i i1} p) ≅ B2 (ProjT2@{i i1} p)) ->
+  P A2 B2
+
+Admitted.
+
+Definition wsmld (s z k : sort) (A1 A2 B1 B2 pA pB P P1 : wterm) : wterm.
+Admitted.
+
+Definition type_smld Γ s z k A1 A2 B1 B2 pA pB P P1 :
+    wf Σ Γ ->
+    Σ ;;; Γ ,, A1 |-w B1 : wSort z ->
+    Σ ;;; Γ ,, A2 |-w B2 : wSort z ->
+    Σ ;;; Γ |-w pA : wHeq (succ s) (wSort s) A1 (wSort s) A2 ->
+    Σ ;;; Γ ,, (wPack s A1 A2)
+    |-w pB : wHeq (succ z)
+                 (wSort z) ((lift 1 1 B1){ 0 := wProjT1 s ⇑A1 ⇑A2 (wRel 0) })
+                 (wSort z) ((lift 1 1 B2){ 0 := wProjT2 s ⇑A1 ⇑A2 (wRel 0) }) ->
+    Σ ;;; Γ ,, wSort s ,, (wRel 0 ↦ wSort z) |-w P : wSort k ->
+    Σ ;;; Γ |-w P1 : P { 1 := A1 } { 0 := wLambda nAnon A1 B1 } ->
+    Σ ;;; Γ |-w wsmld s z k A1 A2 B1 B2 pA pB P P1
+             : P { 1 := A2 } { 0 := wLambda nAnon A2 B2 }.
 Admitted.
 
 
@@ -872,20 +1056,37 @@ exists XX,
          (wSort (Sorts.prod_sort s z)) (wProd nx A1 B1)
          (wSort (Sorts.prod_sort s z)) (wProd ny A2 B2).
 Proof.
-  intros HΓ H H0 H1 H2. 
-  eexists. inverse H1. clear s0 H3 H5.
-  eapply meta_conv.
-  unshelve eapply type_smld with (P := wHeq (succ (Sorts.prod_sort s z))
-         (wSort (Sorts.prod_sort s z)) (lift0 2 (wProd nx A1 B1))
-         (wSort (Sorts.prod_sort s z)) (wProd ny (wRel 1) (wApp (wRel 1) (wRel 0)))).
-  14-15: eassumption. 3-5: eassumption. shelve. shelve.
-  ittcheck. admit.
-  rewrite !subst_heq; cbn. substP3.
+  intros HΓ HB1 HB2 HA12 HB12. 
+  eexists. inverse HA12. clear s0 HA0 HA2. rename HA3 into HA2.
+  unshelve eapply type_HeqTrans. exact (wSort (Sorts.prod_sort s z)).
+  exact (wProd ny A2 (wApp (wLambda nAnon ⇑A2 (lift 1 1 B2)) (wRel 0))).
+  shelve. shelve. assumption.
 
-  pose proof (type_Beta Σ HΣ (Γ ,, A1) ⇑A1 (wRel 88) (lift 1 1 B1) (wRel 0)).
-  eapply meta_conv.
-  eapply type_transport with (P := wHeq (succ (prod_sort s z)) (wSort (prod_sort s z)) ⇑(wProd nx A1 B1) (wSort (prod_sort s z)) (wRel 0)).
-  assumption. shelve.
+  - eapply meta_conv.
+    pose (P := wHeq (succ (Sorts.prod_sort s z))
+        (wSort (Sorts.prod_sort s z)) (lift0 2 (wProd nx A1 B1))
+        (wSort (Sorts.prod_sort s z)) (wProd ny (wRel 1) (wApp (wRel 1) (wRel 0)))).
+    refine (type_smld _ _ _ _ _ _ _ _ _ _ P _ HΓ HB1 HB2 HA12 HB12 _ _); subst P.
+    + ittcheck.
+    + rewrite !subst_heq; cbn. substP3.
+      simple refine (let XX := type_Beta Σ HΣ (Γ ,, A1) ⇑A1 (wSort z) (lift 1 1 B1)
+                                         (wRel 0) _ _ _ in _).
+      constructor.
+      eapply meta_conv.
+      eapply (@type_lift S Σ Γ [_] [_]); ittcheck. reflexivity.
+      ittcheck. rewrite subst_rel0 in XX; cbn in XX.
+      eapply type_EqToHeq. assumption. ittcheck.
+      eapply type_ProdExt. eapply type_inverse; ittcheck. assumption.
+    + rewrite !subst_heq; cbn. substP3.
+  - eapply type_EqToHeq. assumption. ittcheck.
+    eapply type_ProdExt.
+    simple refine (let XX := type_Beta Σ HΣ (Γ ,, A2) ⇑A2 (wSort z) (lift 1 1 B2)
+                                       (wRel 0) _ _ _ in _).
+    constructor. eapply meta_conv.
+    eapply (@type_lift S Σ Γ [_] [_]); ittcheck. reflexivity.
+    ittcheck. rewrite subst_rel0 in XX; cbn in XX.
+    all: eassumption.
+Defined.
 
 
 Γ , A ⊢ B1 : wSort s
