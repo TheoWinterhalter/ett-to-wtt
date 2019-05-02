@@ -123,34 +123,29 @@ Proof.
   apply K.
 Defined.
 
-Lemma heq_to_eq@{i i1} :
-  forall {A : Type@{i}} {u v : A},
-    heq@{i i1} u v -> u = v.
+Lemma heq_to_eq@{i i1} {A : Type@{i}} {u v : A}
+  : heq@{i i1} u v -> u = v.
 Proof.
-  intros A u v h.
+  intros h.
   refine (_ @ h.2). symmetry.
   apply coeβ'.
 Defined.
 
-Lemma eq_to_heq@{i i1} :
-  forall {A : Type@{i}} {u v : A},
-    u = v -> heq@{i i1} u v.
+Lemma eq_to_heq@{i i1} {A : Type@{i}} {u v : A}
+  : u = v -> heq@{i i1} u v.
 Proof.
-  intros A u v h. exists 1.
+  intros h. exists 1.
   refine (_ @ h). apply coeβ.
 Defined.
 
-Lemma heq_refl@{i i1} : forall {A : Type@{i}} (a : A), heq@{i i1} a a.
+Lemma heq_refl@{i i1} {A : Type@{i}} (a : A) : heq@{i i1} a a.
 Proof.
-  intros A a. exists 1.
-  apply coeβ.
+  exists 1. apply coeβ.
 Defined.
 
-Lemma heq_sym@{i i1} :
-  forall {A B : Type@{i}} (a : A) (b : B),
-    heq@{i i1} a b -> heq@{i i1} b a.
+Lemma heq_sym@{i i1} {A B : Type@{i}} (a : A) (b : B)
+  : heq@{i i1} a b -> heq@{i i1} b a.
 Proof.
-  intros A B a b.
   apply sigT_rec@{i1 i i1}.
   intro e; revert b.
   refine (J (fun B p => forall b, coe p a = b -> b ≅ a) e _).
@@ -163,11 +158,9 @@ Defined.
 (* Eval compute in heq_sym. *)
 
 
-Lemma heq_trans@{i i1} :
-  forall {A B C : Type@{i}} (a : A) (b : B) (c : C),
-    heq@{i i1} a b -> b ≅ c -> a ≅ c.
+Lemma heq_trans@{i i1} {A B C : Type@{i}} (a : A) (b : B) (c : C)
+  : heq@{i i1} a b -> b ≅ c -> a ≅ c.
 Proof.
-  intros A B C a b c.
   refine (sigT_rec@{i1 i i1} _ _ _); intros p1 e1.
   refine (sigT_rec@{i1 i i1} _ _ _); intros p2 e2.
   revert p2 b c e1 e2.
@@ -181,14 +174,16 @@ Proof.
   symmetry; apply coeβ.
 Defined.
 
-Lemma heq_transport@{i i1} :
-  forall {T T' : Type@{i}} (p : T = T') (t : T),
-    t ≅ coe@{i i1} p t.
+
+Definition heq_type_eq@{i i1} {A : Type@{i}} {u : A} {B : Type@{i}} {v : B}
+  : heq@{i i1} u v -> A = B
+  := projT1.
+
+Lemma heq_transport@{i i1} {T T' : Type@{i}} (p : T = T') (t : T)
+  : t ≅ coe@{i i1} p t.
 Proof.
-  intros T T' p t.
   exists p. reflexivity.
 Defined.
-
 
 Lemma heq_apD@{i i1 j j1} {A : Type@{i}} {B : A -> Type@{j}}
       (f : forall x, B x) {x y : A} (e : x = y)
@@ -219,13 +214,15 @@ Definition ProjTe@{i i1} {A1 A2 : Type@{i}} (z : Pack@{i i1} A1 A2)
 (* . Admitted. *)
 
 
-Definition transport_sigma_const@{i j ij} {X A : Type@{i}}{B : A -> X -> Type@{j}} {x x'} (p : x = x' :> X)
-           (u : exists a, B a x)
+Definition transport_sigma_const@{i j ij} {X A : Type@{i}} {B : A -> X -> Type@{j}}
+           {x x'} (p : x = x' :> X) (u : exists a, B a x)
   : transport@{i ij} (fun x => sigT@{i j} (fun a => B a x)) p u
     = (u.1; transport (B u.1) p u.2).
 Proof.
   revert u.
-  refine (J (fun x' p => forall u, transport (fun x => exists a, B a x) p u = (u.1; transport (B u.1) p u.2)) p _); clear x' p.
+  refine (J (fun x' p => forall u, transport (fun x => exists a, B a x) p u
+                           = (u.1; transport (B u.1) p u.2)) p _);
+    clear x' p.
   intro u. refine (transportβ _ _ @ _).
   refine (transport (fun u2 => u = (u.1; u2)) (transportβ (B u.1) u.2)^ _).
   symmetry; apply Ση.
@@ -448,14 +445,6 @@ Proof.
   clear A2 hA; intros u2 hu. apply heq_to_eq in hu.
   refine (transport (fun u2 => @eq_refl A1 u1 ≅ @eq_refl A1 u2) hu _).
   apply heq_refl.
-Defined.
-
-Lemma heq_type_eq :
-  forall {A} {u : A} {B} {v : B},
-    u ≅ v -> A = B.
-Proof.
-  intros A u B v e.
-  exact e.1.
 Defined.
 
 

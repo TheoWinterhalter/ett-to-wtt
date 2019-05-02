@@ -190,51 +190,51 @@ Fixpoint fullquote (t : term)
 
      (* *** defined constants *** *)
 
-      else if eq_string c "Translation.Quotes.transport" then
-        match l with
-        | [A; B; x; y; e; u] =>
-          A' <- fullquote A ;;
-          B' <- fullquote B ;;
-          x' <- fullquote x ;;
-          y' <- fullquote y ;;
-          e' <- fullquote e ;;
-          u' <- fullquote u ;;
-          ret (wtransport A' B' x' y' e' u')
-        | _ => raise (InstanciationNotHandeled c l)
-        end
+      (* else if eq_string c "Translation.Quotes.transport" then *)
+      (*   match l with *)
+      (*   | [A; B; x; y; e; u] => *)
+      (*     A' <- fullquote A ;; *)
+      (*     B' <- fullquote B ;; *)
+      (*     x' <- fullquote x ;; *)
+      (*     y' <- fullquote y ;; *)
+      (*     e' <- fullquote e ;; *)
+      (*     u' <- fullquote u ;; *)
+      (*     ret (wtransport A' B' x' y' e' u') *)
+      (*   | _ => raise (InstanciationNotHandeled c l) *)
+      (*   end *)
 
-      else if eq_string c "Translation.Quotes.coe" then
-        match l with
-        | [A; B; e; x] =>
-          A' <- fullquote A ;;
-          B' <- fullquote B ;;
-          e' <- fullquote e ;;
-          x' <- fullquote x ;;
-          ret (wcoe (pvar 0) A' B' e' x')
-        | _ => raise (InstanciationNotHandeled c l)
-        end
+      (* else if eq_string c "Translation.Quotes.coe" then *)
+      (*   match l with *)
+      (*   | [A; B; e; x] => *)
+      (*     A' <- fullquote A ;; *)
+      (*     B' <- fullquote B ;; *)
+      (*     e' <- fullquote e ;; *)
+      (*     x' <- fullquote x ;; *)
+      (*     ret (wcoe (pvar 0) A' B' e' x') *)
+      (*   | _ => raise (InstanciationNotHandeled c l) *)
+      (*   end *)
 
-      else if eq_string c "Translation.Quotes.concat" then
-        match l with
-        | [A; x; y; z; p; q] =>
-          A' <- fullquote A ;;
-          x' <- fullquote x ;;
-          y' <- fullquote y ;;
-          z' <- fullquote z ;;
-          p' <- fullquote p ;;
-          q' <- fullquote q ;;
-          ret (wconcat A' x' y' z' p' q')
-        | _ => raise (InstanciationNotHandeled c l)
-        end
+      (* else if eq_string c "Translation.Quotes.concat" then *)
+      (*   match l with *)
+      (*   | [A; x; y; z; p; q] => *)
+      (*     A' <- fullquote A ;; *)
+      (*     x' <- fullquote x ;; *)
+      (*     y' <- fullquote y ;; *)
+      (*     z' <- fullquote z ;; *)
+      (*     p' <- fullquote p ;; *)
+      (*     q' <- fullquote q ;; *)
+      (*     ret (wconcat A' x' y' z' p' q') *)
+      (*   | _ => raise (InstanciationNotHandeled c l) *)
+      (*   end *)
 
-      else if eq_string c "Translation.Quotes.coeβ" then
-        match l with
-        | [A; x] =>
-          A' <- fullquote A ;;
-          x' <- fullquote x ;;
-          ret (wcoeβ A' x')
-        | _ => raise (InstanciationNotHandeled c l)
-        end
+      (* else if eq_string c "Translation.Quotes.coeβ" then *)
+      (*   match l with *)
+      (*   | [A; x] => *)
+      (*     A' <- fullquote A ;; *)
+      (*     x' <- fullquote x ;; *)
+      (*     ret (wcoeβ A' x') *)
+      (*   | _ => raise (InstanciationNotHandeled c l) *)
+      (*   end *)
 
 
       else match assoc_at c constt with
@@ -243,9 +243,9 @@ Fixpoint fullquote (t : term)
                           | Some (Level.Var k) =>
                             match nth_error univs k with
                             | Some t1 => t1
-                            | None => myadmit
+                            | None => myadmit "not enough univs 1"
                             end
-                          | _ => myadmit
+                          | _ => myadmit "not enough univs 2"
                           end in
         let t' := instantiate_sorts inst t in
         l' <- monad_map fullquote l ;;
@@ -290,36 +290,23 @@ Definition mkApp t u :=
     | _ => wApp t u
   end.
 
-Print Instances Monad.
-
-(* Instance qskdj : Monad fq_result. *)
-(* exact _. *)
-(* Defined. *)
-Opaque lift.
-Eval simpl in (fun s (A e x : wterm) => 
-              (match assoc_at "Translation.Quotes.coeβ'" unknown_constants with
-              | Some (t , _) => t' <- fullquote empty [s] t ;;
-                               let t' := mkApp t' A in
-                               let t' := mkApp t' e in
-                               let t' := mkApp t' x in
-                               ret t'
-              | _ => raise (MsgError "not found")
-              end : result fq_error wterm)).
+(* Opaque lift. *)
+(* Eval simpl in (fun s (A e x : wterm) =>  *)
+(*               (match assoc_at "Translation.Quotes.coeβ'" unknown_constants with *)
+(*               | Some (t , _) => t' <- fullquote empty [s] t ;; *)
+(*                                let t' := mkApp t' A in *)
+(*                                let t' := mkApp t' e in *)
+(*                                let t' := mkApp t' x in *)
+(*                                ret t' *)
+(*               | _ => raise (MsgError "not found") *)
+(*               end : result fq_error wterm)). *)
 
 
-
-Definition tsl_constant TC univs c :=
-  let body :=
-      match assoc_at c unknown_constants with
-      | Some (t , _) => t
-      | _ => tRel 90
-      end in
-  let bodyᵗ :=
-      match fullquote TC univs body with
-      | Success t => t
-      | Error e => wRel 212
-      end in
-  acons c bodyᵗ TC.
+Definition myassoc_at {A} key map : A :=
+  match assoc_at key map with
+  | Some v => v
+  | None => myadmit ("key not in the map: ", key)
+  end.
 
 Fixpoint keys {A} (l : assoc A) :=
   match l with
@@ -327,79 +314,103 @@ Fixpoint keys {A} (l : assoc A) :=
   | acons key data t => key :: (keys t)
   end.
 
-Eval compute in (keys unknown_constants).
-
-
-Definition TC :=
-  (* Eval compute in *)
-  (let TC := empty in                 
-  let TC := tsl_constant TC [pvar 0; pvar 1] "Translation.Quotes.transport" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.coe" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.heq" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.Pack" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT1" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT2" in
-  let TC := tsl_constant TC [pvar 0] "Translation.Quotes.concat" in
-  let TC := tsl_constant TC [pvar 0; pvar 1] "Translation.Quotes.transportβ" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.coeβ" in
-  let TC := tsl_constant TC [pvar 0] "Translation.Quotes.inverse" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.coeβ'" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.heq_to_eq" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.pack" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.heq_refl" in
-  let TC := tsl_constant TC [pvar 0; pvar 1] "Translation.Quotes.ap" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT1β" in
-  let TC := tsl_constant TC [pvar 0; pvar 1; psum_sort (pvar 0) (pvar 1)] "Translation.Quotes.transport_sigma_const" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0)] "Translation.Quotes.ProjT2β" in
-  let TC := tsl_constant TC [pvar 0; psucc (pvar 0); pvar 1; psucc (pvar 1); psucc (psucc (pvar 1)); psucc (pprod_sort (pvar 0) (pvar 1))] "Translation.Quotes.heq_to_eq_fam" in
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_prod" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.eq_to_heq" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.sigT_rec" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.heq_trans" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.heq_apD" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_lambda" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_app" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_sum" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_pi1" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_pi2" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_eq" in *)
-  (* let TC := tsl_constant TC [pvar 0] "Translation.Quotes.cong_refl" in *)
-  TC).
-
-
-Definition tsl_constant' TC univs c :=
-  let typ :=
-      match assoc_at c unknown_constants with
-      | Some (t , A) => A
-      | _ => tRel 90
-      end in
-  match fullquote TC univs typ with
-  | Success t => t
-  | Error e => wRel 212
+Fixpoint assoc_to_list {A} (l : assoc A) :=
+  match l with
+  | empty => []
+  | acons key data t => (key, data) :: (assoc_to_list t)
   end.
 
-Eval lazy in (assoc_at "Translation.Quotes.transport" TC).
 
-Definition wtransport := (wLambda (nNamed "A") (wSort (pvar 0))
-            (wLambda (nNamed "P") (wProd nAnon (wRel 0) (wSort (pvar 1)))
-               (wLambda (nNamed "x") (wRel 1)
-                  (wLambda (nNamed "y") (wRel 2)
-                     (wLambda (nNamed "p") (wEq (wRel 3) (wRel 1) (wRel 0))
-                        (wLambda (nNamed "u") (wApp (wRel 3) (wRel 2))
-                           (wJ (wRel 5) (wRel 3) (wApp (wRel 6) (wRel 1)) 
-                              (wRel 0) (wRel 2) (wRel 1)))))))).
+Notation "s --> t" := (acons s t) (at level 20).
+Notation "[< a ; b ; .. ; c >]" :=
+  (a (b (.. (c empty) ..))).
+Notation "[< a >]" := (a empty).
+Notation "[< >]" := (empty).
 
-Eval lazy in (tsl_constant' TC [pvar 0; pvar 1] "Translation.Quotes.transport").
+(* Eval compute in (keys unknown_constants). *)
 
-Definition wtransport_type := wProd (nNamed "A") (wSort (pvar 0))
-         (wProd (nNamed "P") (wProd nAnon (wRel 0) (wSort (pvar 1)))
-            (wProd (nNamed "x") (wRel 1)
-               (wProd (nNamed "y") (wRel 2)
-                  (wProd (nNamed "p") (wEq (wRel 3) (wRel 1) (wRel 0))
-                     (wProd (nNamed "u") (wApp (wRel 3) (wRel 2))
-                        (wApp (wRel 4) (wRel 2))))))).
+Definition unknown_constants_univs := [<
+    "Translation.Quotes.transport" --> [pvar 0; pvar 1];
+    "Translation.Quotes.coe" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.heq" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.Pack" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.ProjT1" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.ProjT2" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.concat" --> [pvar 0];
+    "Translation.Quotes.inverse" --> [pvar 0];
+    "Translation.Quotes.transportβ" --> [pvar 0; pvar 1];
+    "Translation.Quotes.coeβ" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.coeβ'" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.heq_to_eq" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.pack" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.heq_refl" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.ap" --> [pvar 0; pvar 1];
+    "Translation.Quotes.ProjT1β" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.transport_sigma_const" --> [pvar 0; pvar 1; psum_sort (pvar 0) (pvar 1)];
+    "Translation.Quotes.ProjT2β" --> [pvar 0; psucc (pvar 0)];
+    (* "Translation.Quotes.heq_to_eq_fam'" --> ; *)
+    (* "Translation.Quotes.cong_prod" --> ; *)
+    (* "Translation.Quotes.eq_to_heq" --> ; *)
+    (* "Translation.Quotes.sigT_rec" --> ; *)
+    (* "Translation.Quotes.heq_trans" --> ; *)
+    (* "Translation.Quotes.heq_apD" --> ; *)
+    (* "Translation.Quotes.cong_lambda" --> ; *)
+    "Translation.Quotes.heq_to_eq_fam" --> [pvar 0; psucc (pvar 0); pvar 1; psucc (pvar 1); psucc (psucc (pvar 1)); psucc (pprod_sort (pvar 0) (pvar 1))]
+    (* "Translation.Quotes.cong_app" --> ; *)
+    (* "Translation.Quotes.cong_sum" --> ; *)
+    (* "Translation.Quotes.cong_pi1" --> ; *)
+    (* "Translation.Quotes.cong_pi2" --> ; *)
+    (* "Translation.Quotes.cong_eq" --> ; *)
+    (* "Translation.Quotes.cong_refl" --> ) *)
+  >].
 
-(* Lemma heq_sort {Σ} : Σ ;;; [] |-w wtransport : wtransport_type. *)
+
+Definition tsl_constant TC X :=
+  let '(c, univs) := X in
+  let body := fst (myassoc_at c unknown_constants) in
+  let bodyᵗ :=
+      match fullquote TC univs body with
+      | Success t => t
+      | Error e => myadmit ("tsl error in body:", e)
+      end in
+  acons c bodyᵗ TC.
+
+Definition tsl_constant_typ TC c :=
+  let univs := myassoc_at c unknown_constants_univs in
+  let typ := snd (myassoc_at c unknown_constants) in
+  match fullquote TC univs typ with
+  | Success t => t
+  | Error e => myadmit ("tsl error in type:", e)
+  end.
+
+Definition TC := List.fold_left tsl_constant
+                                (assoc_to_list unknown_constants_univs) empty.
+
+Tactic Notation "myrefl" := lazy; exact Logic.eq_refl.
+
+
+Definition wtransport := Eval lazy in
+      myassoc_at "Translation.Quotes.transport" TC.
+
+Definition wtransport_type := Eval lazy in
+      tsl_constant_typ TC "Translation.Quotes.transport".
+
+Lemma type_transport : [] ;;; [] |-w wtransport : wtransport_type.
+  eapply meta_conv. eapply wttinfer_sound.
+  myrefl. constructor. constructor. myrefl.
+Qed.
+
+Opaque wtransport.
+Definition wcoe := Eval lazy in
+      tsl_constant TC ("Translation.Quotes.coe", [pvar 0; psucc (pvar 0)]).
+
+Definition wcoe_type := Eval lazy in
+      tsl_constant_typ TC "Translation.Quotes.coe".
+
+Lemma type_coe : [] ;;; [] |-w wcoe : wcoe_type.
+  eapply meta_conv. eapply wttinfer_sound.
+  lazy. myrefl. constructor. constructor. myrefl.
+Qed.
 
 
 

@@ -936,185 +936,186 @@ Ltac other_ittintro t ::=
   end.
 
 
+End Manual.
 
-Definition type_smld Γ s z k A1 A2 B1 B2 pA pB P P1 :
-    wf Σ Γ ->
-    Σ ;;; Γ ,, A1 |-w B1 : wSort z ->
-    Σ ;;; Γ ,, A2 |-w B2 : wSort z ->
-    Σ ;;; Γ |-w pA : wHeq (succ s) (wSort s) A1 (wSort s) A2 ->
-    Σ ;;; Γ ,, (wPack s A1 A2)
-    |-w pB : wHeq (succ z)
-                 (wSort z) ((lift 1 1 B1){ 0 := wProjT1 s ⇑A1 ⇑A2 (wRel 0) })
-                 (wSort z) ((lift 1 1 B2){ 0 := wProjT2 s ⇑A1 ⇑A2 (wRel 0) }) ->
-    Σ ;;; Γ ,, wSort s ,, (wRel 0 ↦ wSort z) |-w P : wSort k ->
-    Σ ;;; Γ |-w P1 : P { 1 := A1 } { 0 := wLambda nAnon A1 B1 } ->
-exists P2,
-    Σ ;;; Γ |-w P2 : P { 1 := A2 } { 0 := wLambda nAnon A2 B2 }.
-Proof with try assumption.
-  intros HΓ HB1 HB2 HA12 HB12 HP HP1.
-  eexists. inverse HA12. clear s0 HA0 HA2. rename HA3 into HA2.
-  (* assert (isType Σ Γ ((P {1 := A2}) {0 := wLambda nAnon A2 B2})). { *)
-  (*   eexists. eapply meta_conv. eapply typing_subst2; try eassumption. *)
-  (*   2: reflexivity. cbn. rewrite lift00. *)
-  (*   ittcheck. } *)
-  refine (let XX : Σ ;;; Γ |-w _ : wProd nAnon (A2 ↦ wSort z)
-          ((wProd nAnon ⇑(wPack s A1 A2) (wHeq (succ z) (wSort z)
-          ((lift 2 1 B1) {0 := wProjT1 s (lift0 2 A1) (lift0 2 A2) (wRel 0)}) 
-          (wSort z) (wApp (wRel 1) (wProjT2 s (lift0 2 A1) (lift0 2 A2) (wRel 0)))))
-             ↦ (⇑((P {1 := A2}) {0 := wLambda nAnon A2 B2})))
-              := _ in _).
-  - eapply meta_conv. eapply type_App.
-    eapply meta_conv. eapply type_App. exact XX.
-    all: clear XX.
-    + eapply type_Lambda; eassumption.
-    + cbn; rewrite !subst_heq; cbn; substP3. 
-    + eapply type_Lambda. eapply type_HeqTrans. ittcheck.
-      eapply meta_conv. exact HB12.
-      * apply (f_equal (fun X => wHeq _ _ X _ _)).
-      rewrite (substP4 _ _ _ 0 1); cbn.
-      rewrite (substP3 _ _ 1 2 1) by omega.
-      rewrite subst_ProjT1; cbn.
-      now rewrite !(substP3 _ _ 0) by omega.
-      * eapply type_EqToHeq; ittcheck.
-        rewrite subst_ProjT2; cbn.
-        rewrite !(substP3 _ _ 0 1 1) by omega.
-        eapply meta_conv. eapply type_inverse. ittcheck.
-        eapply type_Beta with (A := ⇑A2) (t := lift 1 1 B2)
-                              (u := wProjT2 s ⇑A1 ⇑A2 (wRel 0)); ittcheck.
-      eapply (@type_lift S Σ Γ [_] [_]); ittcheck. reflexivity.
-    + rewrite lift_lift; cbn.
-      rewrite !(substP3 _ _ 0) by omega.
-      now rewrite lift00.
+(* Definition type_smld Γ s z k A1 A2 B1 B2 pA pB P P1 : *)
+(*     wf Σ Γ -> *)
+(*     Σ ;;; Γ ,, A1 |-w B1 : wSort z -> *)
+(*     Σ ;;; Γ ,, A2 |-w B2 : wSort z -> *)
+(*     Σ ;;; Γ |-w pA : wHeq (succ s) (wSort s) A1 (wSort s) A2 -> *)
+(*     Σ ;;; Γ ,, (wPack s A1 A2) *)
+(*     |-w pB : wHeq (succ z) *)
+(*                  (wSort z) ((lift 1 1 B1){ 0 := wProjT1 s ⇑A1 ⇑A2 (wRel 0) }) *)
+(*                  (wSort z) ((lift 1 1 B2){ 0 := wProjT2 s ⇑A1 ⇑A2 (wRel 0) }) -> *)
+(*     Σ ;;; Γ ,, wSort s ,, (wRel 0 ↦ wSort z) |-w P : wSort k -> *)
+(*     Σ ;;; Γ |-w P1 : P { 1 := A1 } { 0 := wLambda nAnon A1 B1 } -> *)
+(* exists P2, *)
+(*     Σ ;;; Γ |-w P2 : P { 1 := A2 } { 0 := wLambda nAnon A2 B2 }. *)
+(* Proof with try assumption. *)
+(*   intros HΓ HB1 HB2 HA12 HB12 HP HP1. *)
+(*   eexists. inverse HA12. clear s0 HA0 HA2. rename HA3 into HA2. *)
+(*   (* assert (isType Σ Γ ((P {1 := A2}) {0 := wLambda nAnon A2 B2})). { *) *)
+(*   (*   eexists. eapply meta_conv. eapply typing_subst2; try eassumption. *) *)
+(*   (*   2: reflexivity. cbn. rewrite lift00. *) *)
+(*   (*   ittcheck. } *) *)
+(*   refine (let XX : Σ ;;; Γ |-w _ : wProd nAnon (A2 ↦ wSort z) *)
+(*           ((wProd nAnon ⇑(wPack s A1 A2) (wHeq (succ z) (wSort z) *)
+(*           ((lift 2 1 B1) {0 := wProjT1 s (lift0 2 A1) (lift0 2 A2) (wRel 0)})  *)
+(*           (wSort z) (wApp (wRel 1) (wProjT2 s (lift0 2 A1) (lift0 2 A2) (wRel 0))))) *)
+(*              ↦ (⇑((P {1 := A2}) {0 := wLambda nAnon A2 B2}))) *)
+(*               := _ in _). *)
+(*   - eapply meta_conv. eapply type_App. *)
+(*     eapply meta_conv. eapply type_App. exact XX. *)
+(*     all: clear XX. *)
+(*     + eapply type_Lambda; eassumption. *)
+(*     + cbn; rewrite !subst_heq; cbn; substP3.  *)
+(*     + eapply type_Lambda. eapply type_HeqTrans. ittcheck. *)
+(*       eapply meta_conv. exact HB12. *)
+(*       * apply (f_equal (fun X => wHeq _ _ X _ _)). *)
+(*       rewrite (substP4 _ _ _ 0 1); cbn. *)
+(*       rewrite (substP3 _ _ 1 2 1) by omega. *)
+(*       rewrite subst_ProjT1; cbn. *)
+(*       now rewrite !(substP3 _ _ 0) by omega. *)
+(*       * eapply type_EqToHeq; ittcheck. *)
+(*         rewrite subst_ProjT2; cbn. *)
+(*         rewrite !(substP3 _ _ 0 1 1) by omega. *)
+(*         eapply meta_conv. eapply type_inverse. ittcheck. *)
+(*         eapply type_Beta with (A := ⇑A2) (t := lift 1 1 B2) *)
+(*                               (u := wProjT2 s ⇑A1 ⇑A2 (wRel 0)); ittcheck. *)
+(*       eapply (@type_lift S Σ Γ [_] [_]); ittcheck. reflexivity. *)
+(*     + rewrite lift_lift; cbn. *)
+(*       rewrite !(substP3 _ _ 0) by omega. *)
+(*       now rewrite lift00. *)
 
-      Unshelve. all: try exact nAnon. 2: shelve. 2: apply lift_Pack.
-      eapply meta_conv.
-      eapply type_HeqToEq in HA12; try assumption.
-      eapply type_transport with (P := lift 1 1 (wProd nAnon (wRel 0 ↦ wSort z) (wProd nAnon ⇑(wPack s A1 (wRel 0)) (wHeq (succ z) (wSort z) ((lift 2 1 B1) {0 := wProjT1 s (lift0 2 A1) (lift0 2 (wRel 0)) (wRel 0)}) (wSort z) (wApp (wRel 1) (wProjT2 s (lift0 2 A1) (lift0 2 (wRel 0)) (wRel 0)))) ↦ ⇑((P {1 := (wRel 0)}) {0 := wLambda nAnon (wRel 0) B2})))).
-      assumption. 2: exact HA12.
-      * cbn. rewrite !lift_Pack, !lift_heq, !lift_lift; cbn.
-        admit.
-      * cbn. rewrite !lift_Pack, !lift_heq, !lift_lift, !lift00; cbn.
-        repeat eapply type_Lambda.
-      *
- ittcheck.
-        rewrite !lift_Pack. ittcheck; cbn. admit.
-        ittcheck. admit.
-      eapply (@type_lift S Σ _ [_] [_; _]); ittcheck. reflexivity.
-  .
+(*       Unshelve. all: try exact nAnon. 2: shelve. 2: apply lift_Pack. *)
+(*       eapply meta_conv. *)
+(*       eapply type_HeqToEq in HA12; try assumption. *)
+(*       eapply type_transport with (P := lift 1 1 (wProd nAnon (wRel 0 ↦ wSort z) (wProd nAnon ⇑(wPack s A1 (wRel 0)) (wHeq (succ z) (wSort z) ((lift 2 1 B1) {0 := wProjT1 s (lift0 2 A1) (lift0 2 (wRel 0)) (wRel 0)}) (wSort z) (wApp (wRel 1) (wProjT2 s (lift0 2 A1) (lift0 2 (wRel 0)) (wRel 0)))) ↦ ⇑((P {1 := (wRel 0)}) {0 := wLambda nAnon (wRel 0) B2})))). *)
+(*       assumption. 2: exact HA12. *)
+(*       * cbn. rewrite !lift_Pack, !lift_heq, !lift_lift; cbn. *)
+(*         admit. *)
+(*       * cbn. rewrite !lift_Pack, !lift_heq, !lift_lift, !lift00; cbn. *)
+(*         repeat eapply type_Lambda. *)
+(*       * *)
+(*  ittcheck. *)
+(*         rewrite !lift_Pack. ittcheck; cbn. admit. *)
+(*         ittcheck. admit. *)
+(*       eapply (@type_lift S Σ _ [_] [_; _]); ittcheck. reflexivity. *)
+(*   . *)
 
-      eapply type_Lambda. eapply type_Lambda. 
+(*       eapply type_Lambda. eapply type_Lambda.  *)
 
-  cbn. eapply type_heq.
-  ittcheck.
-  eapply type_App.
+(*   cbn. eapply type_heq. *)
+(*   ittcheck. *)
+(*   eapply type_App. *)
 
-   (forall p : Pack@{i i1} A1 A2, B1 (ProjT1@{i i1} p) ≅ B2 (ProjT2@{i i1} p)) ->
-  P A2 B2
+(*    (forall p : Pack@{i i1} A1 A2, B1 (ProjT1@{i i1} p) ≅ B2 (ProjT2@{i i1} p)) -> *)
+(*   P A2 B2 *)
 
-Admitted.
+(* Admitted. *)
 
-Definition wsmld (s z k : sort) (A1 A2 B1 B2 pA pB P P1 : wterm) : wterm.
-Admitted.
+(* Definition wsmld (s z k : sort) (A1 A2 B1 B2 pA pB P P1 : wterm) : wterm. *)
+(* Admitted. *)
 
-Definition type_smld Γ s z k A1 A2 B1 B2 pA pB P P1 :
-    wf Σ Γ ->
-    Σ ;;; Γ ,, A1 |-w B1 : wSort z ->
-    Σ ;;; Γ ,, A2 |-w B2 : wSort z ->
-    Σ ;;; Γ |-w pA : wHeq (succ s) (wSort s) A1 (wSort s) A2 ->
-    Σ ;;; Γ ,, (wPack s A1 A2)
-    |-w pB : wHeq (succ z)
-                 (wSort z) ((lift 1 1 B1){ 0 := wProjT1 s ⇑A1 ⇑A2 (wRel 0) })
-                 (wSort z) ((lift 1 1 B2){ 0 := wProjT2 s ⇑A1 ⇑A2 (wRel 0) }) ->
-    Σ ;;; Γ ,, wSort s ,, (wRel 0 ↦ wSort z) |-w P : wSort k ->
-    Σ ;;; Γ |-w P1 : P { 1 := A1 } { 0 := wLambda nAnon A1 B1 } ->
-    Σ ;;; Γ |-w wsmld s z k A1 A2 B1 B2 pA pB P P1
-             : P { 1 := A2 } { 0 := wLambda nAnon A2 B2 }.
-Admitted.
-
-
-Lemma subst_rel0 t : forall k, (lift 1 (1 + k)%nat t) {k := wRel 0} = t.
-  induction t; intro k; cbn.
-  { destruct n. cbn. case_eq k; reflexivity.
-    nat_case; cbn; nat_case; cbn; try reflexivity.
-    now rewrite e2, Nat.add_0_r. }
-  all: repeat hyp rewrite; try reflexivity.
-Defined.
+(* Definition type_smld Γ s z k A1 A2 B1 B2 pA pB P P1 : *)
+(*     wf Σ Γ -> *)
+(*     Σ ;;; Γ ,, A1 |-w B1 : wSort z -> *)
+(*     Σ ;;; Γ ,, A2 |-w B2 : wSort z -> *)
+(*     Σ ;;; Γ |-w pA : wHeq (succ s) (wSort s) A1 (wSort s) A2 -> *)
+(*     Σ ;;; Γ ,, (wPack s A1 A2) *)
+(*     |-w pB : wHeq (succ z) *)
+(*                  (wSort z) ((lift 1 1 B1){ 0 := wProjT1 s ⇑A1 ⇑A2 (wRel 0) }) *)
+(*                  (wSort z) ((lift 1 1 B2){ 0 := wProjT2 s ⇑A1 ⇑A2 (wRel 0) }) -> *)
+(*     Σ ;;; Γ ,, wSort s ,, (wRel 0 ↦ wSort z) |-w P : wSort k -> *)
+(*     Σ ;;; Γ |-w P1 : P { 1 := A1 } { 0 := wLambda nAnon A1 B1 } -> *)
+(*     Σ ;;; Γ |-w wsmld s z k A1 A2 B1 B2 pA pB P P1 *)
+(*              : P { 1 := A2 } { 0 := wLambda nAnon A2 B2 }. *)
+(* Admitted. *)
 
 
-Definition type_CongProd Γ s z nx ny A1 A2 B1 B2 pA pB :
-    wf Σ Γ ->
-    Σ ;;; Γ ,, A1 |-w B1 : wSort z ->
-    Σ ;;; Γ ,, A2 |-w B2 : wSort z ->
-    Σ ;;; Γ |-w pA : wHeq (succ s) (wSort s) A1 (wSort s) A2 ->
-    Σ ;;; Γ ,, (wPack s A1 A2)
-    |-w pB : wHeq (succ z)
-                 (wSort z) ((lift 1 1 B1){ 0 := wProjT1 s ⇑A1 ⇑A2 (wRel 0) })
-                 (wSort z) ((lift 1 1 B2){ 0 := wProjT2 s ⇑A1 ⇑A2 (wRel 0) }) ->
-exists XX,
-    Σ ;;; Γ |-w XX :
-    wHeq (succ (Sorts.prod_sort s z))
-         (wSort (Sorts.prod_sort s z)) (wProd nx A1 B1)
-         (wSort (Sorts.prod_sort s z)) (wProd ny A2 B2).
-Proof.
-  intros HΓ HB1 HB2 HA12 HB12. 
-  eexists. inverse HA12. clear s0 HA0 HA2. rename HA3 into HA2.
-  unshelve eapply type_HeqTrans. exact (wSort (Sorts.prod_sort s z)).
-  exact (wProd ny A2 (wApp (wLambda nAnon ⇑A2 (lift 1 1 B2)) (wRel 0))).
-  shelve. shelve. assumption.
-
-  - eapply meta_conv.
-    pose (P := wHeq (succ (Sorts.prod_sort s z))
-        (wSort (Sorts.prod_sort s z)) (lift0 2 (wProd nx A1 B1))
-        (wSort (Sorts.prod_sort s z)) (wProd ny (wRel 1) (wApp (wRel 1) (wRel 0)))).
-    refine (type_smld _ _ _ _ _ _ _ _ _ _ P _ HΓ HB1 HB2 HA12 HB12 _ _); subst P.
-    + ittcheck.
-    + rewrite !subst_heq; cbn. substP3.
-      simple refine (let XX := type_Beta Σ HΣ (Γ ,, A1) ⇑A1 (wSort z) (lift 1 1 B1)
-                                         (wRel 0) _ _ _ in _).
-      constructor.
-      eapply meta_conv.
-      eapply (@type_lift S Σ Γ [_] [_]); ittcheck. reflexivity.
-      ittcheck. rewrite subst_rel0 in XX; cbn in XX.
-      eapply type_EqToHeq. assumption. ittcheck.
-      eapply type_ProdExt. eapply type_inverse; ittcheck. assumption.
-    + rewrite !subst_heq; cbn. substP3.
-  - eapply type_EqToHeq. assumption. ittcheck.
-    eapply type_ProdExt.
-    simple refine (let XX := type_Beta Σ HΣ (Γ ,, A2) ⇑A2 (wSort z) (lift 1 1 B2)
-                                       (wRel 0) _ _ _ in _).
-    constructor. eapply meta_conv.
-    eapply (@type_lift S Σ Γ [_] [_]); ittcheck. reflexivity.
-    ittcheck. rewrite subst_rel0 in XX; cbn in XX.
-    all: eassumption.
-Defined.
+(* Lemma subst_rel0 t : forall k, (lift 1 (1 + k)%nat t) {k := wRel 0} = t. *)
+(*   induction t; intro k; cbn. *)
+(*   { destruct n. cbn. case_eq k; reflexivity. *)
+(*     nat_case; cbn; nat_case; cbn; try reflexivity. *)
+(*     now rewrite e2, Nat.add_0_r. } *)
+(*   all: repeat hyp rewrite; try reflexivity. *)
+(* Defined. *)
 
 
-Γ , A ⊢ B1 : wSort s
-Γ , A ⊢ B2 : wSort s
-Γ , A ⊢ pB : wEq (wSort s) B1 B2
+(* Definition type_CongProd Γ s z nx ny A1 A2 B1 B2 pA pB : *)
+(*     wf Σ Γ -> *)
+(*     Σ ;;; Γ ,, A1 |-w B1 : wSort z -> *)
+(*     Σ ;;; Γ ,, A2 |-w B2 : wSort z -> *)
+(*     Σ ;;; Γ |-w pA : wHeq (succ s) (wSort s) A1 (wSort s) A2 -> *)
+(*     Σ ;;; Γ ,, (wPack s A1 A2) *)
+(*     |-w pB : wHeq (succ z) *)
+(*                  (wSort z) ((lift 1 1 B1){ 0 := wProjT1 s ⇑A1 ⇑A2 (wRel 0) }) *)
+(*                  (wSort z) ((lift 1 1 B2){ 0 := wProjT2 s ⇑A1 ⇑A2 (wRel 0) }) -> *)
+(* exists XX, *)
+(*     Σ ;;; Γ |-w XX : *)
+(*     wHeq (succ (Sorts.prod_sort s z)) *)
+(*          (wSort (Sorts.prod_sort s z)) (wProd nx A1 B1) *)
+(*          (wSort (Sorts.prod_sort s z)) (wProd ny A2 B2). *)
+(* Proof. *)
+(*   intros HΓ HB1 HB2 HA12 HB12.  *)
+(*   eexists. inverse HA12. clear s0 HA0 HA2. rename HA3 into HA2. *)
+(*   unshelve eapply type_HeqTrans. exact (wSort (Sorts.prod_sort s z)). *)
+(*   exact (wProd ny A2 (wApp (wLambda nAnon ⇑A2 (lift 1 1 B2)) (wRel 0))). *)
+(*   shelve. shelve. assumption. *)
 
-Γ ⊢ ? : wEq (wSort ...) (wProd A B1) (wProd A B2)
+(*   - eapply meta_conv. *)
+(*     pose (P := wHeq (succ (Sorts.prod_sort s z)) *)
+(*         (wSort (Sorts.prod_sort s z)) (lift0 2 (wProd nx A1 B1)) *)
+(*         (wSort (Sorts.prod_sort s z)) (wProd ny (wRel 1) (wApp (wRel 1) (wRel 0)))). *)
+(*     refine (type_smld _ _ _ _ _ _ _ _ _ _ P _ HΓ HB1 HB2 HA12 HB12 _ _); subst P. *)
+(*     + ittcheck. *)
+(*     + rewrite !subst_heq; cbn. substP3. *)
+(*       simple refine (let XX := type_Beta Σ HΣ (Γ ,, A1) ⇑A1 (wSort z) (lift 1 1 B1) *)
+(*                                          (wRel 0) _ _ _ in _). *)
+(*       constructor. *)
+(*       eapply meta_conv. *)
+(*       eapply (@type_lift S Σ Γ [_] [_]); ittcheck. reflexivity. *)
+(*       ittcheck. rewrite subst_rel0 in XX; cbn in XX. *)
+(*       eapply type_EqToHeq. assumption. ittcheck. *)
+(*       eapply type_ProdExt. eapply type_inverse; ittcheck. assumption. *)
+(*     + rewrite !subst_heq; cbn. substP3. *)
+(*   - eapply type_EqToHeq. assumption. ittcheck. *)
+(*     eapply type_ProdExt. *)
+(*     simple refine (let XX := type_Beta Σ HΣ (Γ ,, A2) ⇑A2 (wSort z) (lift 1 1 B2) *)
+(*                                        (wRel 0) _ _ _ in _). *)
+(*     constructor. eapply meta_conv. *)
+(*     eapply (@type_lift S Σ Γ [_] [_]); ittcheck. reflexivity. *)
+(*     ittcheck. rewrite subst_rel0 in XX; cbn in XX. *)
+(*     all: eassumption. *)
+(* Defined. *)
 
-  cbn in H3. rewrite subst_rel0 in H3.
-  pose proof (substP3 B1 (wRel 0) 0 0 1).  cbn in H4. in H3. by omega.
-  change ()
+
+(* Γ , A ⊢ B1 : wSort s *)
+(* Γ , A ⊢ B2 : wSort s *)
+(* Γ , A ⊢ pB : wEq (wSort s) B1 B2 *)
+
+(* Γ ⊢ ? : wEq (wSort ...) (wProd A B1) (wProd A B2) *)
+
+(*   cbn in H3. rewrite subst_rel0 in H3. *)
+(*   pose proof (substP3 B1 (wRel 0) 0 0 1).  cbn in H4. in H3. by omega. *)
+(*   change () *)
 
 
 
 
-Lemma heq_to_eq_fam'@{i i1 i2 j j1 j2 ij1 k i1j2k} {A1 A2 : Type@{i}}
-      {B1 : A1 -> Type@{j}} {B2 : A2 -> Type@{j}}
-      (hA : heq@{i1 i2} A1 A2)
-      (hB : forall (p : Pack@{i i1} A1 A2), heq@{j1 j2} (B1 (ProjT1 p)) (B2 (ProjT2 p)))
-      (P : forall (A : Type@{i})(B : A -> Type@{j}), Type@{k})
-      (P1 : P A1 B1)
-  : P A2 B2.
-Proof.
-  revert B2 hB. refine (transport@{i1 i1j2k} (fun A2: Type@{i} => forall B2 : A2 -> Type@{j}, (forall p : Pack@{i i1} A1 A2, B1 (ProjT1@{i i1} p) ≅ B2 (ProjT2@{i i1} p)) -> P A2 B2) (heq_to_eq hA) _).
-  intros B2 hB. refine (transport@{ij1 k} _ _ P1). apply funext; intro x.
-  refine (_ @ heq_to_eq (hB (pack x x (heq_refl x))) @ _).
-  all: apply ap. symmetry; apply ProjT1β. apply ProjT2β.
-Defined.
+(* Lemma heq_to_eq_fam'@{i i1 i2 j j1 j2 ij1 k i1j2k} {A1 A2 : Type@{i}} *)
+(*       {B1 : A1 -> Type@{j}} {B2 : A2 -> Type@{j}} *)
+(*       (hA : heq@{i1 i2} A1 A2) *)
+(*       (hB : forall (p : Pack@{i i1} A1 A2), heq@{j1 j2} (B1 (ProjT1 p)) (B2 (ProjT2 p))) *)
+(*       (P : forall (A : Type@{i})(B : A -> Type@{j}), Type@{k}) *)
+(*       (P1 : P A1 B1) *)
+(*   : P A2 B2. *)
+(* Proof. *)
+(*   revert B2 hB. refine (transport@{i1 i1j2k} (fun A2: Type@{i} => forall B2 : A2 -> Type@{j}, (forall p : Pack@{i i1} A1 A2, B1 (ProjT1@{i i1} p) ≅ B2 (ProjT2@{i i1} p)) -> P A2 B2) (heq_to_eq hA) _). *)
+(*   intros B2 hB. refine (transport@{ij1 k} _ _ P1). apply funext; intro x. *)
+(*   refine (_ @ heq_to_eq (hB (pack x x (heq_refl x))) @ _). *)
+(*   all: apply ap. symmetry; apply ProjT1β. apply ProjT2β. *)
+(* Defined. *)
 
 
 
