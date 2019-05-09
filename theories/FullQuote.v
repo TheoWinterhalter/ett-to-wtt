@@ -71,7 +71,34 @@ Fixpoint fullquote (t : term)
     | tCast t _ _ => fullquote t
     | tConst id univs => fullquote (tApp (tConst id univs) [])
     | tApp (tConst c cunivs) l =>
-      if eq_string c "Translation.Quotes.sigT" then
+      if eq_string c "Translation.Quotes.Π" then
+        match l with
+        | [A; tLambda nx _ B] =>
+          A' <- fullquote A ;;
+          B' <- fullquote B ;;
+          ret (wProd nx A' B')
+        | _ => raise (InstanciationNotHandeled c l)
+        end
+
+      else if eq_string c "Translation.Quotes.λ" then
+        match l with
+        | [A; tLambda nx _ _; u] =>
+          A' <- fullquote A ;;
+          u' <- fullquote u ;;
+          ret (wLambda nx A' u')
+        | _ => raise (InstanciationNotHandeled c l)
+        end
+
+      else if eq_string c "Translation.Quotes.App" then
+        match l with
+        | [_; _; u; v] =>
+          u' <- fullquote u ;;
+          v' <- fullquote v ;;
+          ret (wApp u' v')
+        | _ => raise (InstanciationNotHandeled c l)
+        end
+
+      else if eq_string c "Translation.Quotes.sigT" then
         match l with
         | [A; tLambda nx _ B] =>
           A' <- fullquote A ;;
@@ -269,9 +296,9 @@ End fq.
 
 
 
-Quote Recursively Definition all_constants :=
-  (cong_prod, cong_lambda, cong_app, cong_sum, cong_pi1, cong_pi2,
-   cong_eq, cong_refl).
+Quote Recursively Definition all_constants := cong_prod.
+  (* (cong_prod, cong_lambda, cong_app, cong_sum, cong_pi1, cong_pi2, *)
+   (* cong_eq, cong_refl). *)
 
 Fixpoint keep_unknown_constants gdecls :=
   match gdecls with
@@ -327,7 +354,7 @@ Notation "[< a ; b ; .. ; c >]" :=
 Notation "[< a >]" := (a empty).
 Notation "[< >]" := (empty).
 
-(* Eval compute in (keys unknown_constants). *)
+Eval compute in (keys unknown_constants).
 
 Definition unknown_constants_univs := [<
     "Translation.Quotes.transport" --> [pvar 0; pvar 1];
@@ -347,7 +374,7 @@ Definition unknown_constants_univs := [<
     "Translation.Quotes.ap" --> [pvar 0; pvar 1];
     "Translation.Quotes.ProjT1β" --> [pvar 0; psucc (pvar 0)];
     "Translation.Quotes.transport_sigma_const" --> [pvar 0; pvar 1; psum_sort (pvar 0) (pvar 1)];
-    "Translation.Quotes.ProjT2β" --> [pvar 0; psucc (pvar 0)];
+    "Translation.Quotes.ProjT2β" --> [pvar 0; psucc (pvar 0)]
     (* "Translation.Quotes.heq_to_eq_fam'" --> ; *)
     (* "Translation.Quotes.cong_prod" --> ; *)
     (* "Translation.Quotes.eq_to_heq" --> ; *)
@@ -355,7 +382,7 @@ Definition unknown_constants_univs := [<
     (* "Translation.Quotes.heq_trans" --> ; *)
     (* "Translation.Quotes.heq_apD" --> ; *)
     (* "Translation.Quotes.cong_lambda" --> ; *)
-    "Translation.Quotes.heq_to_eq_fam" --> [pvar 0; psucc (pvar 0); pvar 1; psucc (pvar 1); psucc (psucc (pvar 1)); psucc (pprod_sort (pvar 0) (pvar 1))]
+    (* "Translation.Quotes.heq_to_eq_fam" --> [pvar 0; psucc (pvar 0); pvar 1; psucc (pvar 1); psucc (psucc (pvar 1)); psucc (pprod_sort (pvar 0) (pvar 1))] *)
     (* "Translation.Quotes.cong_app" --> ; *)
     (* "Translation.Quotes.cong_sum" --> ; *)
     (* "Translation.Quotes.cong_pi1" --> ; *)

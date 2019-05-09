@@ -291,7 +291,7 @@ Definition type_transport Γ A P x y e u s' :
       Σ ;;; Γ ,, A |-w P : wSort s' ->
       Σ ;;; Γ |-w e : wEq A x y ->
       Σ ;;; Γ |-w u : P {0 := x} ->
-      Σ ;;; Γ |-w wtransport  A P x y e u : P {0 := y}.
+      Σ ;;; Γ |-w wtransport A P x y e u : P {0 := y}.
 Proof.
   intros HΓ HP He Hu; unfold wtransport.
   inverse He. ittcheck.
