@@ -1,4 +1,16 @@
 
+(** ***************************************************
+In this file we emulate Weak Type Theory.
+Axioms are used to introduce constants without their reduction rule
+(λ without beta, eq without J(refl), ...).
+Functions of Coq are used to model dependency and open terms of WTT.
+Axioms Π, λ, App are used to model Pi types of WTT.
+
+We have to take care of not using "open terms" where we don't want.
+E.g. we can't use "A -> B" in the predicate of a transport but only "A ⇒ B".
+Should be possible be ensure this with type classes as for fibrant types.
+**************************************************** *)
+
 Set Universe Polymorphism.
 (* Set Printing Universes. *)
 
@@ -805,10 +817,6 @@ Proof.
   wintro p2 hp. apply heq_to_eq in hp; wdestruct hp.
   exact E1.
 Defined.
-
-Definition Eap {A} {B : A -> Type} (f : forall x, B x) {x x'} (e : x = x')
-  : f x ≅ f x'.
-Admitted.
 
 
 (* Lemma cong_pi2@{i i1 i2 j j1 j2 ij ij1 ij2} (A1 A2 : Type@{i}) *)
