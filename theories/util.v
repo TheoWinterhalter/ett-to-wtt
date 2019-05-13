@@ -2,8 +2,6 @@
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega ROmega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import utils Typing monad_utils.
-
 Set Primitive Projections.
 Open Scope type_scope.
 
@@ -287,6 +285,7 @@ Definition rev_map {A B} (f : A -> B) (l : list A) : list B :=
     end
   in aux l [].
 
+Notation "#| Γ |" := (List.length Γ) (at level 0, Γ at level 99, format "#| Γ |").
 
 
 Fact skipn_all :
@@ -409,31 +408,34 @@ Proof.
     + cbn. eapply IHl1. assumption.
 Defined.
 
-
-Lemma fin_indT :
-  forall {N} (P : nat -> Type),
-    P 0 ->
-    (forall n, n < N -> P n -> P (S n)) ->
-    forall n, n <= N -> P n.
-Proof.
-  intros N P Po Ps n.
-  induction n.
-  - intros _. assumption.
-  - intro h. apply Ps.
-    + myomega.
-    + apply IHn. myomega.
+Program Fixpoint safe_nth {A} (l : list A) (n : nat | n < List.length l) : A :=
+  match l with
+  | nil => !
+  | hd :: tl =>
+    match n with
+    | 0 => hd
+    | S n => safe_nth tl n
+    end
+  end.
+Next Obligation.
+  simpl in H. inversion H.
+Defined.
+Next Obligation.
+  simpl in H. auto with arith.
 Defined.
 
-Corollary fin_indT_last :
-  forall {N} (P : nat -> Type),
-    P 0 ->
-    (forall n, n < N -> P n -> P (S n)) ->
-    P N.
-Proof.
-  intros N P Po Ps.
-  eapply fin_indT ; eauto.
-Defined.
 
+Lemma nth_error_safe_nth {A} n (l : list A) (isdecl : n < Datatypes.length l) :
+  nth_error l n = Some (safe_nth l (exist _ n isdecl)).
+Proof.
+  revert n isdecl; induction l; intros.
+  - inversion isdecl.
+  - destruct n as [| n']; simpl.
+    reflexivity.
+    simpl in IHl.
+    simpl in isdecl.
+    now rewrite <- IHl.
+Qed.
 
 Definition dec (A : Type) := A + { A -> False }.
 
@@ -454,28 +456,40 @@ Fixpoint assoc_at {A} (key : string) (t : assoc A) {struct t} : option A :=
   end.
 
 
-(* Error monad *)
-Inductive result E A :=
-| Success : A -> result E A
-| Error : E -> result E A.
 
-Arguments Success {_ _} _.
-Arguments Error {_ _} _.
+Definition ident := string.
 
-Instance error_monad E : Monad (result E) :=
-  {| ret A a := Success a ;
-     bind A B m f :=
-       match m with
-       | Success a => f a
-       | Error e => Error e
-       end
-  |}.
+Inductive name : Set :=
+| nAnon
+| nNamed (_ : ident).
 
-Instance monad_exc E : MonadExc E (result E) :=
-  { raise A e := Error e;
-    catch A m f :=
-      match m with
-      | Success a => m
-      | Error t => f t
-      end
-  }.
+
+Definition ident_eq (x y : ident) :=
+  match string_dec x y with
+  | left _ => true
+  | right _ => false
+  end.
+
+Lemma nth_error_isdecl {A} {l : list A} {n c} :
+  forall e : nth_error l n = Some c, n < #|l|.
+Proof.
+  revert l. induction n.
+  destruct l; cbn. discriminate. intro; omega.
+  destruct l; cbn. discriminate. intro H; apply IHn in H; omega.
+Defined.
+
+Lemma nth_error_Some_safe_nth {A} {l : list A} {n c} :
+  forall e : nth_error l n = Some c, safe_nth l (exist _ n (nth_error_isdecl e)) = c.
+Proof.
+  intros H.
+  pose proof (nth_error_safe_nth _ _ (nth_error_isdecl H)).
+  pose proof (eq_trans (eq_sym H) H0).
+  injection H1. intro H2; exact (eq_sym H2).
+Defined.
+
+
+
+
+
+Ltac easy := Coq.Init.Tactics.easy || solve [eauto 4 with core arith].
+Tactic Notation "now" tactic(t) := t; easy.

@@ -2,7 +2,6 @@
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import Ast utils Typing.
 From Translation
 Require Import util Sorts WAst WLiftSubst WEquality.
 
@@ -17,8 +16,6 @@ Definition wcontext := list wterm.
 
 Definition wsnoc (Γ : wcontext) (d : wterm) := d :: Γ.
 
-Notation " Γ ,, d " := (wsnoc Γ d) (at level 20, d at next level) : w_scope.
-
 (** Global contexts of axioms
     Basically a list of ITT types.
  *)
@@ -29,7 +26,15 @@ Definition wglobal_context : Type := list glob_decl.
 Definition lookup_glob (Σ : wglobal_context) (id : ident) :=
   List.find (fun d => ident_eq id (dname d)) Σ.
 
+Definition wapp_context (Γ Γ' : wcontext) : wcontext := (Γ' ++ Γ)%list.
+
 End Prelim.
+
+Notation " Γ ,, d " := (wsnoc Γ d) (at level 20, d at next level) : w_scope.
+Notation " Γ  ,,, Γ' " :=
+  (wapp_context Γ Γ')
+    (at level 25, Γ' at next level, left associativity) : w_scope.
+
 
 (*! Typing *)
 

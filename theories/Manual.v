@@ -1,13 +1,10 @@
-(* Partial translation from TemplateCoq to ITT *)
-
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Template
-Require Import Ast utils monad_utils Typing Checker.
 From Equations Require Import Equations DepElimDec.
 From Translation
 Require Import util Sorts WAst WEquality WLiftSubst WTyping WTypingInversions WChecker WLemmata Quotes.
 From TypingFlags Require Import Loader.
-Import MonadNotation ListNotations.
+Import ListNotations.
+Open Scope string_scope.
 
 Notation "⇑ t" := (lift 1 0 t) (at level 3, format "'⇑' t").
 Notation "A ↦ B" := (wProd nAnon A (↑ B)) (at level 30, right associativity).
@@ -343,7 +340,6 @@ Ltac other_ittintro t ::=
   | wcoe _ _ _ _ _ => eapply type_coe
   | _ => fail "No introduction rule for" t
   end.
-
 
 Definition wHeq s A a B b :=
   wSum (nNamed "e") (wEq (wSort s) A B)

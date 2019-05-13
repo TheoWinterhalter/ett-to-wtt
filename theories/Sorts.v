@@ -1,7 +1,6 @@
 (*! Notion of sort *)
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Template Require Import Ast.
 From Translation Require Import util.
 
 (* We define a notion of Sorts, reminiscent of that of a functional PTS *)

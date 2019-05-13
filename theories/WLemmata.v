@@ -1,6 +1,5 @@
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import Ast utils Typing.
 From Translation
 Require Import util WAst WLiftSubst WTyping WTypingInversions WEquality.
 
@@ -65,11 +64,6 @@ Proof.
         -- cbn in *. myomega.
 Defined.
 
-Definition wapp_context (Γ Γ' : wcontext) : wcontext := (Γ' ++ Γ)%list.
-Notation " Γ  ,,, Γ' " :=
-  (wapp_context Γ Γ')
-    (at level 25, Γ' at next level, left associativity) : w_scope.
-
 Lemma meta_conv :
   forall Σ Γ t A B,
     Σ ;;; Γ |-w t : A ->
@@ -114,9 +108,8 @@ Defined.
 
 Fact safe_nth_S :
   forall {A n} {a : A} {l isdecl},
-    ∑ isdecl',
-      safe_nth (a :: l) (exist _ (S n) isdecl) =
-      safe_nth l (exist _ n isdecl').
+    { isdecl' & safe_nth (a :: l) (exist _ (S n) isdecl)
+                = safe_nth l (exist _ n isdecl') }.
 Proof.
   intros A n. induction n ; intros a l isdecl.
   - cbn. eexists. reflexivity.
@@ -231,11 +224,10 @@ Proof.
     case_eq (ident_eq id (dname d0)) ;
     intro e ; rewrite e in h.
     + inversion h as [ h' ]. subst. clear h.
-      destruct (ident_eq_spec id (dname d)).
-      * subst. destruct (ident_eq_spec (dname d) (dname d')).
-        -- exfalso. easy.
-        -- easy.
-      * reflexivity.
+      unfold ident_eq in *.
+      destruct (string_dec id (dname d)); [|reflexivity].
+      destruct (string_dec id (dname d'));
+        congruence.
     + eapply IHΣ; eassumption.
 Defined.
 
@@ -361,7 +353,7 @@ Proof.
     + cbn.
       change (S #|Γ|) with (1+ #|Γ|)%nat.
       erewrite closed_above_lift by omega.
-      now eapply type_ctx_closed_above.
+      eapply type_ctx_closed_above; eassumption.
     + cbn in *. specialize (IHwf n (lt_S_n _ _ isdecl)).
       erewrite <- (closed_above_lift (n := 1) (k := 0)) in IHwf by omega.
       rewrite liftP3 in IHwf by omega.
@@ -563,7 +555,7 @@ Proof.
         replace (S (0 + #|Ξ|)) with (1 + #|Ξ|)%nat by myomega.
         rewrite substP1.
         cbn. eapply type_J ; try eih.
-        + cbn. unfold snoc. cbn.
+        + cbn. unfold wsnoc.
           f_equal. f_equal.
           * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
             apply liftP2. myomega.
@@ -595,7 +587,7 @@ Proof.
         replace (S (0 + #|Ξ|)) with (1 + #|Ξ|)%nat by myomega.
         rewrite substP1.
         eapply type_JBeta ; eih.
-        + cbn. unfold snoc. f_equal. f_equal.
+        + cbn. unfold wsnoc. f_equal. f_equal.
           * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
             apply liftP2. myomega.
           * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
@@ -764,8 +756,7 @@ Defined.
 Ltac sh h :=
   lazymatch goal with
   | [ type_subst :
-        forall (Σ : wglobal_context) (Γ : list wterm) (Δ : wcontext) (t A : wterm)
-          (B u : wterm),
+        forall (Σ : wglobal_context) (Γ Δ : wcontext) (t A B u : wterm),
           Σ;;; Γ,, B ,,, Δ |-w t : A ->
           type_glob Σ ->
           Σ;;; Γ |-w u : B ->
@@ -896,7 +887,7 @@ Proof.
         replace (S (0 + #|Δ|)) with (1 + #|Δ|)%nat by myomega.
         rewrite substP4.
         eapply type_J ; esh.
-        + cbn. unfold snoc. cbn.
+        + cbn. unfold wsnoc. cbn.
           f_equal. f_equal.
           * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
             apply substP2. myomega.
@@ -929,7 +920,7 @@ Proof.
         replace (S (0 + #|Δ|)) with (1 + #|Δ|)%nat by myomega.
         rewrite substP4.
         eapply type_JBeta ; esh.
-        + cbn. unfold snoc. cbn.
+        + cbn. unfold wsnoc. cbn.
           f_equal. f_equal.
           * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
             apply substP2. myomega.
@@ -947,11 +938,11 @@ Proof.
       - cbn. eapply type_SumExt ; esh.
       - cbn. erewrite subst_ax_type by eassumption.
         eapply type_Ax.
-        + now eapply wf_subst.
+        + eapply wf_subst; eassumption.
         + assumption.
       - cbn. erewrite subst_ax_type, subst_ax_body by eassumption.
         eapply type_Delta.
-        + now eapply wf_subst.
+        + eapply wf_subst; eassumption.
         + assumption.
       - eapply type_rename.
         + esh.
@@ -1010,7 +1001,7 @@ Ltac lift_sort :=
 
 Fixpoint nlctx Γ :=
   match Γ with
-  | A :: Γ => nlctx Γ,, nl A
+  | A :: Γ => nl A :: nlctx Γ
   | nil => nil
   end.
 
@@ -1189,7 +1180,7 @@ Proof.
     eapply typing_subst ; try eassumption.
     econstructor ; eassumption.
   - eexists. apply type_Sort. apply (typing_wf H).
-  - eexists. now apply type_Eq.
+  - eexists. apply type_Eq; eassumption.
   - exists s2.
     change (wSort s2) with ((wSort s2){1 := v}{0 := p}).
     eapply typing_subst2.
@@ -1256,7 +1247,7 @@ Proof.
     destruct H1 as [s HH]; exists s.
     pose proof (@type_lift _ [] Γ [] _ _ HH hg). cbn in H1.
     rewrite nil_cat in H1.
-    now erewrite lift_ax_type in H1 by eassumption.
+    erewrite lift_ax_type in H1 by eassumption. auto.
   - pose proof (isType_lookup_glob hg _ _ H0).
     destruct H1 as [s HH]; exists (Sorts.eq_sort s).
     assert (Σ;;; [] |-w wEq (dtype d) (wAx id) (dbody d)
@@ -1268,7 +1259,7 @@ Proof.
     pose proof (@type_lift _ [] Γ [] _ _ H1 hg). cbn in H2.
     rewrite nil_cat in H2.
     erewrite lift_ax_body in H2 by eassumption.
-    now erewrite lift_ax_type in H2 by eassumption.
+    erewrite lift_ax_type in H2 by eassumption; auto.
   - destruct IHtyping. eexists.
     eapply rename_typed ; try eassumption.
     + reflexivity.

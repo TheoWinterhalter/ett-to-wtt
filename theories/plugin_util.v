@@ -224,14 +224,6 @@ Definition some_inj (A : Type) (x y : A) (H : Some x = Some y) : x = y :=
              | None => x
              end) H.
 
-Lemma nth_error_Some_safe_nth A (l : list A) n c :
-  forall e : nth_error l n = Some c, safe_nth l (exist _ n (nth_error_isdecl e)) = c.
-Proof.
-  intros H.
-  pose proof (nth_error_safe_nth _ _ (nth_error_isdecl H)).
-  pose proof (eq_trans (eq_sym H) H0).
-  apply some_inj in H1. exact (eq_sym H1).
-Defined.
 
 Definition app_nil_r :  forall (A : Type) (l : list A), l ++ [] = l :=
 fun (A : Type) (l : list A) =>

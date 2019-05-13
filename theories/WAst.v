@@ -6,7 +6,6 @@
  *)
 
 Require Import List.
-From Template Require Import Ast.
 From Translation Require Import util Sorts.
 
 Section Ast.

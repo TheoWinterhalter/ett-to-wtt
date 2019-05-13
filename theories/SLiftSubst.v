@@ -1,6 +1,5 @@
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import Ast.
 From Translation Require Import util SAst.
 From Translation Require Sorts.
 

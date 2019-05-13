@@ -2,7 +2,6 @@
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import Ast utils Typing.
 From Translation
 Require Import util Sorts SAst SLiftSubst Equality SCommon XTyping
                ITyping ITypingLemmata ITypingAdmissible.
@@ -366,8 +365,10 @@ Lemma lift_llift5 :
     l <= k ->
     llift j k (lift i l t) = lift i l t.
 Proof.
-  intro t. induction t ; intros i j k l h1 h2.
-  all: try (cbn ; f_equal ; easy).
+  intro t; induction t ; intros i j k l h1 h2; cbn ; f_equal;
+    try eapply IHt; try eapply IHt1; try eapply IHt2; try eapply IHt3;
+    try eapply IHt4; try eapply IHt5; try eapply IHt6; try eapply IHt7;
+    try myomega.
   unfold lift. case_eq (l <=? n) ; intro e ; bprop e.
   - unfold llift. case_eq (i+n <? k) ; intro e1 ; bprop e1 ; try myomega.
     case_eq (i+n <? k+j) ; intro e3 ; bprop e3 ; try myomega.
@@ -484,8 +485,10 @@ Lemma lift_rlift5 :
     l <= k ->
     rlift j k (lift i l t) = lift i l t.
 Proof.
-  intro t. induction t ; intros i j k l h1 h2.
-  all: try (cbn ; f_equal ; easy).
+  intro t; induction t ; intros i j k l h1 h2; cbn; f_equal;
+    try eapply IHt; try eapply IHt1; try eapply IHt2; try eapply IHt3;
+    try eapply IHt4; try eapply IHt5; try eapply IHt6; try eapply IHt7;
+    try myomega.
   unfold lift. case_eq (l <=? n) ; intro e ; bprop e.
   - unfold rlift. case_eq (i+n <? k) ; intro e1 ; bprop e1 ; try myomega.
     case_eq (i+n <? k+j) ; intro e3 ; bprop e3 ; try myomega.
@@ -1491,7 +1494,7 @@ Lemma ismix_nth_sort :
 Proof.
   intros Σ Γ Γ1 Γ2 Γm hg hm.
   dependent induction hm.
-  - intros x is1. cbn in is1. easy.
+  - intros x is1. apply False_rect. inversion is1.
   - intro x. destruct x ; intros is1 is2.
     + cbn. exists s. split ; eapply @typing_lift01 with (A := sSort s) ; eassumption.
     + cbn. cbn in is1, is2.

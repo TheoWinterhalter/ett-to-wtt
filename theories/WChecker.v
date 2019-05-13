@@ -2,10 +2,8 @@
 
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import All.
 From Translation
-Require Import util Sorts WAst WLiftSubst WTyping WEquality WLemmata.
-Import MonadNotation.
+Require Import util monad_utils Sorts WAst WLiftSubst WTyping WEquality WLemmata.
 
 Section Checking.
 
@@ -301,7 +299,7 @@ Proof.
     + intros A' eq e. inversion e. subst.
       eapply meta_conv.
       * eapply type_Rel. assumption.
-      * erewrite nth_error_Some_safe_nth with (e := eq). reflexivity.
+      * erewrite (nth_error_Some_safe_nth eq). reflexivity.
     + intros H eq. discriminate eq.
   - go eq. econstructor ; try ih ; try rih.
     one_ih.
@@ -551,8 +549,8 @@ Proof.
     assert (nlctx ((Γ,, A),, wEq (↑ A) (↑ u) (wRel 0))
             = nlctx ((Γ,, x2),, wEq (↑ x2) (↑ u) (wRel 0))) as eq.
     { cbn. f_equal.
-      - f_equal. assumption.
       - f_equal. eapply nl_lift. assumption.
+      - f_equal. assumption.
     }
     destruct (wttinfer_rename_ctx e1 eq) as [? [e3 ?]].
     rewrite e3.

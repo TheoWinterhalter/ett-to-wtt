@@ -1,6 +1,5 @@
 From Coq Require Import Bool String List BinPos Compare_dec Omega.
 From Equations Require Import Equations DepElimDec.
-From Template Require Import Ast utils Typing.
 From Translation
 Require Import util SAst SLiftSubst SCommon Equality
                ITyping ITypingInversions.
@@ -185,7 +184,7 @@ Fact xcomp_subst :
   forall {n}, Xcomp (t{ n := u}).
 Proof.
   intros t ht. induction ht ; intros t' ht' m.
-  all: try (cbn ; constructor ; easy).
+  all: try (cbn ; constructor; easy).
   cbn. case_eq (m ?= n) ; try constructor.
   intro e. apply xcomp_lift. assumption.
 Defined.
@@ -193,13 +192,7 @@ Defined.
 Lemma ident_eq_spec x y : reflect (x = y) (ident_eq x y).
 Proof.
   unfold ident_eq.
-  case_eq (string_compare x y).
-  all: intro e ; constructor.
-  1: apply string_compare_eq ; assumption.
-  all: intro bot.
-  all: apply string_compare_eq in bot.
-  all: rewrite bot in e.
-  all: discriminate e.
+  destruct  (string_dec x y); now constructor.
 Defined.
 
 Fact ident_neq_fresh :
@@ -210,16 +203,11 @@ Fact ident_neq_fresh :
 Proof.
   intro Σ. induction Σ ; intros id ty d h hf.
   - cbn in h. discriminate h.
-  - cbn in h. dependent destruction hf.
-    case_eq (ident_eq id (dname d0)) ;
-    intro e ; rewrite e in h.
-    + inversion h as [ h' ]. subst. clear h.
-      destruct (ident_eq_spec id (dname d)).
-      * subst. destruct (ident_eq_spec (dname d) (dname d0)).
-        -- exfalso. easy.
-        -- easy.
-      * reflexivity.
-    + eapply IHΣ ; eassumption.
+  - cbn in h. inversion_clear hf.
+    unfold ident_eq in *.
+    destruct (string_dec id (dname a)).
+    destruct (string_dec id (dname d)) ; congruence.
+    exact (IHΣ _ _ _ h H).
 Defined.
 
 Fixpoint weak_glob_type {Σ Γ t A} (h : Σ ;;; Γ |-i t : A) :
