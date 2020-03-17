@@ -1,13 +1,16 @@
 (* Inversion lemmata *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Equations Require Import Equations DepElimDec.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+Require Import Equations.Prop.DepElim.
+From Equations Require Import Equations.
 From Translation
 Require Import util Sorts SAst SLiftSubst Equality SCommon ITyping.
 
 Section Inversions.
 
 Context `{Sort_notion : Sorts.notion}.
+
+Derive NoConfusion for sterm.
 
 Open Scope i_scope.
 
@@ -46,9 +49,9 @@ Ltac invtac :=
 Lemma inversionRel :
   forall {Σ Γ n T},
     Σ ;;; Γ |-i sRel n : T ->
-    exists isdecl,
-      let A := lift0 (S n) (safe_nth Γ (exist _ n isdecl)) in
-      nl A = nl T.
+    exists A,
+      nth_error Γ n = Some A /\
+      nl (lift0 (S n) A) = nl T.
 Proof.
   invtac.
 Defined.
@@ -614,7 +617,7 @@ Ltac ttinv h :=
   lazymatch type of h with
   | _ ;;; _ |-i ?term : _ =>
     lazymatch term with
-    | sRel _ => destruct (inversionRel h) as [his hh]
+    | sRel _ => destruct (inversionRel h) as [his [? ?]]
     | sSort _ => pose proof (inversionSort h) as hh
     | sProd _ _ _ => destruct (inversionProd h) as (s1 & s2 & hh) ; splits_one hh
     | sLambda _ _ _ _ => destruct (inversionLambda h) as (s1 & s2 & na & hh) ;

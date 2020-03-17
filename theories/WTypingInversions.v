@@ -1,13 +1,17 @@
 (* Inversion lemmata *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Equations Require Import Equations DepElimDec.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+Require Import Equations.Prop.DepElim.
+From Equations Require Import Equations.
 From Translation
 Require Import util WAst WLiftSubst WTyping WEquality.
+Set Keyed Unification.
 
 Section Inversions.
 
 Context `{Sort_notion : Sorts.notion}.
+
+Derive NoConfusion for wterm.
 
 Ltac destruct_pand :=
   match goal with
@@ -44,9 +48,9 @@ Ltac invtac :=
 Lemma inversionRel :
   forall {Σ Γ n T},
     Σ ;;; Γ |-w wRel n : T ->
-    exists isdecl,
-      let A := lift0 (S n) (safe_nth Γ (exist _ n isdecl)) in
-      nl A = nl T.
+    exists A,
+      nth_error Γ n = Some A /\
+      nl (lift0 (S n) A) = nl T.
 Proof.
   invtac.
 Defined.

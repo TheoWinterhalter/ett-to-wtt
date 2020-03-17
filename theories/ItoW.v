@@ -1,10 +1,9 @@
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
 From Translation
      Require Import util Sorts SAst SLiftSubst WAst WLiftSubst
      SCommon ITyping ITypingLemmata
      WTyping WChecker WLemmata Quotes.
-From TypingFlags Require Import Loader.
 Import ListNotations.
 Open Scope string_scope.
 
@@ -88,17 +87,6 @@ Lemma tsl_ctx_length :
 Proof.
   intro Γ. induction Γ ; eauto.
   cbn. f_equal. assumption.
-Defined.
-
-Lemma tsl_safe_nth :
-  forall {Γ n i1 i2},
-    tsl (safe_nth Γ (exist _ n i1)) = safe_nth (tsl_ctx Γ) (exist _ n i2).
-Proof.
-  intros Γ. induction Γ ; intros n i1 i2.
-  - cbn in i1. omega.
-  - destruct n.
-    + cbn. reflexivity.
-    + cbn. erewrite IHΓ. reflexivity.
 Defined.
 
 Lemma tsl_subst :

@@ -1,7 +1,7 @@
 (* Uniqueness of Typing *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Equations Require Import Equations DepElimDec.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+From Equations Require Import Equations.
 From Translation
 Require Import util SAst SLiftSubst Equality SCommon ITyping
                ITypingInversions ITypingLemmata.
@@ -73,8 +73,7 @@ Proof.
   all: try unitac h1 h2.
   all: try assumption.
   all: try solve [finish].
-  - cbn in *. erewrite @safe_nth_irr with (isdecl' := is) in h0.
-    assumption.
+  - rewrite H1 in H. inversion H. subst. auto.
   - reunih.
     + cbn. f_equal. eauto.
     + repeat eapply wf_snoc.

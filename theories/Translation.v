@@ -1,10 +1,12 @@
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Equations Require Import Equations DepElimDec.
-From Template Require Import Ast utils Typing.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+Require Import Equations.Prop.DepElim.
+From Equations Require Import Equations.
+From MetaCoq Require Import Ast utils Typing.
 From Translation
 Require Import util SAst SLiftSubst Equality SCommon XTyping ITyping
                ITypingInversions ITypingLemmata ITypingAdmissible Optim
                PackLifts FundamentalLemma.
+Import ListNotations.
 
 Section Translation.
 
@@ -25,24 +27,25 @@ Proof.
   - cbn. now f_equal.
 Defined.
 
-Fact nth_increl :
-  forall {Γ Γ'},
+Fact nth_error_increl :
+  forall Γ Γ' n A A',
     Γ ⊂ Γ' ->
-    forall {n} { isdecl : n < #|Γ| } { isdecl' : n < #|Γ'| },
-      safe_nth Γ (exist (fun n0 : nat => n0 < #|Γ|) n isdecl)
-    ⊏ safe_nth Γ' (exist (fun n0 : nat => n0 < #|Γ'|) n isdecl').
+    nth_error Γ n = Some A ->
+    nth_error Γ' n = Some A' ->
+    A ⊏ A'.
 Proof.
-  intros Γ Γ' e. induction e ; intros m isdecl isdecl'.
-  - exfalso. abstract easy.
-  - destruct m.
-    + cbn. assumption.
-    + cbn. apply IHe.
+  intros Γ Γ' n A A' h e e'.
+  induction h in n, A, A', e, e' |- *.
+  1:{ destruct n. all: discriminate. }
+  destruct n.
+  - cbn in *. congruence.
+  - cbn in *. eapply IHh. all: eauto.
 Defined.
 
 Definition trans_snoc {Σ Γ A s Γ' A' s'} :
-  Σ |--i Γ' # ⟦ Γ ⟧ ->
-  Σ ;;;; Γ' |--- [A'] : sSort s' # ⟦ Γ |--- [A] : sSort s ⟧ ->
-  Σ |--i Γ' ,, A' # ⟦ Γ ,, A ⟧.
+  Σ |--i Γ' ∈ ⟦ Γ ⟧ ->
+  Σ ;;;; Γ' ⊢ [A'] : sSort s' ∈ ⟦ Γ ⊢ [A] : sSort s ⟧ ->
+  Σ |--i Γ' ,, A' ∈ ⟦ Γ ,, A ⟧.
 Proof.
   intros hΓ hA.
   split.
@@ -53,12 +56,12 @@ Proof.
 Defined.
 
 Definition trans_Prod {Σ Γ n A B s1 s2 Γ' A' B'} :
-  Σ |--i Γ' # ⟦ Γ ⟧ ->
-  Σ ;;;; Γ' |--- [A'] : sSort s1 # ⟦ Γ |--- [A] : sSort s1 ⟧ ->
-  Σ ;;;; Γ' ,, A' |--- [B'] : sSort s2
-  # ⟦ Γ ,, A |--- [B]: sSort s2 ⟧ ->
-  Σ ;;;; Γ' |--- [sProd n A' B']: sSort (Sorts.prod_sort s1 s2)
-  # ⟦ Γ |--- [ sProd n A B]: sSort (Sorts.prod_sort s1 s2) ⟧.
+  Σ |--i Γ' ∈ ⟦ Γ ⟧ ->
+  Σ ;;;; Γ' ⊢ [A'] : sSort s1 ∈ ⟦ Γ ⊢ [A] : sSort s1 ⟧ ->
+  Σ ;;;; Γ' ,, A' ⊢ [B'] : sSort s2
+  ∈ ⟦ Γ ,, A ⊢ [B]: sSort s2 ⟧ ->
+  Σ ;;;; Γ' ⊢ [sProd n A' B']: sSort (Sorts.prod_sort s1 s2)
+  ∈ ⟦ Γ ⊢ [ sProd n A B]: sSort (Sorts.prod_sort s1 s2) ⟧.
 Proof.
   intros hΓ hA hB.
   destruct hΓ. destruct hA as [[? ?] ?]. destruct hB as [[? ?] ?].
@@ -70,12 +73,12 @@ Proof.
 Defined.
 
 Definition trans_Sum {Σ Γ n A B s1 s2 Γ' A' B'} :
-  Σ |--i Γ' # ⟦ Γ ⟧ ->
-  Σ ;;;; Γ' |--- [A'] : sSort s1 # ⟦ Γ |--- [A] : sSort s1 ⟧ ->
-  Σ ;;;; Γ' ,, A' |--- [B'] : sSort s2
-  # ⟦ Γ ,, A |--- [B]: sSort s2 ⟧ ->
-  Σ ;;;; Γ' |--- [sSum n A' B']: sSort (Sorts.sum_sort s1 s2)
-  # ⟦ Γ |--- [ sSum n A B]: sSort (Sorts.sum_sort s1 s2) ⟧.
+  Σ |--i Γ' ∈ ⟦ Γ ⟧ ->
+  Σ ;;;; Γ' ⊢ [A'] : sSort s1 ∈ ⟦ Γ ⊢ [A] : sSort s1 ⟧ ->
+  Σ ;;;; Γ' ,, A' ⊢ [B'] : sSort s2
+  ∈ ⟦ Γ ,, A ⊢ [B]: sSort s2 ⟧ ->
+  Σ ;;;; Γ' ⊢ [sSum n A' B']: sSort (Sorts.sum_sort s1 s2)
+  ∈ ⟦ Γ ⊢ [ sSum n A B]: sSort (Sorts.sum_sort s1 s2) ⟧.
 Proof.
   intros hΓ hA hB.
   destruct hΓ. destruct hA as [[? ?] ?]. destruct hB as [[? ?] ?].
@@ -87,12 +90,12 @@ Proof.
 Defined.
 
 Definition trans_Eq {Σ Γ A u v s Γ' A' u' v'} :
-  Σ |--i Γ' # ⟦ Γ ⟧ ->
-  Σ ;;;; Γ' |--- [A'] : sSort s # ⟦ Γ |--- [A] : sSort s ⟧ ->
-  Σ ;;;; Γ' |--- [u'] : A' # ⟦ Γ |--- [u] : A ⟧ ->
-  Σ ;;;; Γ' |--- [v'] : A' # ⟦ Γ |--- [v] : A ⟧ ->
-  Σ ;;;; Γ' |--- [sEq A' u' v'] : sSort (Sorts.eq_sort s)
-  # ⟦ Γ |--- [sEq A u v] : sSort (Sorts.eq_sort s) ⟧.
+  Σ |--i Γ' ∈ ⟦ Γ ⟧ ->
+  Σ ;;;; Γ' ⊢ [A'] : sSort s ∈ ⟦ Γ ⊢ [A] : sSort s ⟧ ->
+  Σ ;;;; Γ' ⊢ [u'] : A' ∈ ⟦ Γ ⊢ [u] : A ⟧ ->
+  Σ ;;;; Γ' ⊢ [v'] : A' ∈ ⟦ Γ ⊢ [v] : A ⟧ ->
+  Σ ;;;; Γ' ⊢ [sEq A' u' v'] : sSort (Sorts.eq_sort s)
+  ∈ ⟦ Γ ⊢ [sEq A u v] : sSort (Sorts.eq_sort s) ⟧.
 Proof.
   intros hΓ hA hu hv.
   destruct hA as [[[? ?] ?] ?].
@@ -107,10 +110,10 @@ Defined.
 
 Definition trans_subst {Σ Γ s A B u Γ' A' B' u'} :
   type_glob Σ ->
-  Σ |--i Γ' # ⟦ Γ ⟧ ->
-  Σ ;;;; Γ',, A' |--- [B']: sSort s # ⟦ Γ,, A |--- [B]: sSort s ⟧ ->
-  Σ ;;;; Γ' |--- [u']: A' # ⟦ Γ |--- [u]: A ⟧ ->
-  Σ ;;;; Γ' |--- [B'{ 0 := u' }]: sSort s # ⟦ Γ |--- [B{ 0 := u }]: sSort s ⟧.
+  Σ |--i Γ' ∈ ⟦ Γ ⟧ ->
+  Σ ;;;; Γ',, A' ⊢ [B']: sSort s ∈ ⟦ Γ,, A ⊢ [B]: sSort s ⟧ ->
+  Σ ;;;; Γ' ⊢ [u']: A' ∈ ⟦ Γ ⊢ [u]: A ⟧ ->
+  Σ ;;;; Γ' ⊢ [B'{ 0 := u' }]: sSort s ∈ ⟦ Γ ⊢ [B{ 0 := u }]: sSort s ⟧.
 Proof.
   intros hg hΓ hB hu.
   destruct hΓ.
@@ -135,8 +138,8 @@ Lemma eqtrans_trans :
   forall {Σ Γ A u v Γ' A' A'' u' v' p'},
     type_glob Σ ->
     eqtrans Σ Γ A u v Γ' A' A'' u' v' p' ->
-    (Σ ;;;; Γ' |--- [u'] : A' # ⟦ Γ |--- [u] : A ⟧) *
-    (Σ ;;;; Γ' |--- [v'] : A'' # ⟦ Γ |--- [v] : A ⟧).
+    (Σ ;;;; Γ' ⊢ [u'] : A' ∈ ⟦ Γ ⊢ [u] : A ⟧) *
+    (Σ ;;;; Γ' ⊢ [v'] : A'' ∈ ⟦ Γ ⊢ [v] : A ⟧).
 Proof.
   intros Σ Γ A u v Γ' A' A'' u' v' p' hg h.
   destruct h as [[[[[eΓ eS'] eS''] eA] eB] hp'].
@@ -164,10 +167,10 @@ Definition typing_all :=
 Definition complete_translation {Σ} :
   type_glob Σ ->
   (forall {Γ t A} (h : Σ ;;; Γ |-x t : A)
-     {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
-      ∑ A' t', Σ ;;;; Γ' |--- [t'] : A' # ⟦ Γ |--- [t] : A ⟧) *
+     {Γ'} (hΓ : Σ |--i Γ' ∈ ⟦ Γ ⟧),
+      ∑ A' t', Σ ;;;; Γ' ⊢ [t'] : A' ∈ ⟦ Γ ⊢ [t] : A ⟧) *
   (forall {Γ u v A} (h : Σ ;;; Γ |-x u ≡ v : A)
-     {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
+     {Γ'} (hΓ : Σ |--i Γ' ∈ ⟦ Γ ⟧),
       ∑ A' A'' u' v' p',
         eqtrans Σ Γ A u v Γ' A' A'' u' v' p').
 Proof.
@@ -176,10 +179,10 @@ Proof.
     typing_all
       Σ
       (fun {Γ t A} (h : Σ ;;; Γ |-x t : A) => forall
-           {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
-           ∑ A' t', Σ ;;;; Γ' |--- [t'] : A' # ⟦ Γ |--- [t] : A ⟧)
+           {Γ'} (hΓ : Σ |--i Γ' ∈ ⟦ Γ ⟧),
+           ∑ A' t', Σ ;;;; Γ' ⊢ [t'] : A' ∈ ⟦ Γ ⊢ [t] : A ⟧)
       (fun {Γ u v A} (h : Σ ;;; Γ |-x u ≡ v : A) => forall
-           {Γ'} (hΓ : Σ |--i Γ' # ⟦ Γ ⟧),
+           {Γ'} (hΓ : Σ |--i Γ' ∈ ⟦ Γ ⟧),
            ∑ A' A'' u' v' p',
          eqtrans Σ Γ A u v Γ' A' A'' u' v' p')
       _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
@@ -188,14 +191,24 @@ Proof.
   (** type_translation **)
 
     (* type_Rel *)
-    + assert (isdecl' : n < #|Γ'|).
-      { destruct hΓ as [iΓ _]. now rewrite <- (length_increl iΓ). }
-      exists (lift0 (S n) (safe_nth Γ' (exist _ n isdecl'))), (sRel n).
+    + case_eq (nth_error Γ' n).
+      2:{
+        intro h.
+        apply nth_error_None in h.
+        apply nth_error_Some_length in e.
+        destruct hΓ as [iΓ _]. apply length_increl in iΓ.
+        mylia.
+      }
+      intros B e'.
+      exists (lift0 (S n) B), (sRel n).
       repeat split.
       * now destruct hΓ.
-      * apply inrel_lift. apply nth_increl. now destruct hΓ.
+      * apply inrel_lift. eapply nth_error_increl. all: eauto.
+        now destruct hΓ.
       * constructor.
-      * apply type_Rel. now destruct hΓ.
+      * apply type_Rel.
+        -- now destruct hΓ.
+        -- assumption.
 
     (* type_Sort *)
     + exists (sSort (Sorts.succ s)), (sSort s).
@@ -2650,7 +2663,7 @@ Defined.
 
 Theorem context_translation {Σ} :
   type_glob Σ ->
-  forall Γ (h : XTyping.wf Σ Γ), ∑ Γ', Σ |--i Γ' # ⟦ Γ ⟧.
+  forall Γ (h : XTyping.wf Σ Γ), ∑ Γ', Σ |--i Γ' ∈ ⟦ Γ ⟧.
 Proof.
   intros hg Γ h. induction h.
   (* wf_nil *)
@@ -2681,8 +2694,8 @@ Corollary conservativity :
     ∑ t', Σ ;;; [] |-i t' : A.
 Proof.
   intros Σ t A s hg xA hA ht.
-  assert (h' : Σ ;;;; [] |--- [ A ] : sSort s
-             # ⟦ [] |--- [ A ] : sSort s ⟧).
+  assert (h' : Σ ;;;; [] ⊢ [ A ] : sSort s
+             ∈ ⟦ [] ⊢ [ A ] : sSort s ⟧).
   { repeat split.
     - constructor.
     - constructor.
@@ -2701,7 +2714,7 @@ Section Consistency.
 
 Local Existing Instance Sorts.nat_sorts.
 
-(* Consistency of ETT relative to consistency of ITT. *)
+(* Consistency of ETT relative to consistency of WTT. *)
 Corollary consistency :
   forall {Σ t},
     type_glob Σ ->
@@ -2716,9 +2729,9 @@ Proof.
   - instantiate (1 := Sorts.prod_sort 1 0).
     econstructor.
     + econstructor. constructor.
-    + refine (type_Rel _ _ _ _ _).
+    + refine (type_Rel _ _ _ _ (sSort 0) _).
       * repeat econstructor.
-      * auto with arith.
+      * cbn. reflexivity.
 Defined.
 
 End Consistency.

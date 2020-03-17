@@ -1,7 +1,9 @@
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Equations Require Import Equations DepElimDec.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+Require Import Equations.Prop.DepElim.
+From Equations Require Import Equations.
 From Translation
 Require Import util WAst WLiftSubst WTyping WTypingInversions WEquality.
+Import ListNotations.
 
 Section Lemmata.
 
@@ -29,39 +31,6 @@ Proof.
   intro Γ. induction Γ ; intro m.
   - reflexivity.
   - cbn. f_equal. eapply IHΓ.
-Defined.
-
-Fact safe_nth_lift_context :
-  forall {Γ Δ : wcontext} {n isdecl isdecl'},
-    safe_nth (lift_context #|Γ| Δ) (exist _ n isdecl) =
-    lift #|Γ| (#|Δ| - n - 1) (safe_nth Δ (exist _ n isdecl')).
-Proof.
-  intros Γ Δ. induction Δ.
-  - cbn. intros. bang.
-  - intro n. destruct n ; intros isdecl isdecl'.
-    + cbn. replace (#|Δ| - 0) with #|Δ| by myomega. reflexivity.
-    + cbn. erewrite IHΔ. reflexivity.
-Defined.
-
-Fact lift_context_ex :
-  forall {Δ Ξ : wcontext} {n isdecl isdecl'},
-    lift0 (S n) (safe_nth (lift_context #|Δ| Ξ) (exist _ n isdecl)) =
-    lift #|Δ| #|Ξ| (lift0 (S n) (safe_nth Ξ (exist _ n isdecl'))).
-Proof.
-  intros Δ Ξ n isdecl isdecl'.
-  erewrite safe_nth_lift_context.
-  rewrite <- liftP2 by myomega.
-  cbn.
-  replace (S (n + (#|Ξ| - n - 1)))%nat with #|Ξ|.
-  - reflexivity.
-  - revert n isdecl isdecl'. induction Ξ ; intros n isdecl isdecl'.
-    + cbn. exfalso. abstract easy.
-    + cbn. f_equal.
-      destruct n.
-      * cbn. myomega.
-      * cbn. apply IHΞ.
-        -- cbn in *. myomega.
-        -- cbn in *. myomega.
 Defined.
 
 Lemma meta_conv :
@@ -106,112 +75,6 @@ Proof.
   - cbn. f_equal. apply IHΓ.
 Defined.
 
-Fact safe_nth_S :
-  forall {A n} {a : A} {l isdecl},
-    { isdecl' & safe_nth (a :: l) (exist _ (S n) isdecl)
-                = safe_nth l (exist _ n isdecl') }.
-Proof.
-  intros A n. induction n ; intros a l isdecl.
-  - cbn. eexists. reflexivity.
-  - eexists. cbn. reflexivity.
-Defined.
-
-Lemma eq_safe_nth' :
-  forall {Γ : wcontext} {n a isdecl isdecl'},
-    safe_nth (a :: Γ) (exist _ (S n) isdecl') =
-    safe_nth Γ (exist _ n isdecl).
-Proof.
-  intros Γ. induction Γ ; intros n A isdecl isdecl'.
-  - exfalso. abstract easy.
-  - destruct n.
-    + reflexivity.
-    + destruct (@safe_nth_S _ (S n) A (a :: Γ) isdecl')
-        as [isecl0 eq].
-      rewrite eq.
-      destruct (@safe_nth_S _ n a Γ isdecl)
-        as [isecl1 eq1].
-      rewrite eq1.
-      apply IHΓ.
-Defined.
-
-Lemma eq_safe_nth :
-  forall {Γ : wcontext} {n A isdecl isdecl'},
-    safe_nth (Γ ,, A) (exist _ (S n) isdecl') =
-    safe_nth Γ (exist _ n isdecl).
-Proof.
-  intros Γ n A isdecl isdecl'.
-  apply eq_safe_nth'.
-Defined.
-
-Fact safe_nth_irr :
-  forall {A n} {l : list A} {isdecl isdecl'},
-    safe_nth l (exist _ n isdecl) =
-    safe_nth l (exist _ n isdecl').
-Proof.
-  intros A n. induction n ; intro l ; destruct l ; intros isdecl isdecl'.
-  all: cbn. all: try bang.
-  - reflexivity.
-  - eapply IHn.
-Defined.
-
-Fact safe_nth_cong_irr :
-  forall {A n m} {l : list A} {isdecl isdecl'},
-    n = m ->
-    safe_nth l (exist _ n isdecl) =
-    safe_nth l (exist _ m isdecl').
-Proof.
-  intros A n m l isdecl isdecl' e.
-  revert isdecl isdecl'.
-  rewrite e. intros isdecl isdecl'.
-  apply safe_nth_irr.
-Defined.
-
-Fact safe_nth_ge :
-  forall {Γ Δ n} { isdecl : n < #|Γ ,,, Δ| } { isdecl' : n - #|Δ| < #|Γ| },
-    n >= #|Δ| ->
-    safe_nth (Γ ,,, Δ) (exist _ n isdecl) =
-    safe_nth Γ (exist _ (n - #|Δ|) isdecl').
-Proof.
-  intros Γ Δ.
-  induction Δ ; intros n isdecl isdecl' h.
-  - cbn in *. revert isdecl'.
-    replace (n - 0) with n by myomega.
-    intros isdecl'. apply safe_nth_irr.
-  - destruct n.
-    + cbn in *. inversion h.
-    + cbn. apply IHΔ. cbn in *. myomega.
-Defined.
-
-Definition ge_sub {Γ Δ n} (isdecl : n < #|Γ ,,, Δ|) :
-  n >= #|Δ| ->  n - #|Δ| < #|Γ|.
-Proof.
-  intro h.
-  rewrite length_cat in isdecl. myomega.
-Defined.
-
-Fact safe_nth_ge' :
-  forall {Γ Δ n} { isdecl : n < #|Γ ,,, Δ| } (h : n >= #|Δ|),
-    safe_nth (Γ ,,, Δ) (exist _ n isdecl) =
-    safe_nth Γ (exist _ (n - #|Δ|) (ge_sub isdecl h)).
-Proof.
-  intros Γ Δ n isdecl h.
-  eapply safe_nth_ge. assumption.
-Defined.
-
-Fact safe_nth_lt :
-  forall {n Γ Δ} { isdecl : n < #|Γ ,,, Δ| } { isdecl' : n < #|Δ| },
-    safe_nth (Γ ,,, Δ) (exist _ n isdecl) =
-    safe_nth Δ (exist _ n isdecl').
-Proof.
-  intros n. induction n ; intros Γ Δ isdecl isdecl'.
-  - destruct Δ.
-    + cbn in *. inversion isdecl'.
-    + cbn. reflexivity.
-  - destruct Δ.
-    + cbn in *. inversion isdecl'.
-    + cbn. eapply IHn.
-Defined.
-
 Fact ident_neq_fresh :
   forall {Σ id d d'},
     lookup_glob Σ id = Some d' ->
@@ -221,13 +84,12 @@ Proof.
   intro Σ. induction Σ ; intros id d d' h hf.
   - cbn in h. discriminate h.
   - cbn in h. dependent destruction hf.
-    case_eq (ident_eq id (dname d0)) ;
-    intro e ; rewrite e in h.
+    case_eq (ident_eq id (dname a)).
+    all: intro e ; rewrite e in h.
     + inversion h as [ h' ]. subst. clear h.
       unfold ident_eq in *.
-      destruct (string_dec id (dname d)); [|reflexivity].
-      destruct (string_dec id (dname d'));
-        congruence.
+      destruct (string_dec id (dname d')). 2: discriminate.
+      destruct (string_dec id (dname d)). all: congruence.
     + eapply IHΣ; eassumption.
 Defined.
 
@@ -284,7 +146,8 @@ Proof.
   intros Σ Γ t T h.
   dependent induction h.
   all: try (cbn in * ; repeat erewrite_assumption ; reflexivity).
-  unfold closed_above. case_eq (n <? #|Γ|) ; intro e ; bprop e ; try myomega.
+  eapply nth_error_Some_length in H0.
+  unfold closed_above. case_eq (n <? #|Γ|) ; intro e ; bprop e ; try mylia.
   reflexivity.
 Defined.
 
@@ -342,36 +205,17 @@ Defined.
 (*     intros _ H. eapply IHwΣ. eassumption. *)
 (* Defined. *)
 
-Lemma closed_above_safe_nth:
-  forall (Σ : wglobal_context) (Γ : wcontext),
-    wf Σ Γ -> forall (n : nat) (isdecl : n < #|Γ|), closed_above #|Γ|
-      (lift0 (S n) (safe_nth Γ (exist (fun n0 : nat => n0 < #|Γ|) n isdecl))) = true.
-Proof.
-  intros Σ Γ H. induction H.
-  - cbn; intros n isdecl. bang.
-  - intros [] isdecl.
-    + cbn.
-      change (S #|Γ|) with (1+ #|Γ|)%nat.
-      erewrite closed_above_lift by omega.
-      eapply type_ctx_closed_above; eassumption.
-    + cbn in *. specialize (IHwf n (lt_S_n _ _ isdecl)).
-      erewrite <- (closed_above_lift (n := 1) (k := 0)) in IHwf by omega.
-      rewrite liftP3 in IHwf by omega.
-      erewrite safe_nth_irr; eassumption.
-Defined.
-
-
 Ltac tcca :=
   match goal with
   | |- _ && _ = _ => apply andb_true_intro; split
   | |- closed_above _ (_ {_ := _}) = _ =>
-    eapply closed_above_subst; [omega|cbn|cbn]
+    eapply closed_above_subst; [lia|cbn|cbn]
   | _ => reflexivity
   | _ => eassumption
   | H : _ ;;; _ |-w ?A : _ |- closed_above _ ?A = _ =>
     eapply type_ctx_closed_above in H
   | H : forall _ _, _ -> _ -> closed_above _ ?A = _ |- closed_above _ ?A = _ =>
-    eapply H;[|eassumption]; omega
+    eapply H;[|eassumption]; lia
   | H0 : nl ?t = nl ?A , H : forall _ _ _, closed_above _ ?t = _ -> _ |- closed_above _ ?A = _ =>
     eapply (H _ H0); try eassumption
   | H : _ && _ = _ |- _ => apply andb_prop in H; destruct H
@@ -385,7 +229,7 @@ Proof.
   induction t; intros; cbn -[leb] in *; repeat tcca.
   apply leb_complete in H0.
   apply leb_correct.
-  omega.
+  lia.
 Defined.
 
 Fact closed_above_nl t : forall u, nl t = nl u -> forall n,
@@ -396,6 +240,29 @@ Proof.
   subst; assumption.
 Qed.
 
+Lemma closed_above_nth_error :
+  forall (Σ : wglobal_context) Γ n A,
+    wf Σ Γ ->
+    nth_error Γ n = Some A ->
+    closed_above #|Γ| (lift0 (S n) A) = true.
+Proof.
+  intros Σ Γ n A hΣ e.
+  induction hΣ in n, A, e |- *.
+  - destruct n. all: discriminate.
+  - cbn. destruct n.
+    + cbn in e. inversion e. subst. clear e.
+      change (S #|Γ|) with (1 + #|Γ|)%nat.
+      erewrite closed_above_lift by lia.
+      eapply type_ctx_closed_above. eassumption.
+    + cbn in e. eapply IHhΣ in e as h.
+      eapply nth_error_Some_length in e.
+      change (S #|Γ|) with (1 + #|Γ|)%nat.
+      change (S (S n)) with (1 + (S n))%nat.
+      erewrite <- liftP3 with (k := S n) by lia.
+      erewrite closed_above_lift by lia.
+      assumption.
+Qed.
+
 Fact type_ctx_closed_above' :
   forall {Σ Γ t T},
     type_glob Σ ->
@@ -404,12 +271,12 @@ Fact type_ctx_closed_above' :
 Proof.
   intros Σ Γ t T wΣ h.
   induction h; cbn in *; try repeat tcca.
-  - eapply closed_above_safe_nth; eassumption.
-  - eapply closed_above_nk with (n := 0). omega.
+  - eapply closed_above_nth_error. all: eassumption.
+  - eapply closed_above_nk with (n := 0). lia.
     eapply isType_ctxempty_closed, isType_lookup_glob; eassumption.
-  - eapply closed_above_nk with (n := 0). omega.
+  - eapply closed_above_nk with (n := 0). lia.
     eapply isType_ctxempty_closed, isType_lookup_glob; eassumption.
-  - eapply closed_above_nk with (n := 0). omega.
+  - eapply closed_above_nk with (n := 0). lia.
     eapply type_ctxempty_closed.
     eapply typed_ax_body. eassumption. eassumption.
   - eapply closed_above_nl; eassumption.
@@ -451,6 +318,20 @@ Proof.
   intros Σ hg id ty isd n k.
   eapply closed_lift.
   eapply type_ctxempty_closed. eapply typed_ax_body; eassumption.
+Defined.
+
+Lemma nth_error_lift_context :
+  forall Γ k n A,
+    nth_error Γ n = Some A ->
+    nth_error (lift_context k Γ) n = Some (lift k (#|Γ| - S n) A).
+Proof.
+  intros Γ k n A e.
+  induction Γ in k, n, A, e |- *.
+  - destruct n. all: discriminate.
+  - destruct n.
+    + cbn in e. inversion e. subst. clear e.
+      cbn. f_equal. f_equal. mylia.
+    + cbn. cbn in e. eapply IHΓ in e. rewrite e. reflexivity.
 Defined.
 
 Ltac ih h :=
@@ -517,20 +398,26 @@ with wf_lift {Σ Γ Δ Ξ} (h : wf Σ (Γ ,,, Ξ)) {struct h} :
 Proof.
   - { dependent destruction h ; intros hΣ hwf.
       - cbn. case_eq (#|Ξ| <=? n) ; intro e ; bprop e.
-        + rewrite liftP3 by myomega.
-          replace (#|Δ| + S n)%nat with (S (#|Δ| + n)) by myomega.
-          eapply meta_conv.
-          * eapply type_Rel.
-            eapply wf_lift ; assumption.
-          * f_equal. f_equal.
-            erewrite 3!safe_nth_ge'
-              by (try rewrite lift_context_length ; myomega).
-            eapply safe_nth_cong_irr.
-            rewrite lift_context_length. myomega.
+        + rewrite liftP3 by mylia.
+          replace (#|Δ| + S n)%nat with (S (#|Δ| + n)) by mylia.
+          eapply type_Rel.
+          * eapply wf_lift. all: assumption.
+          * unfold ",,,". rewrite nth_error_app2.
+            2:{ rewrite lift_context_length. mylia. }
+            rewrite lift_context_length.
+            rewrite nth_error_app2 by mylia.
+            replace (#|Δ| + n - #|Ξ| - #|Δ|) with (n - #|Ξ|) by mylia.
+            unfold ",,," in H0. rewrite nth_error_app2 in H0 by auto.
+            eassumption.
         + eapply meta_conv.
-          * eapply type_Rel. eapply wf_lift ; assumption.
-          * erewrite 2!safe_nth_lt.
-            eapply lift_context_ex.
+          * eapply type_Rel.
+            --- eapply wf_lift ; assumption.
+            --- unfold ",,,". rewrite nth_error_app1.
+                2:{ rewrite lift_context_length. auto. }
+                eapply nth_error_lift_context.
+                unfold ",,," in H0. rewrite nth_error_app1 in H0 by auto.
+                eassumption.
+          * rewrite <- liftP2 by mylia. f_equal. mylia.
       - cbn. apply type_Sort. now apply wf_lift.
       - cbn. eapply type_Prod ; eih.
       - cbn. eapply type_Lambda ; eih.
@@ -552,18 +439,18 @@ Proof.
       - cbn. eapply type_Refl ; eih.
       - change (#|Ξ|) with (0 + #|Ξ|)%nat.
         rewrite substP1.
-        replace (S (0 + #|Ξ|)) with (1 + #|Ξ|)%nat by myomega.
+        replace (S (0 + #|Ξ|)) with (1 + #|Ξ|)%nat by mylia.
         rewrite substP1.
         cbn. eapply type_J ; try eih.
         + cbn. unfold wsnoc.
           f_equal. f_equal.
-          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
-            apply liftP2. myomega.
-          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
-            apply liftP2. myomega.
-        + replace (S (S #|Ξ|)) with (1 + (S (0 + #|Ξ|)))%nat by myomega.
+          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by mylia.
+            apply liftP2. mylia.
+          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by mylia.
+            apply liftP2. mylia.
+        + replace (S (S #|Ξ|)) with (1 + (S (0 + #|Ξ|)))%nat by mylia.
           rewrite <- substP1.
-          replace (1 + (0 + #|Ξ|))%nat with (S (0 + #|Ξ|))%nat by myomega.
+          replace (1 + (0 + #|Ξ|))%nat with (S (0 + #|Ξ|))%nat by mylia.
           change (wRefl (lift #|Δ| #|Ξ| A0) (lift #|Δ| #|Ξ| u))
             with (lift #|Δ| #|Ξ| (wRefl A0 u)).
           rewrite <- substP1. reflexivity.
@@ -578,23 +465,23 @@ Proof.
       - cbn. eapply type_K ; eih.
       - cbn. eapply type_Funext ; eih.
         cbn. f_equal. f_equal.
-        + f_equal. replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
-            apply liftP2. myomega.
-        + f_equal. replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
-            apply liftP2. myomega.
+        + f_equal. replace (S #|Ξ|) with (1 + #|Ξ|)%nat by mylia.
+            apply liftP2. mylia.
+        + f_equal. replace (S #|Ξ|) with (1 + #|Ξ|)%nat by mylia.
+            apply liftP2. mylia.
       - cbn. change (#|Ξ|) with (0 + #|Ξ|)%nat.
         rewrite substP1.
-        replace (S (0 + #|Ξ|)) with (1 + #|Ξ|)%nat by myomega.
+        replace (S (0 + #|Ξ|)) with (1 + #|Ξ|)%nat by mylia.
         rewrite substP1.
         eapply type_JBeta ; eih.
         + cbn. unfold wsnoc. f_equal. f_equal.
-          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
-            apply liftP2. myomega.
-          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by myomega.
-            apply liftP2. myomega.
-        + cbn. replace (S (S #|Ξ|)) with (1 + (S (0 + #|Ξ|)))%nat by myomega.
+          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by mylia.
+            apply liftP2. mylia.
+          * replace (S #|Ξ|) with (1 + #|Ξ|)%nat by mylia.
+            apply liftP2. mylia.
+        + cbn. replace (S (S #|Ξ|)) with (1 + (S (0 + #|Ξ|)))%nat by mylia.
           rewrite <- substP1.
-          replace (1 + (0 + #|Ξ|))%nat with (S (0 + #|Ξ|))%nat by myomega.
+          replace (1 + (0 + #|Ξ|))%nat with (S (0 + #|Ξ|))%nat by mylia.
           change (wRefl (lift #|Δ| #|Ξ| A0) (lift #|Δ| #|Ξ| u))
             with (lift #|Δ| #|Ξ| (wRefl A0 u)).
           rewrite <- substP1. reflexivity.
@@ -628,7 +515,7 @@ Proof.
 
     Unshelve.
     all: try rewrite !length_cat ; try rewrite length_cat in isdecl ;
-      try rewrite lift_context_length ; myomega.
+      try rewrite lift_context_length ; mylia.
 Defined.
 
 Corollary typing_lift01 :
@@ -741,16 +628,18 @@ Proof.
   - cbn. f_equal. assumption.
 Defined.
 
-Fact safe_nth_subst_context :
-  forall {Δ : wcontext} {n u isdecl isdecl'},
-    (safe_nth (subst_context u Δ) (exist _ n isdecl)) =
-    (safe_nth Δ (exist _ n isdecl')) { #|Δ| - S n := u }.
+Lemma nth_error_subst_context :
+  forall Γ u n A,
+    nth_error Γ n = Some A ->
+    nth_error (subst_context u Γ) n = Some (A{ #|Γ| - S n := u }).
 Proof.
-  intro Δ. induction Δ.
-  - cbn. intros. bang.
-  - intro n. destruct n ; intros u isdecl isdecl'.
-    + cbn. replace (#|Δ| - 0) with #|Δ| by myomega. reflexivity.
-    + cbn. erewrite IHΔ. reflexivity.
+  intros Γ u n A e.
+  induction Γ in u, n, A, e |- *.
+  - destruct n. all: discriminate.
+  - destruct n.
+    + cbn in e. inversion e. subst. clear e.
+      cbn. f_equal. f_equal. mylia.
+    + cbn. cbn in e. eapply IHΓ in e. rewrite e. reflexivity.
 Defined.
 
 Ltac sh h :=
@@ -821,47 +710,43 @@ Proof.
   - { intros hg hu.
       dependent destruction h.
       - cbn. case_eq (#|Δ| ?= n) ; intro e ; bprop e.
-        + assert (h : n >= #|Δ|) by myomega.
-          rewrite safe_nth_ge' with (h0 := h).
-          assert (n - #|Δ| = 0) by myomega.
-          set (ge := ge_sub isdecl h).
-          generalize ge.
-          rewrite H0. intro ge'.
-          cbn. rewrite substP3 by myomega.
-          subst.
-          replace #|Δ| with #|subst_context u Δ|
-            by (now rewrite subst_context_length).
+        + rewrite substP3 by mylia.
+          rewrite <- e0.
+          replace #|Δ| with #|subst_context u Δ|.
+          2:{ rewrite subst_context_length. reflexivity. }
+          unfold ",,," in H0. rewrite nth_error_app2 in H0 by mylia.
+          replace (n - #|Δ|) with 0 in H0 by mylia.
+          cbn in H0. inversion H0. subst.
           eapply @type_lift with (Ξ := []) (Δ := subst_context u Δ).
           * cbn. assumption.
           * assumption.
           * eapply wf_subst ; eassumption.
-        + assert (h : n >= #|Δ|) by myomega.
-          rewrite safe_nth_ge' with (h0 := h).
-          set (ge := ge_sub isdecl h).
-          destruct n ; try easy.
-          rewrite substP3 by myomega.
-          generalize ge.
-          replace (S n - #|Δ|) with (S (n - #|Δ|)) by myomega.
-          cbn. intro ge'.
-          eapply meta_conv.
-          * eapply type_Rel. eapply wf_subst ; eassumption.
-          * erewrite safe_nth_ge'.
-            f_equal. eapply safe_nth_cong_irr.
-            rewrite subst_context_length. reflexivity.
-        + assert (h : n < #|Δ|) by myomega.
-          rewrite @safe_nth_lt with (isdecl' := h).
-          match goal with
+        + rewrite substP3 by mylia.
+          destruct n. 1: lia.
+          cbn. unfold ",,," in H0. rewrite nth_error_app2 in H0 by mylia.
+          unfold ",," in H0. change (B :: Γ) with ([B] ++ Γ) in H0.
+          rewrite nth_error_app2 in H0.
+          2:{ unfold length at 1. mylia. }
+          unfold length at 2 in H0.
+          replace (S n - #|Δ| - 1) with (n - #|Δ|) in H0 by mylia.
+          eapply type_Rel.
+          * eapply wf_subst. all: eassumption.
+          * unfold ",,,". rewrite nth_error_app2.
+            2:{ rewrite subst_context_length. mylia. }
+            rewrite subst_context_length. assumption.
+        + match goal with
           | |- _ ;;; _ |-w _ : ?t{?d := ?u} =>
             replace (subst u d t) with (t{((S n) + (#|Δ| - (S n)))%nat := u})
-              by (f_equal ; myomega)
+              by (f_equal ; mylia)
           end.
-          rewrite substP2 by myomega.
-          eapply meta_conv.
-          * eapply type_Rel.
-            eapply wf_subst ; eassumption.
-          * f_equal.
-            erewrite safe_nth_lt.
-            eapply safe_nth_subst_context.
+          rewrite substP2 by mylia.
+          eapply type_Rel.
+          * eapply wf_subst ; eassumption.
+          * unfold ",,,". rewrite nth_error_app1.
+            2:{ rewrite subst_context_length. mylia. }
+          eapply nth_error_subst_context.
+          unfold ",,," in H0. rewrite nth_error_app1 in H0 by mylia.
+          assumption.
       - cbn. apply type_Sort. eapply wf_subst ; eassumption.
       - cbn. eapply type_Prod ; esh.
       - cbn. eapply type_Lambda ; esh.
@@ -884,18 +769,18 @@ Proof.
       - cbn.
         change (#|Δ|) with (0 + #|Δ|)%nat.
         rewrite substP4.
-        replace (S (0 + #|Δ|)) with (1 + #|Δ|)%nat by myomega.
+        replace (S (0 + #|Δ|)) with (1 + #|Δ|)%nat by mylia.
         rewrite substP4.
         eapply type_J ; esh.
         + cbn. unfold wsnoc. cbn.
           f_equal. f_equal.
-          * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
-            apply substP2. myomega.
-          * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
-            apply substP2. myomega.
-        + replace (S (S #|Δ|)) with (1 + (S (0 + #|Δ|)))%nat by myomega.
+          * replace (S #|Δ|) with (1 + #|Δ|)%nat by mylia.
+            apply substP2. mylia.
+          * replace (S #|Δ|) with (1 + #|Δ|)%nat by mylia.
+            apply substP2. mylia.
+        + replace (S (S #|Δ|)) with (1 + (S (0 + #|Δ|)))%nat by mylia.
           rewrite <- substP4.
-          replace (1 + (0 + #|Δ|))%nat with (S (0 + #|Δ|))%nat by myomega.
+          replace (1 + (0 + #|Δ|))%nat with (S (0 + #|Δ|))%nat by mylia.
           change (wRefl (A0 {0 + #|Δ| := u}) (u0 {0 + #|Δ| := u}))
             with ((wRefl A0 u0){ 0 + #|Δ| := u}).
           rewrite <- substP4. reflexivity.
@@ -910,25 +795,25 @@ Proof.
       - cbn. eapply type_K ; esh.
       - cbn. eapply type_Funext ; esh.
         cbn. f_equal. f_equal.
-        + f_equal. replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
-          apply substP2. myomega.
-        + f_equal. replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
-          apply substP2. myomega.
+        + f_equal. replace (S #|Δ|) with (1 + #|Δ|)%nat by mylia.
+          apply substP2. mylia.
+        + f_equal. replace (S #|Δ|) with (1 + #|Δ|)%nat by mylia.
+          apply substP2. mylia.
       - cbn.
         change (#|Δ|) with (0 + #|Δ|)%nat.
         rewrite substP4.
-        replace (S (0 + #|Δ|)) with (1 + #|Δ|)%nat by myomega.
+        replace (S (0 + #|Δ|)) with (1 + #|Δ|)%nat by mylia.
         rewrite substP4.
         eapply type_JBeta ; esh.
         + cbn. unfold wsnoc. cbn.
           f_equal. f_equal.
-          * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
-            apply substP2. myomega.
-          * replace (S #|Δ|) with (1 + #|Δ|)%nat by myomega.
-            apply substP2. myomega.
-        + replace (S (S #|Δ|)) with (1 + (S (0 + #|Δ|)))%nat by myomega.
+          * replace (S #|Δ|) with (1 + #|Δ|)%nat by mylia.
+            apply substP2. mylia.
+          * replace (S #|Δ|) with (1 + #|Δ|)%nat by mylia.
+            apply substP2. mylia.
+        + replace (S (S #|Δ|)) with (1 + (S (0 + #|Δ|)))%nat by mylia.
           rewrite <- substP4.
-          replace (1 + (0 + #|Δ|))%nat with (S (0 + #|Δ|))%nat by myomega.
+          replace (1 + (0 + #|Δ|))%nat with (S (0 + #|Δ|))%nat by mylia.
           change (wRefl (A0 {0 + #|Δ| := u}) (u0 {0 + #|Δ| := u}))
             with ((wRefl A0 u0){ 0 + #|Δ| := u}).
           rewrite <- substP4. reflexivity.
@@ -961,7 +846,7 @@ Proof.
     }
 
   Unshelve.
-  all: try rewrite !length_cat ; try rewrite !subst_context_length ; myomega.
+  all: try rewrite !length_cat ; try rewrite !subst_context_length ; mylia.
 Defined.
 
 Corollary typing_subst :
@@ -1018,19 +903,27 @@ Proof.
     simpl in e. inversion e. reflexivity.
 Defined.
 
-Lemma nl_safe_nth :
-  forall {Γ Δ n i1 i2},
+Lemma nth_error_nlctx :
+  forall Γ Δ n A,
+    nth_error Γ n = Some A ->
     nlctx Γ = nlctx Δ ->
-    nl (safe_nth Δ (exist _ n i1)) = nl (safe_nth Γ (exist _ n i2)).
+    ∑ B,
+      nth_error Δ n = Some B /\
+      nl A = nl B.
 Proof.
-  intros Γ Δ n i1 i2 e. cbn in *. revert Δ n i1 i2 e.
-  induction Γ as [| A Γ ih] ; intros Δ n i1 i2 e.
-  - cbn. bang.
-  - destruct Δ as [|B Δ] ; simpl in e ; try discriminate e.
-    inversion e.
-    destruct n.
-    + cbn. symmetry. assumption.
-    + cbn. eapply ih. assumption.
+  intros Γ Δ n A h e.
+  induction Γ in Δ, A, n, h, e |- *.
+  - destruct n. all: discriminate.
+  - destruct n.
+    + cbn in h. inversion h. subst. clear h.
+      destruct Δ. 1: discriminate.
+      cbn in e. inversion e.
+      cbn. eexists. intuition eauto.
+    + cbn in h.
+      destruct Δ. 1: discriminate.
+      cbn in e. inversion e.
+      eapply IHΓ in h as [B [? ?]]. 2: eauto.
+      cbn. eexists. intuition eauto.
 Defined.
 
 Ltac nleq :=
@@ -1091,10 +984,12 @@ Proof.
   ].
   - simpl in e. destruct t' ; try discriminate e.
     simpl in e. inversion e. subst. clear e.
-    econstructor.
-    + unshelve (econstructor ; eassumption).
-      rewrite <- (nlctx_length ex). assumption.
-    + eapply nl_lift. eapply nl_safe_nth. assumption.
+    eapply nth_error_nlctx in ex as [B [? ?]]. 2: eassumption.
+    eapply type_rename.
+    + econstructor.
+      * assumption.
+      * eassumption.
+    + eapply nl_lift. auto.
   - simpl in e. destruct t' ; try discriminate e.
     simpl in e. inversion e. subst. clear e.
     econstructor.
@@ -1108,6 +1003,7 @@ Proof.
         try eassumption ; try reih ;
         try (econstructor ; [ reih | repeat nleq ]).
         try econstructor ; [ econstructor |].
+        -- assumption.
         -- repeat eapply wf_snoc ; try eassumption ; try reih.
         -- cbn. nleq.
     + nleq.
@@ -1124,6 +1020,7 @@ Proof.
         try eassumption ; try reih ;
         try (econstructor ; [ reih | repeat nleq ]).
         try econstructor ; [ econstructor |].
+        -- assumption.
         -- repeat eapply wf_snoc ; try eassumption ; try reih.
         -- cbn. nleq.
     + repeat nleq.
@@ -1132,8 +1029,6 @@ Proof.
     + assumption.
   Unshelve.
   all: try solve [ constructor ].
-  { cbn. auto with arith. }
-  { cbn. auto with arith. }
 Defined.
 
 Lemma istype_type :
@@ -1144,24 +1039,19 @@ Lemma istype_type :
 Proof.
   unfold isType. intros Σ Γ t T hg H.
   induction H.
-  - revert n isdecl. induction H ; intros n isdecl.
-    + cbn in isdecl. easy.
-    + destruct n.
-      * cbn.
-        exists s. change (wSort s) with (lift0 1 (wSort s)).
-        eapply typing_lift01 ; eassumption.
-      * assert (isdecl' : n < #|Γ|).
-        -- auto with arith.
-        -- destruct (IHwf n isdecl') as [s' hh].
-           exists s'. change (wSort s') with (lift0 1 (wSort s')).
-           (* Take out as a lemma? *)
-           assert (eq : forall t, lift0 (S (S n)) t = lift0 1 (lift0 (S n) t)).
-           { intro t'. rewrite lift_lift. reflexivity. }
-           rewrite eq. clear eq.
-           eapply typing_lift01.
-           ++ assumption.
-           ++ erewrite eq_safe_nth. eassumption.
-           ++ eassumption.
+  - induction H in n, A, H0 |- *.
+    1:{ destruct n. all: discriminate. }
+    destruct n.
+    + cbn in H0. inversion H0. subst. clear H0.
+      exists s. change (wSort s) with (lift0 1 (wSort s)).
+      eapply typing_lift01. all: eassumption.
+    + cbn in H0. eapply IHwf in H0 as [s' ?].
+      exists s'. change (wSort s') with (lift0 1 (wSort s')).
+      assert (eq : forall t, lift0 (S (S n)) t = lift0 1 (lift0 (S n) t)).
+      { intro t'. rewrite lift_lift. reflexivity. }
+      rewrite eq. clear eq.
+      eapply typing_lift01.
+      all: eassumption.
   - exists (Sorts.succ (Sorts.succ s)). now apply type_Sort.
   - eexists. apply type_Sort. apply (typing_wf H).
   - destruct IHtyping2. eexists. apply type_Prod ; eassumption.

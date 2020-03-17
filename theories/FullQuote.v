@@ -1,11 +1,10 @@
 (* Partial translation from TemplateCoq to ITT *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Template
+From Coq Require Import Bool String List BinPos Compare_dec Lia.
+From MetaCoq
 Require Import Ast utils monad_utils Typing Checker.
 From Translation
 Require Import util monad_utils Sorts WAst WLiftSubst WTyping WChecker WLemmata Quotes Manual.
-From TypingFlags Require Import Loader.
 Import ListNotations.
 
 
@@ -51,7 +50,7 @@ Local Existing Instance psort_notion.
 (*     end *)
 (*   | _ => Error AlgebraicUniverse *)
 (*   end. *)
-Definition tsl_univ (univs : list sort) (u : universe) :=
+(* Definition tsl_univ (univs : list sort) (u : universe) :=
   match u with
   | [ pair (Level.Var n) (false) ] =>
     match nth_error univs n with
@@ -447,7 +446,7 @@ Definition wcoe := Eval lazy in
       (* tsl_constant TC ("Translation.Quotes.coe", [pvar 0; psucc (pvar 0)]). *)
 
 Definition wcoe_type := Eval lazy in
-      tsl_constant_typ TC "Translation.Quotes.coe".
+      tsl_constant_typ TC "Translation.Quotes.coe". *)
 
 (* (* this is not a bug but a theoretical problem ... *) *)
 (* Lemma type_coe : [] ;;; [] |-w wcoe : wcoe_type. *)

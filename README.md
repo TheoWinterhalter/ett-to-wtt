@@ -1,7 +1,7 @@
 # Eliminating Reflection from Type Theory
-**A translation from extensional type theory (ETT) to intensional type theory (ITT)**
+**A translation from extensional type theory (ETT) to weak type theory (WTT)**
 
-*Authors:* Théo Winterhalter, Matthieu Sozeau and Nicolas Tabareau
+*Authors:* Théo Winterhalter, Matthieu Sozeau, Nicolas Tabareau and Simon Boulier
 
 **Quick jump**
 - [Installing](#installing)
@@ -22,105 +22,15 @@ ETT differs from ITT by the addition of the **reflection rule**:
   Γ ⊢ u ≡ v
 ```
 
-### Examples (Plugin)
-
-In order to see more clearly what it does, here are a few examples that can be found
-in this repository.
-
-#### Identity with a coercion
-
-A toy example of ETT would be to use an equality between types in context to
-coerce a term.
-```coq
-Fail Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := x.
-```
-This of course fails in Coq / ITT because `A` and `B` are not convertible.
-In order to still be able to write our example in Coq we use a notation
-reminiscent of Agda `{! _ !}` with an underlying axiom going from any type
-to any other. With it we can write:
-```coq
-Definition pseudoid (A B : Type) (e : A = B) (x : A) : B := {! x !}.
-```
-Using the power of TemplateCoq, we can quote it, translate it using our
-translation, and then unquote it to get back a Coq term:
-```coq
-Run TemplateProgram (Translate ε "pseudoid").
-```
-which defines
-```coq
-pseudoidᵗ =
-fun (A B : Type) (e : A = B) (x : A) => transport (pseudoid_obligation_0 A B e x) x
-     : forall A B : Type, A = B -> A -> B
-```
-This is what you would expect, and what you would write by hand:
-**the use of reflection has been replaced by a transport**.
-
-#### Reversal of vectors
-
-An already more challenging example involves playing around with
-inductive types and eliminators (we don't handle fixed points and
-pattern-matching).
-
-Consider for this the type of length-indexed lists:
-```coq
-Inductive vec A : nat -> Type :=
-| vnil : vec A 0
-| vcons : A -> forall n, vec A n -> vec A (S n).
-```
-
-One more *realistic* example would be the reversal of vectors (using an accumulator):
-```coq
-Fail Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
-  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
-           (fun m acc => acc) (fun a n _ rv m acc => rv _ (vcons a m acc))
-           n v m acc.
-```
-Indeed, in ITT, it is not possible to write it directly like this, as we would
-do in the non dependent case (lists). This time it has to do with commutativity
-of addition: `S n + m` and `n + S m` are not convertible.
-We then write the ETT definition below.
-```coq
-Definition vrev {A n m} (v : vec A n) (acc : vec A m) : vec A (n + m) :=
-  vec_rect A (fun n _ => forall m, vec A m -> vec A (n + m))
-           (fun m acc => acc) (fun a n _ rv m acc => {! rv _ (vcons a m acc) !})
-           n v m acc.
-```
-To translate it we must first put its dependencies in the translation context.
-```coq
-Run TemplateProgram (
-      Θ <- TranslateConstant ε "nat" ;;
-      Θ <- TranslateConstant Θ "vec" ;;
-      Θ <- TranslateConstant Θ "Nat.add" ;;
-      Θ <- TranslateConstant Θ "vec_rect" ;;
-      Translate Θ "vrev'"
-).
-```
-We then obtain the following translation (after the system solves
-automatically 4 equality obligations) with exactly one transport as expected.
-```coq
-fun (A : Type) (n m : nat) (v : vec A n) (acc : vec A m) =>
-vec_rect A
-  (fun (n0 : nat) (_ : vec A n0) =>
-   forall m0 : nat, vec A m0 -> vec A (n0 + m0))
-  (fun (m0 : nat) (acc0 : vec A m0) => acc0)
-  (fun (a : A) (n0 : nat) (v0 : vec A n0)
-     (rv : forall m0 : nat, vec A m0 -> vec A (n0 + m0))
-     (m0 : nat) (acc0 : vec A m0) =>
-   transport (vrev_obligation3 A n m v acc a n0 v0 rv m0 acc0)
-     (rv (S m0) (vcons a m0 acc0))) n v m acc
-     : forall (A : Type) (n m : nat), vec A n -> vec A m -> vec A (n + m)
-```
+WTT is ITT without any notion of computation or conversion.
 
 ## Installing
 
 ### Requirements
 
-This project can be compiled with Coq 8.8.1 and requires
+This project can be compiled with Coq 8.11.0 and requires
 [Equations](http://mattam82.github.io/Coq-Equations/)
-and
-[TemplateCoq](https://github.com/Template-Coq/template-coq/releases/tag/v2.1-beta3).
-
-*Note: If you have trouble installing TemplateCoq v2.1-beta3, have a look at [this fix](https://github.com/Template-Coq/template-coq/issues/77#issuecomment-439006141).*
+and [MetaCoq](https://github.com/MetaCoq/metacoq).
 
 If you want to compile the examples, you also need
 [TypingFlags](https://github.com/SimonBoulier/TypingFlags).

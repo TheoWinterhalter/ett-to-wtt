@@ -1,6 +1,6 @@
 (*! ITT Derivations checking *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
+From Coq Require Import Bool String List BinPos Compare_dec Lia.
 From Equations Require Import Equations DepElimDec.
 From Translation Require Import util Quotes Sorts SAst SLiftSubst SCommon
      ITyping ITypingInversions ITypingLemmata ITypingAdmissible
@@ -181,6 +181,6 @@ Ltac ittcheck1 Σi :=
   | _ => fail "Not applicable"
   end.
 
-Ltac ittcheck' Σi := ittcheck1 Σi ; try (lazy  - [Σi] ; myomega).
+Ltac ittcheck' Σi := ittcheck1 Σi ; try (lazy  - [Σi] ; mylia).
 
 Ltac ittcheck Σi := repeat (ittcheck' Σi).

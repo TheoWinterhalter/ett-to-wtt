@@ -2,7 +2,7 @@
 Require Import TypingFlags.Loader.
 Set Type In Type.
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
+From Coq Require Import Bool String List BinPos Compare_dec Lia.
 From Equations Require Import Equations DepElimDec.
 From Template Require Import All.
 From Translation

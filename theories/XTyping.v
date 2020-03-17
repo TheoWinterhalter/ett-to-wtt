@@ -1,5 +1,5 @@
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Equations Require Import Equations DepElimDec.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+From Equations Require Import Equations.
 From Translation Require Import util Sorts SAst SLiftSubst SCommon Equality.
 
 Reserved Notation " Σ ;;; Γ '|-x' t : T " (at level 50, Γ, t, T at next level).
@@ -13,8 +13,9 @@ Context `{Sort_notion : Sorts.notion}.
 
 Inductive typing (Σ : sglobal_context) (Γ : scontext) : sterm -> sterm -> Type :=
 | type_Rel n :
-    forall (isdecl : n < List.length Γ),
-      Σ ;;; Γ |-x (sRel n) : lift0 (S n) (safe_nth Γ (exist _ n isdecl))
+    forall A,
+      nth_error Γ n = Some A ->
+      Σ ;;; Γ |-x (sRel n) : lift0 (S n) A
 
 | type_Sort s :
     Σ ;;; Γ |-x (sSort s) : sSort (succ s)

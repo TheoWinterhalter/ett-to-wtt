@@ -1,6 +1,6 @@
 (* Optimisation on syntax *)
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Equations Require Import Equations DepElimDec.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+From Equations Require Import Equations.
 From Translation
 Require Import util Sorts SAst SLiftSubst Equality SCommon XTyping
 ITyping ITypingInversions ITypingLemmata ITypingAdmissible.

@@ -1,9 +1,11 @@
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Equations Require Import Equations DepElimDec.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+Require Import Equations.Prop.DepElim.
+From Equations Require Import Equations.
 From Translation
 Require Import util Sorts SAst SLiftSubst Equality SCommon XTyping ITyping
                ITypingInversions ITypingLemmata ITypingAdmissible Optim
                Uniqueness PackLifts.
+Import ListNotations.
 
 Open Scope type_scope.
 Open Scope x_scope.
@@ -227,6 +229,24 @@ Section Fundamental.
 
 Context `{Sort_notion : Sorts.notion}.
 
+(* TODO MOVE to packlifts *)
+Lemma nth_error_mix :
+  forall Σ Γ Γ1 Γ2 Γm n A1 A2,
+    ismix Σ Γ Γ1 Γ2 Γm ->
+    nth_error Γ1 n = Some A1 ->
+    nth_error Γ2 n = Some A2 ->
+    nth_error Γm n =
+    Some (sPack (llift0 (#|Γm| - S n) A1) (rlift0 (#|Γm| - S n) A2)).
+Proof.
+  intros Σ Γ Γ1 Γ2 Γm n A1 A2 hm e1 e2.
+  induction hm in n, A1, A2, e1, e2 |- *.
+  1:{ destruct n. all: discriminate. }
+  destruct n.
+  - cbn in *. inversion e1. inversion e2. subst. clear e1 e2.
+    f_equal. f_equal. all: f_equal. all: mylia.
+  - cbn in *. eapply IHhm. all: assumption.
+Defined.
+
 Ltac cleannl :=
   let inv h :=
     inversion h ; subst ; clear h
@@ -275,32 +295,34 @@ Proof.
       exists (sProjTe (sRel x)).
       intros Γm U1 U2 hm h1 h2.
       unfold llift at 2. unfold rlift at 2.
-      case_eq (x <? 0) ; intro e ; bprop e ; try myomega. clear e2.
+      case_eq (x <? 0) ; intro e ; bprop e ; try mylia. clear e2.
       pose proof (mix_length1 hm) as ml. rewrite <- ml in e0, e1.
       change (0 + #|Γm|)%nat with #|Γm|.
       rewrite e0.
       (* Now for the specifics *)
       apply type_ProjTe' ; try assumption.
       ttinv h1. ttinv h2.
-      rename is into is1, is0 into is2, h into hx1, h0 into hx2.
+      rename H into en1, H1 into en2, H0 into hx1, H2 into hx2.
       assert (is1' : x < #|Γ1|) by (erewrite mix_length1 in e1 ; eassumption).
       assert (is2' : x < #|Γ2|) by (erewrite mix_length2 in e1 ; eassumption).
-      cbn in hx1. erewrite @safe_nth_lt with (isdecl' := is1') in hx1.
-      cbn in hx2. erewrite @safe_nth_lt with (isdecl' := is2') in hx2.
       destruct (istype_type hg h1) as [s1 ?].
       destruct (istype_type hg h2) as [s2 ?].
-      destruct (ismix_nth_sort hg hm x is1' is2') as [ss [? ?]].
+      unfold ",,," in en1. rewrite nth_error_app1 in en1 by auto.
+      unfold ",,," in en2. rewrite nth_error_app1 in en2 by auto.
+      eapply ismix_nth_sort in hm as hm'. 2-4: eassumption.
+      destruct hm' as [ss [? ?]].
       eapply type_rename.
       * eapply type_Rel.
-        eapply (@wf_llift Sort_notion) with (Δ := []) ; try eassumption.
-        eapply typing_wf ; eassumption.
-      * erewrite safe_nth_lt. erewrite safe_nth_mix by eassumption.
-        cbn. f_equal.
+        -- eapply (@wf_llift Sort_notion) with (Δ := []) ; try eassumption.
+           eapply typing_wf ; eassumption.
+        -- unfold ",,,". rewrite nth_error_app1 by auto.
+           eapply nth_error_mix. all: eassumption.
+      * cbn. f_equal.
         -- rewrite lift_llift.
-           replace (S x + (#|Γm| - S x))%nat with #|Γm| by myomega.
+           replace (S x + (#|Γm| - S x))%nat with #|Γm| by mylia.
            eapply nl_llift. eassumption.
         -- rewrite lift_rlift.
-           replace (S x + (#|Γm| - S x))%nat with #|Γm| by myomega.
+           replace (S x + (#|Γm| - S x))%nat with #|Γm| by mylia.
            eapply nl_rlift. eassumption.
     + (* Unless it is ill-typed, the variable is in Γ, reflexivity will do.
          To type reflexivity properly we still need a proof that
@@ -309,23 +331,34 @@ Proof.
       case_eq ((x - #|Γ1|) <? #|Γ|) ; intro isdecl ; bprop isdecl.
       * (* The variable is indeed in the context. *)
         set (y := x - #|Γ1|) in *.
-        set (A := lift0 (S x) (safe_nth Γ (exist _ y isdecl0))).
+        case_eq (nth_error Γ y).
+        2:{ intros e. apply nth_error_None in e. mylia. }
+        intros B en.
+        set (A := lift0 (S x) B).
         exists (sHeqRefl A (sRel x)).
         intros Γm U1 U2 hm h1 h2.
         unfold llift at 2. unfold rlift at 2.
-        case_eq (x <? 0) ; intro e ; bprop e ; try myomega. clear e2.
+        case_eq (x <? 0) ; intro e ; bprop e ; try mylia. clear e2.
         pose proof (mix_length1 hm) as ml. rewrite <- ml in e0, e1.
         change (0 + #|Γm|)%nat with #|Γm|.
         rewrite e0.
         (* Now for the specifics *)
         assert (h1' : Σ ;;; Γ ,,, Γm |-i sRel x : llift0 #|Γm| U1).
-        { replace (sRel x) with (llift0 #|Γm| (sRel x))
-            by (unfold llift ; rewrite e ; rewrite e0 ; reflexivity).
+        { replace (sRel x) with (llift0 #|Γm| (sRel x)).
+          2:{
+            unfold llift. rewrite e.
+            change (0 + #|Γm|)%nat with #|Γm|. rewrite e0.
+            reflexivity.
+          }
           eapply type_llift0 ; eassumption.
         }
         assert (h2' : Σ ;;; Γ ,,, Γm |-i sRel x : rlift0 #|Γm| U2).
-        { replace (sRel x) with (rlift0 #|Γm| (sRel x))
-            by (unfold rlift ; rewrite e ; rewrite e0 ; reflexivity).
+        { replace (sRel x) with (rlift0 #|Γm| (sRel x)).
+          2:{
+            unfold rlift. rewrite e.
+            change (0 + #|Γm|)%nat with #|Γm|. rewrite e0.
+            reflexivity.
+          }
           eapply type_rlift0 ; eassumption.
         }
         pose proof (uniqueness hg h1' h2').
@@ -333,27 +366,25 @@ Proof.
         destruct (istype_type hg h2').
         eapply type_rename.
         -- eapply type_HeqRefl' ; try eassumption.
-           subst y A. revert isdecl0. rewrite <- ml. intro isdecl0.
-           eapply meta_conv.
-           ++ eapply type_Rel. eapply typing_wf. eassumption.
-           ++ erewrite @safe_nth_ge with (isdecl' := isdecl0) by myomega.
-              reflexivity.
+           subst y A.
+           eapply type_Rel.
+           ++ eapply typing_wf. eassumption.
+           ++ unfold ",,,". rewrite nth_error_app2 by mylia.
+              rewrite ml. assumption.
         -- cbn. ttinv h1'. ttinv h2'. f_equal.
-           ++ subst y A. revert isdecl0. rewrite <- ml. intro isdecl0.
-              rewrite <- h.
-              erewrite @safe_nth_ge with (isdecl' := isdecl0) by myomega.
-              reflexivity.
-           ++ subst y A. revert isdecl0. rewrite <- ml. intro isdecl0.
-              rewrite <- h0.
-              erewrite @safe_nth_ge with (isdecl' := isdecl0) by myomega.
-              reflexivity.
+           ++ subst y A. rewrite <- H3.
+              unfold ",,," in H2. rewrite nth_error_app2 in H2 by mylia.
+              rewrite ml in H2. rewrite en in H2. inversion H2. reflexivity.
+           ++ subst y A. rewrite <- H5.
+              unfold ",,," in H4. rewrite nth_error_app2 in H4 by mylia.
+              rewrite ml in H4. rewrite en in H4. inversion H4. reflexivity.
       * (* In case the variable isn't in the context at all,
            it is bound to be ill-typed and we can return garbage.
          *)
         exists (sRel 0).
         intros Γm U1 U2 hm h1 h2.
-        exfalso. ttinv h1. clear h. rewrite length_cat in is. myomega.
-
+        exfalso. ttinv h1. apply nth_error_Some_length in H.
+        unfold ",,," in H. rewrite length_cat in H. mylia.
   (* Left transport *)
   - destruct (IHsim Γ Γ1 Γ2) as [q hq].
     exists (optHeqTrans (optHeqSym (optHeqTransport (llift0 #|Γ1| p) (llift0 #|Γ1| t1))) q).
@@ -635,7 +666,7 @@ Proof.
       * rewrite llift_substProj, rlift_substProj.
         apply hpB.
       * apply hpu.
-      * replace 0 with (0 + 0)%nat in hpv by myomega.
+      * replace 0 with (0 + 0)%nat in hpv by mylia.
         rewrite llift_subst, rlift_subst in hpv.
         apply hpv.
       * lift_sort. eapply (@type_llift1 Sort_notion) ; eassumption.
@@ -785,7 +816,7 @@ Proof.
       rewrite h0 in neq. discriminate neq.
 
   Unshelve.
-  all: cbn ; try rewrite !length_cat ; try exact nAnon ; myomega.
+  all: cbn ; try rewrite !length_cat ; try exact nAnon ; mylia.
 Defined.
 
 Corollary trel_to_heq :
@@ -952,14 +983,14 @@ Notation " Γ ≈ Δ " := (crel Γ Δ) (at level 19).
 
 Notation " Γ ⊂ Γ' " := (increl Γ Γ') (at level 19).
 
-Notation " Σ ;;;; Γ' |--- [ t' ] : A' # ⟦ Γ |--- [ t ] : A ⟧ " :=
+Notation " Σ ;;;; Γ' ⊢ [ t' ] : A' ∈ ⟦ Γ ⊢ [ t ] : A ⟧ " :=
   (trans Σ Γ A t Γ' A' t')
     (at level 7) : i_scope.
 
 Definition ctxtrans `{Sort_notion : Sorts.notion} Σ Γ Γ' :=
   Γ ⊂ Γ' * (wf Σ Γ').
 
-Notation " Σ |--i Γ' # ⟦ Γ ⟧ " := (ctxtrans Σ Γ Γ') (at level 7) : i_scope.
+Notation " Σ |--i Γ' ∈ ⟦ Γ ⟧ " := (ctxtrans Σ Γ Γ') (at level 7) : i_scope.
 
 Section Head.
 
@@ -1168,9 +1199,9 @@ Lemma choose_type :
   forall {Σ Γ A t Γ' A' t'},
     type_glob Σ ->
     type_head (head A) ->
-    Σ ;;;; Γ' |--- [ t' ] : A' # ⟦ Γ |--- [t] : A ⟧ ->
+    Σ ;;;; Γ' ⊢ [ t' ] : A' ∈ ⟦ Γ ⊢ [t] : A ⟧ ->
     ∑ A'',
-      (∑ t'', Σ ;;;; Γ' |--- [ t'' ] : A'' # ⟦ Γ |--- [t] : A ⟧) *
+      (∑ t'', Σ ;;;; Γ' ⊢ [ t'' ] : A'' ∈ ⟦ Γ ⊢ [t] : A ⟧) *
       (head A'' = head A).
 Proof.
   intros Σ Γ A t Γ' A' t' hg htt [[[hΓ hA] ht] h].
@@ -1184,9 +1215,9 @@ Defined.
 Lemma change_type :
   forall {Σ Γ A t Γ' A' t' s A''},
     type_glob Σ ->
-    Σ ;;;; Γ' |--- [ t' ] : A' # ⟦ Γ |--- [t] : A ⟧ ->
-    Σ ;;;; Γ' |--- [ A'' ] : sSort s # ⟦ Γ |--- [A] : sSort s ⟧ ->
-    ∑ t'', Σ ;;;; Γ' |--- [ t'' ] : A'' # ⟦ Γ |--- [t] : A ⟧.
+    Σ ;;;; Γ' ⊢ [ t' ] : A' ∈ ⟦ Γ ⊢ [t] : A ⟧ ->
+    Σ ;;;; Γ' ⊢ [ A'' ] : sSort s ∈ ⟦ Γ ⊢ [A] : sSort s ⟧ ->
+    ∑ t'', Σ ;;;; Γ' ⊢ [ t'' ] : A'' ∈ ⟦ Γ ⊢ [t] : A ⟧.
 Proof.
   intros Σ Γ A t Γ' A' t' s A'' hg [[[rΓ' rA'] rt'] ht'] [[[rΓ'' _] rA''] hA''].
   assert (simA : A' ∼ A'').

@@ -1,6 +1,6 @@
 (*! Inversion lemmata for ETT *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
+From Coq Require Import Bool String List BinPos Compare_dec Lia.
 From Equations Require Import Equations DepElimDec.
 From Translation
 Require Import util Sorts SAst SLiftSubst SCommon ITyping ITypingLemmata

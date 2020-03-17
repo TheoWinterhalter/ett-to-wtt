@@ -1,9 +1,10 @@
 (*! WTT Typing *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Equations Require Import Equations DepElimDec.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+From Equations Require Import Equations.
 From Translation
 Require Import util Sorts WAst WLiftSubst WEquality.
+Import ListNotations.
 
 Open Scope w_scope.
 
@@ -47,8 +48,9 @@ Reserved Notation " Σ ;;; Γ '|-w' t : T " (at level 50, Γ, t, T at next level
 Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
 | type_Rel Γ n :
     wf Σ Γ ->
-    forall (isdecl : n < List.length Γ),
-      Σ ;;; Γ |-w (wRel n) : lift0 (S n) (safe_nth Γ (exist _ n isdecl))
+    forall A,
+      nth_error Γ n = Some A ->
+      Σ ;;; Γ |-w (wRel n) : lift0 (S n) A
 
 | type_Sort Γ s :
     wf Σ Γ ->

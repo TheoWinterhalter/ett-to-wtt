@@ -1,7 +1,7 @@
 (*! Type checker for WTT *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega.
-From Equations Require Import Equations DepElimDec.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+From Equations Require Import Equations.
 From Translation
 Require Import util monad_utils Sorts WAst WLiftSubst WTyping WEquality WLemmata.
 
@@ -295,12 +295,6 @@ Proof.
   revert Γ A eq hw.
   induction t ; intros Γ A eq hw.
   all: try solve [ go eq ; econstructor ; try eassumption ; try ih ; try rih ].
-  - cbn in eq. revert eq. case_eq (nth_error Γ n).
-    + intros A' eq e. inversion e. subst.
-      eapply meta_conv.
-      * eapply type_Rel. assumption.
-      * erewrite (nth_error_Some_safe_nth eq). reflexivity.
-    + intros H eq. discriminate eq.
   - go eq. econstructor ; try ih ; try rih.
     one_ih.
     + eassumption.
@@ -314,8 +308,10 @@ Proof.
            eapply typing_lift01 ; try eassumption ; ih.
         -- eapply typing_lift01 ; try eassumption ; try rih. ih.
         -- eapply meta_conv.
-           ++ econstructor. econstructor ; try eassumption. ih.
-           ++ cbn. reflexivity.
+           ++ econstructor.
+              ** econstructor ; try eassumption. ih.
+              ** cbn. reflexivity.
+           ++ reflexivity.
   - go eq.
     assert (Σ ;;; Γ |-w t2 : w) as hh by ih.
     destruct (istype_type hg hh).
@@ -334,12 +330,12 @@ Proof.
       eapply typing_lift01 ; try eassumption ; ih.
     + eapply typing_lift01 ; try eassumption ; rih.
     + eapply meta_conv.
-      * econstructor. econstructor ; eassumption.
-      * cbn. reflexivity.
+      * econstructor.
+        -- econstructor ; eassumption.
+        -- cbn. reflexivity.
+      * reflexivity.
   Unshelve.
   all: try solve [ constructor ].
-  { cbn. auto with arith. }
-  { cbn. auto with arith. }
 Defined.
 
 Lemma nth_error_rename :
@@ -522,9 +518,7 @@ Proof.
   intros Σ Γ t A h.
   induction h.
   all: try solve [ co ].
-  - exists (lift0 (S n) (safe_nth Γ (exist _ n isdecl))). split.
-    + cbn. erewrite nth_error_safe_nth. reflexivity.
-    + reflexivity.
+  - cbn. rewrite H0. eexists. intuition eauto.
   - simpl.
     repeat rewih.
     assert (nlctx (Γ,, A) = nlctx (Γ,, x)) as eq.
@@ -608,7 +602,7 @@ Inductive psort :=
 | ppack_sort (s : psort)
 .
 
-Instance psort_notion : Sorts.notion := {|
+#[refine] Instance psort_notion : Sorts.notion := {|
   sort := psort ;
   succ := psucc ;
   prod_sort := pprod_sort ;
@@ -711,20 +705,6 @@ Proof.
   induction Γ ; cbn ; auto.
 Defined.
 
-Lemma instantiate_sorts_safe_nth :
-  forall `{ S : Sorts.notion } inst (Γ : @wcontext psort_notion) n is is',
-    instantiate_sorts inst (safe_nth Γ (exist _ n is)) =
-    safe_nth (instantiate_sorts_ctx inst Γ) (exist _ n is').
-Proof.
-  intros S inst Γ.
-  induction Γ ; intros n is is'.
-  - cbn. bang.
-  - destruct n.
-    + cbn. reflexivity.
-    + cbn. erewrite IHΓ. reflexivity.
-Defined.
-
-
 Definition instantiate_sorts_decl `{ S : Sorts.notion } inst
            (d : @glob_decl psort_notion) : @glob_decl S :=
   {| dname := d.(dname) ;
@@ -762,6 +742,21 @@ Proof.
          repeat (erewrite_assumption by eassumption) ; reflexivity).
 Defined.
 
+Lemma nth_error_instantiate_sorts :
+  forall `{ S : Sorts.notion } Γ n A inst,
+    nth_error Γ n = Some A ->
+    nth_error (instantiate_sorts_ctx inst Γ) n =
+    Some (instantiate_sorts inst A).
+Proof.
+  intros S Γ n A inst e.
+  induction Γ in A, n, e |- *.
+  1:{ destruct n. all: discriminate. }
+  destruct n.
+  - cbn in e. inversion e. subst. clear e.
+    cbn. reflexivity.
+  - cbn in e. eapply IHΓ in e. cbn. assumption.
+Defined.
+
 Lemma instantiate_sorts_sound :
   forall `{ S : Sorts.notion } Σ Γ inst t A,
     Σ ;;; Γ |-w t : A ->
@@ -787,9 +782,10 @@ Proof.
            ].
   - cbn. unfold A'.
     rewrite instantiate_sorts_lift.
-    unshelve erewrite instantiate_sorts_safe_nth.
-    + rewrite instantiate_sorts_ctx_length. assumption.
-    + econstructor. assumption.
+    econstructor.
+    + assumption.
+    + unfold Γ'. apply nth_error_instantiate_sorts.
+      assumption.
   - cbn. econstructor. assumption.
   - cbn. econstructor.
     + eapply IHh1. assumption.
@@ -851,8 +847,10 @@ Proof.
            ++ eapply IHh2. assumption.
            ++ eapply IHh1. assumption.
         -- eapply meta_conv.
-           ++ econstructor. econstructor ; try assumption.
-              eapply IHh1. assumption.
+           ++ econstructor.
+              ** econstructor ; try assumption.
+                 eapply IHh1. assumption.
+              ** cbn. reflexivity.
            ++ cbn. rewrite instantiate_sorts_lift. reflexivity.
     + eapply IHh5. assumption.
     + rewrite 2!instantiate_sorts_subst in IHh6. eapply IHh6. assumption.
@@ -882,9 +880,8 @@ Proof.
         -- eapply typing_lift01 ; try eassumption.
            ++ eapply IHh1 ; assumption.
            ++ eapply IHh4 ; assumption.
-        -- eapply meta_conv.
+        -- econstructor ; try eassumption.
            ++ econstructor ; try eassumption.
-              econstructor ; try eassumption.
               eapply IHh4 ; assumption.
            ++ reflexivity.
     + rewrite 2!instantiate_sorts_subst in IHh3. eapply IHh3. assumption.
@@ -906,9 +903,6 @@ Proof.
   - eapply type_rename.
     + eapply IHh. assumption.
     + unfold A'. eapply nl_instantiate_sorts. assumption.
-  Unshelve.
-  { cbn. auto with arith. }
-  { cbn. auto with arith. }
 Defined.
 
 End PolymorphicSorts.

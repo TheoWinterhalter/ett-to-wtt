@@ -1,7 +1,8 @@
 (* Utility *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Omega ROmega.
-From Equations Require Import Equations DepElimDec.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+From Equations Require Import Equations.
+Import List.ListNotations.
 Set Primitive Projections.
 Open Scope type_scope.
 
@@ -41,14 +42,14 @@ Definition compute_gt {n m} : n > m -> n > m :=
   | right nh => fun h => False_rect _ (nh h)
   end.
 
-Ltac myomega :=
+Ltac mylia :=
   match goal with
-  | |- @eq nat _ _ => eapply compute_eq ; abstract omega
-  | |- _ <= _ => eapply compute_le ; abstract omega
-  | |- _ < _ => eapply compute_lt ; abstract omega
-  | |- _ >= _ => eapply compute_ge ; abstract omega
-  | |- _ > _ => eapply compute_gt ; abstract omega
-  | _ => abstract omega
+  | |- @eq nat _ _ => eapply compute_eq ; abstract lia
+  | |- _ <= _ => eapply compute_le ; abstract lia
+  | |- _ < _ => eapply compute_lt ; abstract lia
+  | |- _ >= _ => eapply compute_ge ; abstract lia
+  | |- _ > _ => eapply compute_gt ; abstract lia
+  | _ => abstract lia
   end.
 
 Record pp_sigT {A : Type} (P : A -> Type) : Type :=
@@ -251,7 +252,7 @@ Tactic Notation "erewrite_assumption" "by" tactic(tac) :=
 
 Ltac ncase exp :=
   let e := fresh "e" in
-  case_eq exp ; intro e ; bprop e ; try myomega.
+  case_eq exp ; intro e ; bprop e ; try mylia.
 
 Ltac nat_case :=
   match goal with
@@ -263,7 +264,7 @@ Ltac nat_case :=
 
 Tactic Notation "hyp" "rewrite" :=
   match goal with
-  | H : _ |- _ => rewrite H by myomega
+  | H : _ |- _ => rewrite H by mylia
   end.
 
 
@@ -342,7 +343,7 @@ Fact lastn_O :
   forall {A} {l : list A}, lastn 0 l = [].
 Proof.
   intros A l. unfold lastn.
-  replace (#|l| - 0) with #|l| by myomega.
+  replace (#|l| - 0) with #|l| by mylia.
   apply skipn_all.
 Defined.
 
@@ -351,7 +352,7 @@ Fact lastn_all :
     lastn #|l| l = l.
 Proof.
   intros A l. unfold lastn.
-  replace (#|l| - #|l|) with 0 by myomega.
+  replace (#|l| - #|l|) with 0 by mylia.
   reflexivity.
 Defined.
 
@@ -362,7 +363,7 @@ Fact lastn_all2 :
 Proof.
   intros A n l h.
   unfold lastn.
-  replace (#|l| - n) with 0 by myomega.
+  replace (#|l| - n) with 0 by mylia.
   reflexivity.
 Defined.
 
@@ -375,7 +376,7 @@ Proof.
   intros A l n a hn h.
   unfold lastn.
   erewrite skipn_reconstruct.
-  - f_equal. f_equal. myomega.
+  - f_equal. f_equal. mylia.
   - assumption.
 Defined.
 
@@ -407,35 +408,6 @@ Proof.
     + cbn. f_equal ; assumption.
     + cbn. eapply IHl1. assumption.
 Defined.
-
-Program Fixpoint safe_nth {A} (l : list A) (n : nat | n < List.length l) : A :=
-  match l with
-  | nil => !
-  | hd :: tl =>
-    match n with
-    | 0 => hd
-    | S n => safe_nth tl n
-    end
-  end.
-Next Obligation.
-  simpl in H. inversion H.
-Defined.
-Next Obligation.
-  simpl in H. auto with arith.
-Defined.
-
-
-Lemma nth_error_safe_nth {A} n (l : list A) (isdecl : n < Datatypes.length l) :
-  nth_error l n = Some (safe_nth l (exist _ n isdecl)).
-Proof.
-  revert n isdecl; induction l; intros.
-  - inversion isdecl.
-  - destruct n as [| n']; simpl.
-    reflexivity.
-    simpl in IHl.
-    simpl in isdecl.
-    now rewrite <- IHl.
-Qed.
 
 Definition dec (A : Type) := A + { A -> False }.
 
@@ -474,19 +446,19 @@ Lemma nth_error_isdecl {A} {l : list A} {n c} :
   forall e : nth_error l n = Some c, n < #|l|.
 Proof.
   revert l. induction n.
-  destruct l; cbn. discriminate. intro; omega.
-  destruct l; cbn. discriminate. intro H; apply IHn in H; omega.
+  destruct l; cbn. discriminate. intro; lia.
+  destruct l; cbn. discriminate. intro H; apply IHn in H; lia.
 Defined.
 
-Lemma nth_error_Some_safe_nth {A} {l : list A} {n c} :
-  forall e : nth_error l n = Some c, safe_nth l (exist _ n (nth_error_isdecl e)) = c.
+Lemma nth_error_Some_length :
+  forall A (l : list A) n x,
+    nth_error l n = Some x ->
+    n < #|l|.
 Proof.
-  intros H.
-  pose proof (nth_error_safe_nth _ _ (nth_error_isdecl H)).
-  pose proof (eq_trans (eq_sym H) H0).
-  injection H1. intro H2; exact (eq_sym H2).
-Defined.
-
+  intros A l n x e.
+  apply nth_error_Some.
+  rewrite e. discriminate.
+Qed.
 
 
 
