@@ -229,24 +229,6 @@ Section Fundamental.
 
 Context `{Sort_notion : Sorts.notion}.
 
-(* TODO MOVE to packlifts *)
-Lemma nth_error_mix :
-  forall Σ Γ Γ1 Γ2 Γm n A1 A2,
-    ismix Σ Γ Γ1 Γ2 Γm ->
-    nth_error Γ1 n = Some A1 ->
-    nth_error Γ2 n = Some A2 ->
-    nth_error Γm n =
-    Some (sPack (llift0 (#|Γm| - S n) A1) (rlift0 (#|Γm| - S n) A2)).
-Proof.
-  intros Σ Γ Γ1 Γ2 Γm n A1 A2 hm e1 e2.
-  induction hm in n, A1, A2, e1, e2 |- *.
-  1:{ destruct n. all: discriminate. }
-  destruct n.
-  - cbn in *. inversion e1. inversion e2. subst. clear e1 e2.
-    f_equal. f_equal. all: f_equal. all: mylia.
-  - cbn in *. eapply IHhm. all: assumption.
-Defined.
-
 Ltac cleannl :=
   let inv h :=
     inversion h ; subst ; clear h
@@ -278,7 +260,7 @@ Lemma trel_to_heq' :
         forall {Γm T1 T2},
           ismix Σ Γ Γ1 Γ2 Γm ->
           Σ ;;; Γ ,,, Γ1 |-i t1 : T1 ->
-          Σ ;;; Γ ,,, Γ2 |-i  t2 : T2 ->
+          Σ ;;; Γ ,,, Γ2 |-i t2 : T2 ->
           Σ ;;; Γ ,,, Γm |-i p : sHeq (llift0 #|Γm| T1)
                                      (llift0 #|Γm| t1)
                                      (rlift0 #|Γm| T2)
