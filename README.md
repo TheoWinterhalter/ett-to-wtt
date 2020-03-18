@@ -32,9 +32,6 @@ This project can be compiled with Coq 8.11.0 and requires
 [Equations](http://mattam82.github.io/Coq-Equations/)
 and [MetaCoq](https://github.com/MetaCoq/metacoq).
 
-If you want to compile the examples, you also need
-[TypingFlags](https://github.com/SimonBoulier/TypingFlags).
-
 ### Building
 
 Once you have the dependencies, simply run
