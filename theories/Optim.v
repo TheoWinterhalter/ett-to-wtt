@@ -289,10 +289,9 @@ Proof.
             cbn ; f_equal ;
             rewrite_assumption ; (reflexivity || assumption)).
   revert h. cbn - [Nat.leb]. ncase (i =? n).
-  - cbn. discriminate.
-  - intros _. nat_case.
-    + nat_case. reflexivity.
-    + nat_case. reflexivity.
+  intros _. nat_case.
+  - nat_case. reflexivity.
+  - nat_case. reflexivity.
 Defined.
 
 Corollary notdep_lift :

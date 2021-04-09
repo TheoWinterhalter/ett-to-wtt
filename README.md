@@ -29,9 +29,15 @@ WTT is ITT without any notion of computation or conversion.
 
 ### Requirements
 
-This project can be compiled with Coq 8.11.0 and requires
-[Equations](http://mattam82.github.io/Coq-Equations/)
-and [MetaCoq](https://github.com/MetaCoq/metacoq).
+This project can be compiled with Coq 8.13 and requires
+[Equations](http://mattam82.github.io/Coq-Equations/) 1.2.4.
+
+You can install those via opam with
+```fish
+opam repo add coq-released https://coq.inria.fr/opam/released
+opam update
+opam install coq-equations.1.2.4+8+13
+```
 
 ### Building
 
@@ -127,33 +133,3 @@ procedure for conversion in ITT defined in
 [FundamentalLemma](theories/FundamentalLemma.v) contains the proof of the
 fundamental lemma, crucial step for our translation.
 [Translation](theories/Translation.v) contains the translation from ETT to ITT.
-
-### Meta Theory of ETT
-
-In order to write ETT derivations more effectively, we develop some of the
-meta-theory of ETT. [XInversions](theories/XInversions.v) provides inversion
-lemmata for ETT while [XTypingLemmata](theories/XTypingLemmata.v) provides lift
-and substitution lemmata, along with the proof that the type in a judgement is
-well sorted.
-
-### Checking
-
-For type checking, we write one tactic for ITT and one for ETT.
-Their respective definitions can be found in
-[IChecking](theories/IChecking.v) and [XChecking](theories/XChecking.v).
-
-### TemplateCoq and Plugin
-
-To realise the sugar of ITT, we define some constants in
-[Quotes](theories/Quotes.v) and then quote them to TemplateCoq's inner
-representation of terms.
-The translation from ITT to TemplateCoq is done in
-[FinalTranslation](theories/FinalTranslation.v).
-[FullQuote](theories/FullQuote.v) is for the opposite: generating an ITT term
-from a TemplateCoq (and thus Coq) term, it is useful to generate examples.
-
-Finally [plugin](theories/plugin.v) defines a plugin using the TemplateMonad.
-It relies on type checkers written in [plugin_checkers](theories/checker.v)
-and some extra utility in [plugin_util](theories/util.v).
-
-**To see the plugin in action, just have a look at [plugin_demo](theories/plugin_demo.v)!**

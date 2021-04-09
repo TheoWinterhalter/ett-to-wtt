@@ -436,9 +436,9 @@ Proof.
   unfold lift. nat_case.
   - unfold closed_above.
     nat_case.
-    + nat_case. reflexivity.
-    + nat_case. reflexivity.
-  - unfold closed_above. nat_case. nat_case. reflexivity.
+    + nat_case.
+    + nat_case.
+  - unfold closed_above. nat_case. nat_case.
 Defined.
 
 Ltac erewrite_close_above_lift_id :=
@@ -493,8 +493,8 @@ Proof.
   cbn. nat_case.
   + subst. replace l with (n + (l - n))%nat by mylia.
     rewrite closed_above_lift by mylia. assumption.
-  + unfold closed_above. nat_case. reflexivity.
-  + unfold closed_above. nat_case. reflexivity.
+  + unfold closed_above. nat_case.
+  + unfold closed_above. nat_case.
 Defined.
 
 Ltac erewrite_close_above_subst_id :=

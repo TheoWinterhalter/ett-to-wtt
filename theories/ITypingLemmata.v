@@ -53,7 +53,6 @@ Proof.
   all: try (cbn in * ; repeat erewrite_assumption ; reflexivity).
   apply nth_error_Some_length in H0.
   unfold closed_above. case_eq (n <? #|Γ|) ; intro e ; bprop e ; try mylia.
-  reflexivity.
 Defined.
 
 Fact type_ctxempty_closed :

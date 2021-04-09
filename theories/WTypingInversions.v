@@ -83,7 +83,6 @@ Lemma inversionLambda :
         (nl (wProd na' A B) = nl T).
 Proof.
   invtac.
-  Unshelve. constructor.
 Defined.
 
 Lemma inversionApp :
@@ -119,7 +118,6 @@ Lemma inversionPair :
       (nl (wSum n A B) = nl T).
 Proof.
   invtac.
-  Unshelve. constructor.
 Defined.
 
 Lemma inversionPi1 :
@@ -208,7 +206,6 @@ Lemma inversionBeta :
        = nl T).
 Proof.
   invtac.
-  Unshelve. constructor.
 Defined.
 
 (* Lemma inversionHeq : *)
