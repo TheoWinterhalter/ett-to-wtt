@@ -1,7 +1,11 @@
 # Eliminating Reflection from Type Theory
 **A translation from extensional type theory (ETT) to weak type theory (WTT)**
 
-*Authors:* Théo Winterhalter, Matthieu Sozeau, Nicolas Tabareau and Simon Boulier
+*Authors:* Théo Winterhalter and Simon Boulier
+Based on previous work with Matthieu Sozeau and Nicolas Tabareau:
+[ett-to-itt]. This repository is in fact more or less a fork of the other one.
+
+[ett-to-itt]: https://github.com/TheoWinterhalter/ett-to-itt
 
 **Quick jump**
 - [Installing](#installing)
@@ -9,11 +13,10 @@
 
 ## Overview
 
-This work is a Coq formalisation of a translation from ETT to ITT that can
-be interfaced with Coq thanks to the TemplateCoq plugin.
+This work is a Coq formalisation of a translation from ETT to WTT.
 Additionally, sorts are handled quite generically (although without
 cumulativity) which means in particular that we can have a translation from
-Homotopy Type System (HTS) to Two-Level Type Theory (2TT) as a direct
+Homotopy Type System (HTS) to Two-Level Weak Type Theory (2WTT) as a direct
 application.
 
 ETT differs from ITT by the addition of the **reflection rule**:
@@ -23,7 +26,8 @@ ETT differs from ITT by the addition of the **reflection rule**:
   Γ ⊢ u ≡ v
 ```
 
-WTT is ITT without any notion of computation or conversion.
+WTT is ITT without any notion of computation or conversion, operations like
+β-reduction are instead handled directly with propositional equalities.
 
 ## Installing
 
