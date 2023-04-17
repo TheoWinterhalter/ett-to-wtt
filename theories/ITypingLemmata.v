@@ -781,7 +781,7 @@ Proof.
       - cbn. eapply type_HeqSym ; esh.
       - cbn.
         eapply type_HeqTrans
-          with (B1 := B0{ #|Δ| := u }) (b0 := b{ #|Δ| := u }) ; esh.
+          with (B := B0{ #|Δ| := u }) (b := b{ #|Δ| := u }) ; esh.
       - cbn. eapply type_HeqTransport ; esh.
       - cbn. eapply type_CongProd ; esh.
         cbn. f_equal.

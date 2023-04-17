@@ -11,6 +11,8 @@ Section XTyping.
 
 Context `{Sort_notion : Sorts.notion}.
 
+Declare Scope x_scope.
+
 Inductive typing (Σ : sglobal_context) (Γ : scontext) : sterm -> sterm -> Type :=
 | type_Rel n :
     forall A,

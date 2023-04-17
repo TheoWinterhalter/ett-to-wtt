@@ -797,7 +797,7 @@ Proof.
       cbn. econstructor ; try assumption.
       eapply IHh1. eassumption.
   - cbn. unfold A'. rewrite instantiate_sorts_subst.
-    eapply type_App with (A0 := instantiate_sorts inst A).
+    eapply type_App with (A := instantiate_sorts inst A).
     + eapply IHh1. assumption.
     + eapply IHh2. assumption.
   - cbn. econstructor.

@@ -257,7 +257,7 @@ Lemma trel_to_heq' :
     t1 ∼ t2 ->
     forall Γ Γ1 Γ2,
       ∑ p,
-        forall {Γm T1 T2},
+        forall Γm T1 T2,
           ismix Σ Γ Γ1 Γ2 Γm ->
           Σ ;;; Γ ,,, Γ1 |-i t1 : T1 ->
           Σ ;;; Γ ,,, Γ2 |-i t2 : T2 ->
@@ -806,7 +806,7 @@ Corollary trel_to_heq :
     type_glob Σ ->
     t1 ∼ t2 ->
     ∑ p,
-      forall {T1 T2},
+      forall T1 T2,
         Σ ;;; Γ |-i t1 : T1 ->
         Σ ;;; Γ |-i t2 : T2 ->
         Σ ;;; Γ |-i p : sHeq T1 t1 T2 t2.

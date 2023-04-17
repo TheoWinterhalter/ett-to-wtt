@@ -145,6 +145,8 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
   | sAx id => sAx id
   end.
 
+Declare Scope s_scope.
+
 Notation subst0 t u := (subst t 0 u).
 Notation "M { j := N }" := (subst N j M) (at level 10, right associativity) : s_scope.
 

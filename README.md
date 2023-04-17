@@ -34,14 +34,14 @@ WTT is ITT without any notion of computation or conversion, operations like
 
 ### Requirements
 
-This project can be compiled with Coq 8.13 and requires
-[Equations](http://mattam82.github.io/Coq-Equations/) 1.2.4.
+This project can be compiled with Coq 8.16 and requires
+[Equations](http://mattam82.github.io/Coq-Equations/) 1.3.
 
 You can install those via opam with
 ```fish
 opam repo add coq-released https://coq.inria.fr/opam/released
 opam update
-opam install coq-equations.1.2.4+8+13
+opam install coq-equations.1.3+8.16
 ```
 
 ### Building

@@ -550,7 +550,7 @@ Proof.
   - cbn. assumption.
   - cbn. econstructor.
     + assumption.
-    + eapply type_Pack with (s0 := s) ; assumption.
+    + eapply type_Pack with (s := s) ; assumption.
 Defined.
 
 Fact mix'_length1 :

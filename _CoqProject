@@ -31,4 +31,4 @@ theories/WChecker.v
 # theories/Manual.v
 # theories/FullQuote.v
 
-theories/ItoW.v
+# theories/ItoW.v

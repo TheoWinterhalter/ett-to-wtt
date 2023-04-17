@@ -177,11 +177,11 @@ Proof.
   unshelve refine (
     typing_all
       Σ
-      (fun {Γ t A} (h : Σ ;;; Γ |-x t : A) => forall
-           {Γ'} (hΓ : Σ |--i Γ' ∈ ⟦ Γ ⟧),
+      (fun Γ t A (h : Σ ;;; Γ |-x t : A) => forall
+           Γ' (hΓ : Σ |--i Γ' ∈ ⟦ Γ ⟧),
            ∑ A' t', Σ ;;;; Γ' ⊢ [t'] : A' ∈ ⟦ Γ ⊢ [t] : A ⟧)
-      (fun {Γ u v A} (h : Σ ;;; Γ |-x u ≡ v : A) => forall
-           {Γ'} (hΓ : Σ |--i Γ' ∈ ⟦ Γ ⟧),
+      (fun Γ u v A (h : Σ ;;; Γ |-x u ≡ v : A) => forall
+           Γ' (hΓ : Σ |--i Γ' ∈ ⟦ Γ ⟧),
            ∑ A' A'' u' v' p',
          eqtrans Σ Γ A u v Γ' A' A'' u' v' p')
       _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _

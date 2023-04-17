@@ -8,6 +8,8 @@ Open Scope s_scope.
 
 (*! Typing *)
 
+Declare Scope i_scope.
+
 Section ITyping.
 
 Context `{Sort_notion : Sorts.notion}.
