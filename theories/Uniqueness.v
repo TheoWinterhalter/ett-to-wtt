@@ -34,15 +34,11 @@ Ltac unitac h1 h2 :=
   | repeat unih
   ].
 
-Ltac nleq :=
-  repeat (try eapply nl_lift ; try eapply nl_subst) ;
-  cbn ; auto ; f_equal ; eauto.
-
 Ltac finish :=
   lazymatch goal with
-  | h : nl ?u = nl ?t |- _ = nl ?t =>
-    transitivity (nl u) ; [ | assumption ] ;
-    repeat nleq
+  | h : ?u = ?t |- _ = ?t =>
+    transitivity u ; [ | assumption ] ;
+    reflexivity
   end.
 
 Ltac reunih :=
@@ -53,7 +49,7 @@ Ltac reunih :=
     |- _ =>
     let hh2 := fresh h2 in
     assert (Σ ;;; Γ |-i t : A) as hh2 ; [
-      eapply rename_typed ; try eassumption ; try reflexivity
+      eapply meta_conv ; try eassumption ; try reflexivity
     | specialize (ih _ _ _ h1 hh2) ;
       simpl in ih ;
       inversion ih ; subst ; clear ih
@@ -65,34 +61,16 @@ Lemma uniqueness :
     type_glob Σ ->
     Σ ;;; Γ |-i u : A ->
     Σ ;;; Γ |-i u : B ->
-    nl A = nl B.
+    A = B.
 Proof.
   intros Σ Γ A B u hg h1 h2.
   revert Γ A B h1 h2.
   induction u ; intros Γ A B h1 h2.
   all: try unitac h1 h2.
   all: try assumption.
-  all: try solve [finish].
-  - rewrite H1 in H. inversion H. subst. auto.
-  - reunih.
-    + cbn. f_equal. eauto.
-    + repeat eapply wf_snoc.
-      * eapply typing_wf. eassumption.
-      * eassumption.
-    + try assumption. try solve [finish].
-  - reunih.
-    + cbn. f_equal. eauto.
-    + repeat eapply wf_snoc.
-      * eapply typing_wf. eassumption.
-      * eassumption.
-    + try assumption. try solve [finish].
-  - reunih.
-    + cbn. f_equal. eauto.
-    + repeat eapply wf_snoc.
-      * eapply typing_wf. eassumption.
-      * eassumption.
-    + try assumption. try solve [finish].
-  - rewrite h4 in h0. inversion h0. inversion h0. subst. assumption.
+  all: try reflexivity.
+  - rewrite H1 in H. inversion H. subst. reflexivity.
+  - rewrite h4 in h0. inversion h0. subst. reflexivity.
 Defined.
 
 End Uniqueness.

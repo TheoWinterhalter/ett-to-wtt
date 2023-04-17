@@ -32,12 +32,12 @@ Fixpoint llift γ δ (t:sterm)  : sterm :=
     else if i <? δ + γ
          then sProjT1 (sRel i)
          else sRel i
-  | sLambda na A B b =>
-    sLambda na (llift γ δ A) (llift γ (S δ) B) (llift γ (S δ) b)
+  | sLambda A B b =>
+    sLambda (llift γ δ A) (llift γ (S δ) B) (llift γ (S δ) b)
   | sApp u A B v =>
     sApp (llift γ δ u) (llift γ δ A) (llift γ (S δ) B) (llift γ δ v)
-  | sProd na A B => sProd na (llift γ δ A) (llift γ (S δ) B)
-  | sSum na A B => sSum na (llift γ δ A) (llift γ (S δ) B)
+  | sProd A B => sProd (llift γ δ A) (llift γ (S δ) B)
+  | sSum A B => sSum (llift γ δ A) (llift γ (S δ) B)
   | sPair A B u v =>
     sPair (llift γ δ A) (llift γ (S δ) B) (llift γ δ u) (llift γ δ v)
   | sPi1 A B p => sPi1 (llift γ δ A) (llift γ (S δ) B) (llift γ δ p)
@@ -104,12 +104,12 @@ Fixpoint rlift γ δ t : sterm :=
     else if i <? δ + γ
          then sProjT2 (sRel i)
          else sRel i
-  | sLambda na A B b =>
-    sLambda na (rlift γ δ A) (rlift γ (S δ) B) (rlift γ (S δ) b)
+  | sLambda A B b =>
+    sLambda (rlift γ δ A) (rlift γ (S δ) B) (rlift γ (S δ) b)
   | sApp u A B v =>
     sApp (rlift γ δ u) (rlift γ δ A) (rlift γ (S δ) B) (rlift γ δ v)
-  | sProd na A B => sProd na (rlift γ δ A) (rlift γ (S δ) B)
-  | sSum na A B => sSum na (rlift γ δ A) (rlift γ (S δ) B)
+  | sProd A B => sProd (rlift γ δ A) (rlift γ (S δ) B)
+  | sSum A B => sSum (rlift γ δ A) (rlift γ (S δ) B)
   | sPair A B u v =>
     sPair (rlift γ δ A) (rlift γ (S δ) B) (rlift γ δ u) (rlift γ δ v)
   | sPi1 A B p => sPi1 (rlift γ δ A) (rlift γ (S δ) B) (rlift γ δ p)
@@ -743,40 +743,6 @@ Proof.
   - mylia.
 Defined.
 
-Lemma nl_llift :
-  forall {t u n k},
-    nl t = nl u ->
-    nl (llift n k t) = nl (llift n k u).
-Proof.
-  intros t u n k.
-  case (nl_dec (nl t) (nl u)).
-  - intros e _.
-    revert u e n k.
-    induction t ;
-    intros u e m k ; destruct u ; cbn in e ; try discriminate e.
-    all:
-      try (cbn ; inversion e ;
-           repeat (erewrite_assumption by eassumption) ; reflexivity).
-  - intros h e. exfalso. apply h. apply e.
-Defined.
-
-Lemma nl_rlift :
-  forall {t u n k},
-    nl t = nl u ->
-    nl (rlift n k t) = nl (rlift n k u).
-Proof.
-  intros t u n k.
-  case (nl_dec (nl t) (nl u)).
-  - intros e _.
-    revert u e n k.
-    induction t ;
-    intros u e m k ; destruct u ; cbn in e ; try discriminate e.
-    all:
-      try (cbn ; inversion e ;
-           repeat (erewrite_assumption by eassumption) ; reflexivity).
-  - intros h e. exfalso. apply h. apply e.
-Defined.
-
 Fact llift_ax_type :
   forall {Σ},
     type_glob Σ ->
@@ -1194,9 +1160,6 @@ Proof.
         eapply type_Ax.
         + eapply wf_llift' ; eassumption.
         + assumption.
-      - eapply type_rename.
-        + emh.
-        + eapply nl_llift. assumption.
     }
 
   (* type_rlift' *)
@@ -1400,9 +1363,6 @@ Proof.
         eapply type_Ax.
         + eapply wf_rlift' ; eassumption.
         + assumption.
-      - eapply type_rename.
-        + emh.
-        + eapply nl_rlift. assumption.
     }
 
   (* wf_llift' *)

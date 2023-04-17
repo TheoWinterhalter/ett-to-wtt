@@ -56,41 +56,41 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     wf Σ Γ ->
     Σ ;;; Γ |-w (wSort s) : wSort (Sorts.succ s)
 
-| type_Prod Γ n A B s1 s2 :
+| type_Prod Γ A B s1 s2 :
     Σ ;;; Γ |-w A : wSort s1 ->
     Σ ;;; Γ ,, A |-w B : wSort s2 ->
-    Σ ;;; Γ |-w wProd n A B : wSort (Sorts.prod_sort s1 s2)
+    Σ ;;; Γ |-w wProd A B : wSort (Sorts.prod_sort s1 s2)
 
-| type_Lambda Γ n n' t s A B :
+| type_Lambda Γ t s A B :
     Σ ;;; Γ |-w A : wSort s ->
     Σ ;;; Γ ,, A |-w t : B ->
-    Σ ;;; Γ |-w wLambda n A t : wProd n' A B
+    Σ ;;; Γ |-w wLambda A t : wProd A B
 
-| type_App Γ n t A B u :
-    Σ ;;; Γ |-w t : wProd n A B ->
+| type_App Γ t A B u :
+    Σ ;;; Γ |-w t : wProd A B ->
     Σ ;;; Γ |-w u : A ->
     Σ ;;; Γ |-w wApp t u : B{ 0 := u }
 
-| type_Sum Γ n t b s1 s2 :
+| type_Sum Γ t b s1 s2 :
     Σ ;;; Γ |-w t : wSort s1 ->
     Σ ;;; Γ ,, t |-w b : wSort s2 ->
-    Σ ;;; Γ |-w (wSum n t b) : wSort (Sorts.sum_sort s1 s2)
+    Σ ;;; Γ |-w (wSum t b) : wSort (Sorts.sum_sort s1 s2)
 
-| type_Pair Γ n A B u v s1 s2 :
+| type_Pair Γ A B u v s1 s2 :
     Σ ;;; Γ |-w A : wSort s1 ->
     Σ ;;; Γ ,, A |-w B : wSort s2 ->
     Σ ;;; Γ |-w u : A ->
     Σ ;;; Γ |-w v : B{ 0 := u } ->
-    Σ ;;; Γ |-w wPair A B u v : wSum n A B
+    Σ ;;; Γ |-w wPair A B u v : wSum A B
 
-| type_Pi1 Γ n A B s1 s2 p :
-    Σ ;;; Γ |-w p : wSum n A B ->
+| type_Pi1 Γ A B s1 s2 p :
+    Σ ;;; Γ |-w p : wSum A B ->
     Σ ;;; Γ |-w A : wSort s1 ->
     Σ ;;; Γ ,, A |-w B : wSort s2 ->
     Σ ;;; Γ |-w wPi1 A B p : A
 
-| type_Pi2 Γ n A B s1 s2 p :
-    Σ ;;; Γ |-w p : wSum n A B ->
+| type_Pi2 Γ A B s1 s2 p :
+    Σ ;;; Γ |-w p : wSum A B ->
     Σ ;;; Γ |-w A : wSort s1 ->
     Σ ;;; Γ ,, A |-w B : wSort s2 ->
     Σ ;;; Γ |-w wPi2 A B p : B{ 0 := wPi1 A B p }
@@ -122,12 +122,12 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w t : T1 ->
     Σ ;;; Γ |-w wTransport T1 T2 p t : T2
 
-| type_Beta Γ s A B t u n :
+| type_Beta Γ s A B t u :
     Σ ;;; Γ |-w A : wSort s ->
     Σ ;;; Γ ,, A |-w t : B ->
     Σ ;;; Γ |-w u : A ->
     Σ ;;; Γ |-w wBeta t u : wEq (B{ 0 := u })
-                               (wApp (wLambda n A t) u)
+                               (wApp (wLambda A t) u)
                                (t{ 0 := u })
 
 | type_K Γ A u p s :
@@ -136,13 +136,13 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w u : A ->
     Σ ;;; Γ |-w wK A u p : wEq (wEq A u u) p (wRefl A u)
 
-| type_Funext Γ A B f g p n nx n1 n2 :
-    Σ ;;; Γ |-w p : wProd nx A
+| type_Funext Γ A B f g p :
+    Σ ;;; Γ |-w p : wProd A
                      (wEq B (wApp (lift0 1 f) (wRel 0))
                             (wApp (lift0 1 g) (wRel 0))) ->
-    Σ ;;; Γ |-w f : wProd n1 A B ->
-    Σ ;;; Γ |-w g : wProd n2 A B ->
-    Σ ;;; Γ |-w wFunext f g p : wEq (wProd n A B) f g
+    Σ ;;; Γ |-w f : wProd A B ->
+    Σ ;;; Γ |-w g : wProd A B ->
+    Σ ;;; Γ |-w wFunext f g p : wEq (wProd A B) f g
 
 | type_JBeta Γ A u P w s1 s2 :
     Σ ;;; Γ |-w u : A ->
@@ -159,20 +159,20 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w wTransportBeta A t
              : wEq A (wTransport A A (wRefl (wSort s) A) t) t
 
-| type_PairEta Γ A B p n n' :
-    Σ ;;; Γ |-w p : wSum n A B ->
+| type_PairEta Γ A B p :
+    Σ ;;; Γ |-w p : wSum A B ->
     Σ ;;; Γ |-w wPairEta p
-             : wEq (wSum n' A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p
+             : wEq (wSum A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p
 
-| type_ProdExt Γ A B1 B2 n1 n2 p s1 s2 :
+| type_ProdExt Γ A B1 B2 p s1 s2 :
     Σ ;;; Γ,, A |-w p : wEq (wSort s2) B1 B2 ->
     Σ ;;; Γ |-w A : wSort s1 ->
-    Σ ;;; Γ |-w wProdExt A p : wEq (wSort (prod_sort s1 s2)) (wProd n1 A B1) (wProd n2 A B2)
+    Σ ;;; Γ |-w wProdExt A p : wEq (wSort (prod_sort s1 s2)) (wProd A B1) (wProd A B2)
 
-| type_SumExt Γ A B1 B2 n1 n2 p s1 s2 :
+| type_SumExt Γ A B1 B2 p s1 s2 :
     Σ ;;; Γ,, A |-w p : wEq (wSort s2) B1 B2 ->
     Σ ;;; Γ |-w A : wSort s1 ->
-    Σ ;;; Γ |-w wSumExt A p : wEq (wSort (sum_sort s1 s2)) (wSum n1 A B1) (wSum n2 A B2)
+    Σ ;;; Γ |-w wSumExt A p : wEq (wSort (sum_sort s1 s2)) (wSum A B1) (wSum A B2)
 
 | type_Ax Γ id d :
     wf Σ Γ ->
@@ -183,11 +183,6 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     wf Σ Γ ->
     lookup_glob Σ id = Some d ->
     Σ ;;; Γ |-w wDelta id : wEq (dtype d) (wAx id) (dbody d)
-
-| type_rename Γ t A B :
-    Σ ;;; Γ |-w t : A ->
-    nl A = nl B ->
-    Σ ;;; Γ |-w t : B
 
 where " Σ ;;; Γ '|-w' t : T " := (@typing Σ Γ t T) : w_scope
 

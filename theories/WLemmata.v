@@ -215,7 +215,7 @@ Ltac tcca :=
     eapply type_ctx_closed_above in H
   | H : forall _ _, _ -> _ -> closed_above _ ?A = _ |- closed_above _ ?A = _ =>
     eapply H;[|eassumption]; lia
-  | H0 : nl ?t = nl ?A , H : forall _ _ _, closed_above _ ?t = _ -> _ |- closed_above _ ?A = _ =>
+  | H0 : ?t = ?A , H : forall _ _ _, closed_above _ ?t = _ -> _ |- closed_above _ ?A = _ =>
     eapply (H _ H0); try eassumption
   | H : _ && _ = _ |- _ => apply andb_prop in H; destruct H
   | _ => rewrite Nat.sub_0_r
@@ -230,14 +230,6 @@ Proof.
   apply leb_correct.
   lia.
 Defined.
-
-Fact closed_above_nl t : forall u, nl t = nl u -> forall n,
-      closed_above n t = true -> closed_above n u = true.
-Proof.
-  induction t; cbn -[leb] in *; intros [] e k IH; inversion e;
-    cbn -[leb]; repeat tcca.
-  subst; assumption.
-Qed.
 
 Lemma closed_above_nth_error :
   forall (Σ : wglobal_context) Γ n A,
@@ -278,7 +270,6 @@ Proof.
   - eapply closed_above_nk with (n := 0). lia.
     eapply type_ctxempty_closed.
     eapply typed_ax_body. eassumption. eassumption.
-  - eapply closed_above_nl; eassumption.
 Qed.
 
 Fact type_ctxempty_closed' :
@@ -496,9 +487,6 @@ Proof.
         eapply type_Delta.
         + now apply wf_lift.
         + assumption.
-      - eapply type_rename.
-        + eih.
-        + eapply nl_lift. assumption.
     }
 
   (* wf_lift *)
@@ -828,11 +816,6 @@ Proof.
         eapply type_Delta.
         + eapply wf_subst; eassumption.
         + assumption.
-      - eapply type_rename.
-        + esh.
-        + eapply nl_subst.
-          * assumption.
-          * reflexivity.
     }
 
   (* wf_subst *)
@@ -882,153 +865,6 @@ Ltac lift_sort :=
   | |- _ ;;; _ |-w lift ?n ?k ?t : ?S => change S with (lift n k S)
   | |- _ ;;; _ |-w ?t { ?n := ?u } : ?S => change S with (S {n := u})
   end.
-
-Fixpoint nlctx Γ :=
-  match Γ with
-  | A :: Γ => nl A :: nlctx Γ
-  | nil => nil
-  end.
-
-Lemma nlctx_length :
-  forall {Γ Δ},
-    nlctx Γ = nlctx Δ ->
-    #|Γ| = #|Δ|.
-Proof.
-  intro Γ. induction Γ ; intros Δ e.
-  - cbn. destruct Δ ; simpl in e ; try discriminate e.
-    reflexivity.
-  - destruct Δ ; simpl in e ; try discriminate e.
-    cbn. f_equal. eapply IHΓ.
-    simpl in e. inversion e. reflexivity.
-Defined.
-
-Lemma nth_error_nlctx :
-  forall Γ Δ n A,
-    nth_error Γ n = Some A ->
-    nlctx Γ = nlctx Δ ->
-    ∑ B,
-      nth_error Δ n = Some B /\
-      nl A = nl B.
-Proof.
-  intros Γ Δ n A h e.
-  induction Γ in Δ, A, n, h, e |- *.
-  - destruct n. all: discriminate.
-  - destruct n.
-    + cbn in h. inversion h. subst. clear h.
-      destruct Δ. 1: discriminate.
-      cbn in e. inversion e.
-      cbn. eexists. intuition eauto.
-    + cbn in h.
-      destruct Δ. 1: discriminate.
-      cbn in e. inversion e.
-      eapply IHΓ in h as [B [? ?]]. 2: eauto.
-      cbn. eexists. intuition eauto.
-Defined.
-
-Ltac nleq :=
-  repeat (try eapply nl_lift ; try eapply nl_subst) ;
-  cbn ; auto ; f_equal ; eauto.
-
-Ltac reih :=
-  lazymatch goal with
-  | h : _ -> _ -> _ -> nl ?t1 = _ -> _ -> _ ;;; _ |-w _ : _,
-    e : nl ?t1 = nl ?t2
-    |- _ ;;; _ |-w ?t2 : _ =>
-    eapply h ; [
-      repeat nleq
-    | first [ eassumption | reflexivity ]
-    | first [
-        eassumption
-      | econstructor ; try eassumption ; reih
-      ]
-    ]
-  | h : _ -> _ -> _ -> nl ?t = _ -> _ -> _ ;;; _ |-w _ : _
-    |- _ ;;; _ |-w ?t : _ =>
-    eapply h ; [
-      repeat nleq
-    | first [ eassumption | reflexivity ]
-    | first [
-        eassumption
-      | econstructor ; try eassumption ; reih
-      ]
-    ]
-  end.
-
-Lemma rename_typed :
-  forall {Σ Γ Δ t u A},
-    type_glob Σ ->
-    Σ ;;; Γ |-w t : A ->
-    nlctx Γ = nlctx Δ ->
-    nl t = nl u ->
-    wf Σ Δ ->
-    Σ ;;; Δ |-w u : A.
-Proof.
-  intros Σ Γ Δ t u A hg h ex e hw. revert Δ ex u e hw.
-  induction h ; intros Δ ex t' e hw.
-  all: try solve [
-    simpl in e ; destruct t' ; try discriminate e ;
-    simpl in e ; inversion e ; subst ; clear e ;
-    try solve [
-          econstructor ; try eassumption ; try reih ;
-          try (econstructor ; [ reih | repeat nleq ])
-        ] ;
-    try solve [
-          econstructor ; [
-            econstructor ; try eassumption ;
-            try reih ;
-            try (econstructor ; [ reih | repeat nleq ])
-          | repeat nleq
-          ]
-        ]
-  ].
-  - simpl in e. destruct t' ; try discriminate e.
-    simpl in e. inversion e. subst. clear e.
-    eapply nth_error_nlctx in ex as [B [? ?]]. 2: eassumption.
-    eapply type_rename.
-    + econstructor.
-      * assumption.
-      * eassumption.
-    + eapply nl_lift. auto.
-  - simpl in e. destruct t' ; try discriminate e.
-    simpl in e. inversion e. subst. clear e.
-    econstructor.
-    + econstructor ; try eassumption ; try reih ;
-      try (econstructor ; [ reih | repeat nleq ]).
-      eapply IHh4.
-      * repeat nleq.
-      * eassumption.
-      * repeat eapply wf_snoc ; try eassumption ; try reih.
-        econstructor ; try lift_sort ; try eapply typing_lift01 ;
-        try eassumption ; try reih ;
-        try (econstructor ; [ reih | repeat nleq ]).
-        try econstructor ; [ econstructor |].
-        -- assumption.
-        -- repeat eapply wf_snoc ; try eassumption ; try reih.
-        -- cbn. nleq.
-    + nleq.
-  - simpl in e. destruct t' ; try discriminate e.
-    simpl in e. inversion e. subst. clear e.
-    econstructor.
-    + econstructor ; try eassumption ; try reih ;
-      try (econstructor ; [ reih | repeat nleq ]).
-      eapply IHh2.
-      * repeat nleq.
-      * eassumption.
-      * repeat eapply wf_snoc ; try eassumption ; try reih.
-        econstructor ; try lift_sort ; try eapply typing_lift01 ;
-        try eassumption ; try reih ;
-        try (econstructor ; [ reih | repeat nleq ]).
-        try econstructor ; [ econstructor |].
-        -- assumption.
-        -- repeat eapply wf_snoc ; try eassumption ; try reih.
-        -- cbn. nleq.
-    + repeat nleq.
-  - econstructor.
-    + eapply IHh ; assumption.
-    + assumption.
-  Unshelve.
-  all: try solve [ constructor ].
-Defined.
 
 Lemma istype_type :
   forall {Σ Γ t T},
@@ -1092,10 +928,8 @@ Proof.
     destruct (inversion_Prod H3) as [? [? [? [? ?]]]].
     eexists. econstructor.
     + econstructor ; eassumption.
-    + eapply type_rename ; try eassumption.
-      reflexivity.
-    + eapply type_rename ; try eassumption.
-      reflexivity.
+    + assumption.
+    + assumption.
   - eexists. eapply type_Eq.
     + match goal with
       | |- _ ;;; _ |-w _ : ?S =>
@@ -1119,7 +953,7 @@ Proof.
     + econstructor ; try eassumption.
       * econstructor ; eassumption.
       * econstructor ; eassumption.
-    + econstructor ; try eassumption. reflexivity.
+    + assumption.
   - destruct IHtyping1 as [? h].
     destruct (inversion_Eq h) as [? [? [? [? ?]]]].
     eexists. econstructor.
@@ -1149,10 +983,6 @@ Proof.
     rewrite nil_cat in H2.
     erewrite lift_ax_body in H2 by eassumption.
     erewrite lift_ax_type in H2 by eassumption; auto.
-  - destruct IHtyping. eexists.
-    eapply rename_typed ; try eassumption.
-    + reflexivity.
-    + eapply typing_wf. eassumption.
-  Unshelve. constructor.
 Defined.
+
 End Lemmata.

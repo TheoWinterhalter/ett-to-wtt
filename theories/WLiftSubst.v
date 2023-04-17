@@ -8,10 +8,10 @@ Open Scope type_scope.
 Fixpoint lift `{Sort_notion : Sorts.notion} n k t : wterm :=
   match t with
   | wRel i => if Nat.leb k i then wRel (n + i) else wRel i
-  | wLambda na T M => wLambda na (lift n k T) (lift n (S k) M)
+  | wLambda T M => wLambda (lift n k T) (lift n (S k) M)
   | wApp u v => wApp (lift n k u) (lift n k v)
-  | wProd na A B => wProd na (lift n k A) (lift n (S k) B)
-  | wSum na A B => wSum na (lift n k A) (lift n (S k) B)
+  | wProd A B => wProd (lift n k A) (lift n (S k) B)
+  | wSum A B => wSum (lift n k A) (lift n (S k) B)
   | wPair A B u v =>
     wPair (lift n k A) (lift n (S k) B) (lift n k u) (lift n k v)
   | wPi1 A B p => wPi1 (lift n k A) (lift n (S k) B) (lift n k p)
@@ -51,10 +51,10 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
     | Gt => wRel n
     | Lt => wRel (pred n)
     end
-  | wLambda na T M => wLambda na (subst t k T) (subst t (S k) M)
+  | wLambda T M => wLambda (subst t k T) (subst t (S k) M)
   | wApp u v => wApp (subst t k u) (subst t k v)
-  | wProd na A B => wProd na (subst t k A) (subst t (S k) B)
-  | wSum na A B => wSum na (subst t k A) (subst t (S k) B)
+  | wProd A B => wProd (subst t k A) (subst t (S k) B)
+  | wSum A B => wSum (subst t k A) (subst t (S k) B)
   | wPair A B u v =>
     wPair (subst t k A) (subst t (S k) B) (subst t k u) (subst t k v)
   | wPi1 A B p => wPi1 (subst t k A) (subst t (S k) B) (subst t k p)
@@ -103,10 +103,10 @@ Fixpoint closed_above k (t : wterm) :=
   match t with
   | wRel n => n <? k
   | wSort _ => true
-  | wProd _ A B => closed_above k A && closed_above (S k) B
-  | wLambda _ A t => closed_above k A && closed_above (S k) t
+  | wProd A B => closed_above k A && closed_above (S k) B
+  | wLambda A t => closed_above k A && closed_above (S k) t
   | wApp u v => closed_above k u && closed_above k v
-  | wSum _ A B => closed_above k A && closed_above (S k) B
+  | wSum A B => closed_above k A && closed_above (S k) B
   | wPair A B u v =>
     closed_above k A && closed_above (S k) B &&
     closed_above k u && closed_above k v

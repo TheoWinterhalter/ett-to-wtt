@@ -130,4 +130,4 @@ fundamental lemma, crucial step for our translation.
 
 The remaining files are focused on a final translation from the WTT used above
 to a simpler version where syntactic sugar is removed.
-This part is still work-in-progress.
+This part is still work in progress.

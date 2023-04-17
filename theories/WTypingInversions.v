@@ -35,14 +35,8 @@ Ltac invtac :=
   intros ;
   lazymatch goal with
   | h : _ |- _ =>
-    dependent induction h ; [
-      repeat eexists ; eassumption
-    | destruct_pands ; mysplits ; try eassumption ;
-      match goal with
-      | h : nl ?A = _ |- _ =>
-        solve [ transitivity (nl A) ; eauto ]
-      end
-    ]
+    dependent induction h ;
+    repeat eexists ; eassumption
   end.
 
 Lemma inversionRel :
@@ -50,7 +44,7 @@ Lemma inversionRel :
     Σ ;;; Γ |-w wRel n : T ->
     exists A,
       nth_error Γ n = Some A /\
-      nl (lift0 (S n) A) = nl T.
+      lift0 (S n) A = T.
 Proof.
   invtac.
 Defined.
@@ -58,29 +52,29 @@ Defined.
 Lemma inversionSort :
   forall {Σ Γ s T},
     Σ ;;; Γ |-w wSort s : T ->
-    nl (wSort (Sorts.succ s)) = nl T.
+    wSort (Sorts.succ s) = T.
 Proof.
   invtac.
 Defined.
 
 Lemma inversion_Prod :
-  forall {Σ Γ n A B T},
-    Σ ;;; Γ |-w wProd n A B : T ->
+  forall {Σ Γ A B T},
+    Σ ;;; Γ |-w wProd A B : T ->
     exists s1 s2,
       Σ ;;; Γ |-w A : wSort s1 /\
       Σ ;;; Γ,, A |-w B : wSort s2 /\
-      nl T = nlSort (Sorts.prod_sort s1 s2).
+      T = wSort (Sorts.prod_sort s1 s2).
 Proof.
   invtac.
 Defined.
 
 Lemma inversionLambda :
-  forall {Σ Γ na A t T},
-    Σ ;;; Γ |-w wLambda na A t : T ->
-      exists s1 na' B,
+  forall {Σ Γ A t T},
+    Σ ;;; Γ |-w wLambda A t : T ->
+      exists s1 B,
         (Σ ;;; Γ |-w A : wSort s1) /\
         (Σ ;;; Γ ,, A |-w t : B) /\
-        (nl (wProd na' A B) = nl T).
+        (wProd A B = T).
 Proof.
   invtac.
 Defined.
@@ -88,21 +82,21 @@ Defined.
 Lemma inversionApp :
   forall {Σ Γ t u T},
     Σ ;;; Γ |-w wApp t u : T ->
-    exists A B n,
-      (Σ ;;; Γ |-w t : wProd n A B) /\
+    exists A B,
+      (Σ ;;; Γ |-w t : wProd A B) /\
       (Σ ;;; Γ |-w u : A) /\
-      (nl (B{ 0 := u }) = nl T).
+      (B{ 0 := u } = T).
 Proof.
   invtac.
 Defined.
 
 Lemma inversion_Sum :
-  forall {Σ Γ n A B T},
-    Σ ;;; Γ |-w wSum n A B : T ->
+  forall {Σ Γ A B T},
+    Σ ;;; Γ |-w wSum A B : T ->
     exists s1 s2,
       Σ ;;; Γ |-w A : wSort s1 /\
       Σ ;;; Γ,, A |-w B : wSort s2 /\
-      nl T = nlSort (Sorts.sum_sort s1 s2).
+      T = wSort (Sorts.sum_sort s1 s2).
 Proof.
   invtac.
 Defined.
@@ -110,12 +104,12 @@ Defined.
 Lemma inversionPair :
   forall {Σ Γ A B u v T},
     Σ ;;; Γ |-w wPair A B u v : T ->
-    exists n s1 s2,
+    exists s1 s2,
       (Σ ;;; Γ |-w A : wSort s1) /\
       (Σ ;;; Γ ,, A |-w B : wSort s2) /\
       (Σ ;;; Γ |-w u : A) /\
       (Σ ;;; Γ |-w v : B{ 0 := u }) /\
-      (nl (wSum n A B) = nl T).
+      (wSum A B = T).
 Proof.
   invtac.
 Defined.
@@ -123,11 +117,11 @@ Defined.
 Lemma inversionPi1 :
   forall {Σ Γ A B p T},
     Σ ;;; Γ |-w wPi1 A B p : T ->
-    exists n s1 s2,
-      (Σ ;;; Γ |-w p : wSum n A B) /\
+    exists s1 s2,
+      (Σ ;;; Γ |-w p : wSum A B) /\
       (Σ ;;; Γ |-w A : wSort s1) /\
       (Σ ;;; Γ ,, A |-w B : wSort s2) /\
-      (nl A = nl T).
+      (A = T).
 Proof.
   invtac.
 Defined.
@@ -135,11 +129,11 @@ Defined.
 Lemma inversionPi2 :
   forall {Σ Γ A B p T},
     Σ ;;; Γ |-w wPi2 A B p : T ->
-    exists n s1 s2,
-      (Σ ;;; Γ |-w p : wSum n A B) /\
+    exists s1 s2,
+      (Σ ;;; Γ |-w p : wSum A B) /\
       (Σ ;;; Γ |-w A : wSort s1) /\
       (Σ ;;; Γ ,, A |-w B : wSort s2) /\
-      (nl (B{ 0 := wPi1 A B p }) = nl T).
+      (B{ 0 := wPi1 A B p } = T).
 Proof.
   invtac.
 Defined.
@@ -151,7 +145,7 @@ Lemma inversion_Eq :
       Σ ;;; Γ |-w A : wSort s /\
       Σ ;;; Γ |-w u : A /\
       Σ ;;; Γ |-w v : A /\
-      nl T = nlSort (Sorts.eq_sort s).
+      T = wSort (Sorts.eq_sort s).
 Proof.
   invtac.
 Defined.
@@ -162,7 +156,7 @@ Lemma inversionRefl :
     exists s,
       (Σ ;;; Γ |-w A : wSort s) /\
       (Σ ;;; Γ |-w u : A) /\
-      (nl (wEq A u u) = nl T).
+      (wEq A u u = T).
 Proof.
   invtac.
 Defined.
@@ -177,7 +171,7 @@ Lemma inversionJ :
       (Σ ;;; Γ ,, A ,, (wEq (lift0 1 A) (lift0 1 u) (wRel 0)) |-w P : wSort s2) /\
       (Σ ;;; Γ |-w p : wEq A u v) /\
       (Σ ;;; Γ |-w w : (P {1 := u}){0 := wRefl A u}) /\
-      (nl (P{1 := v}{0 := p}) = nl T).
+      (P{1 := v}{0 := p} = T).
 Proof.
   invtac.
 Defined.
@@ -190,7 +184,7 @@ Lemma inversion_Transport :
       Σ ;;; Γ |-w B : wSort s /\
       Σ ;;; Γ |-w p : wEq (wSort s) A B /\
       Σ ;;; Γ |-w t : A /\
-      nl T = nl B.
+      T = B.
 Proof.
   invtac.
 Defined.
@@ -198,12 +192,11 @@ Defined.
 Lemma inversionBeta :
   forall {Σ Γ t u T},
     Σ ;;; Γ |-w wBeta t u : T ->
-    exists s n A B,
+    exists s A B,
       (Σ ;;; Γ,, A |-w t : B) /\
       (Σ ;;; Γ |-w u : A) /\
       (Σ ;;; Γ |-w A : wSort s) /\
-      (nl (wEq (B {0 := u}) (wApp (wLambda n A t) u) (t {0 := u}))
-       = nl T).
+      (wEq (B {0 := u}) (wApp (wLambda A t) u) (t {0 := u}) = T).
 Proof.
   invtac.
 Defined.

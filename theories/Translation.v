@@ -54,13 +54,13 @@ Proof.
     + now destruct hA as [[[? ?] ?] ?].
 Defined.
 
-Definition trans_Prod {Σ Γ n A B s1 s2 Γ' A' B'} :
+Definition trans_Prod {Σ Γ A B s1 s2 Γ' A' B'} :
   Σ |--i Γ' ∈ ⟦ Γ ⟧ ->
   Σ ;;;; Γ' ⊢ [A'] : sSort s1 ∈ ⟦ Γ ⊢ [A] : sSort s1 ⟧ ->
   Σ ;;;; Γ' ,, A' ⊢ [B'] : sSort s2
   ∈ ⟦ Γ ,, A ⊢ [B]: sSort s2 ⟧ ->
-  Σ ;;;; Γ' ⊢ [sProd n A' B']: sSort (Sorts.prod_sort s1 s2)
-  ∈ ⟦ Γ ⊢ [ sProd n A B]: sSort (Sorts.prod_sort s1 s2) ⟧.
+  Σ ;;;; Γ' ⊢ [sProd A' B']: sSort (Sorts.prod_sort s1 s2)
+  ∈ ⟦ Γ ⊢ [ sProd A B]: sSort (Sorts.prod_sort s1 s2) ⟧.
 Proof.
   intros hΓ hA hB.
   destruct hΓ. destruct hA as [[? ?] ?]. destruct hB as [[? ?] ?].
@@ -71,13 +71,13 @@ Proof.
   - now eapply type_Prod.
 Defined.
 
-Definition trans_Sum {Σ Γ n A B s1 s2 Γ' A' B'} :
+Definition trans_Sum {Σ Γ A B s1 s2 Γ' A' B'} :
   Σ |--i Γ' ∈ ⟦ Γ ⟧ ->
   Σ ;;;; Γ' ⊢ [A'] : sSort s1 ∈ ⟦ Γ ⊢ [A] : sSort s1 ⟧ ->
   Σ ;;;; Γ' ,, A' ⊢ [B'] : sSort s2
   ∈ ⟦ Γ ,, A ⊢ [B]: sSort s2 ⟧ ->
-  Σ ;;;; Γ' ⊢ [sSum n A' B']: sSort (Sorts.sum_sort s1 s2)
-  ∈ ⟦ Γ ⊢ [ sSum n A B]: sSort (Sorts.sum_sort s1 s2) ⟧.
+  Σ ;;;; Γ' ⊢ [sSum A' B']: sSort (Sorts.sum_sort s1 s2)
+  ∈ ⟦ Γ ⊢ [ sSum A B]: sSort (Sorts.sum_sort s1 s2) ⟧.
 Proof.
   intros hΓ hA hB.
   destruct hΓ. destruct hA as [[? ?] ?]. destruct hB as [[? ?] ?].
@@ -157,11 +157,11 @@ Scheme typing_ind := Induction for XTyping.typing Sort Type
 
 Definition typing_all :=
   fun Σ P P0 X X0 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12 X13 X14 X15
-    X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 X27 =>
+    X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 =>
     (typing_ind Sort_notion Σ P P0 X X0 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12
-                X13 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 X27,
+                X13 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26,
      eq_term_ind Sort_notion Σ P P0 X X0 X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12
-                 X13 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26 X27).
+                 X13 X14 X15 X16 X17 X18 X19 X20 X21 X22 X23 X24 X25 X26).
 
 Definition complete_translation {Σ} :
   type_glob Σ ->
@@ -184,7 +184,7 @@ Proof.
            Γ' (hΓ : Σ |--i Γ' ∈ ⟦ Γ ⟧),
            ∑ A' A'' u' v' p',
          eqtrans Σ Γ A u v Γ' A' A'' u' v' p')
-      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+      _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
    ) ; intros.
 
   (** type_translation **)
@@ -233,7 +233,7 @@ Proof.
       clear hb' b' S'.
       destruct T' ; inversion hh. subst. clear hh th.
       (* Now we conclude *)
-      exists (sSort (Sorts.prod_sort s1 s2)), (sProd n t'' b'').
+      exists (sSort (Sorts.prod_sort s1 s2)), (sProd t'' b'').
       now apply trans_Prod.
 
     (* type_Lambda *)
@@ -256,7 +256,7 @@ Proof.
         as [S' [b' hb']].
       destruct (change_type hg hb' hbty'') as [b'' hb''].
       clear hb' S' b'.
-      exists (sProd n' t'' bty''), (sLambda n t'' bty'' b'').
+      exists (sProd t'' bty''), (sLambda t'' bty'' b'').
       destruct ht'' as [[[? ?] ?] ?].
       destruct hbty'' as [[[? ?] ?] ?].
       destruct hb'' as [[[? ?] ?] ?].
@@ -283,7 +283,7 @@ Proof.
       destruct T' ; inversion hh. subst. clear hh th.
       (* Translation of the function *)
       destruct (X1 _ hΓ) as [T'' [t'' ht'']].
-      assert (th : type_head (head (sProd n A B))) by constructor.
+      assert (th : type_head (head (sProd A B))) by constructor.
       destruct (choose_type hg th ht'') as [T' [[t' ht'] hh]].
       clear ht'' t'' T''.
       destruct T' ; inversion hh. subst. clear hh th.
@@ -323,7 +323,7 @@ Proof.
       clear hb' b' S'.
       destruct T' ; inversion hh. subst. clear hh th.
       (* Now we conclude *)
-      exists (sSort (Sorts.sum_sort s1 s2)), (sSum n t'' b'').
+      exists (sSort (Sorts.sum_sort s1 s2)), (sSum t'' b'').
       now apply trans_Sum.
 
     (* type_Pair *)
@@ -350,7 +350,7 @@ Proof.
       destruct (change_type hg hv'' (trans_subst hg hΓ hB' hu')) as [v' hv'].
       clear hv'' Bv' v''.
       (* Now we conclude *)
-      exists (sSum n A' B'), (sPair A' B' u' v').
+      exists (sSum A' B'), (sPair A' B' u' v').
       destruct hΓ.
       destruct hA' as [[[? ?] ?] ?].
       destruct hB' as [[[? ?] ?] ?].
@@ -379,7 +379,7 @@ Proof.
       destruct T' ; inversion hh. subst. clear hh th.
       (* Translation of the pair *)
       destruct (X _ hΓ) as [T'' [p'' hp'']].
-      assert (th : type_head (head (sSum n A B))) by constructor.
+      assert (th : type_head (head (sSum A B))) by constructor.
       destruct (choose_type hg th hp'') as [T' [[p' hp'] hh]].
       clear hp'' p'' T''.
       destruct T' ; inversion hh. subst. clear hh th.
@@ -414,7 +414,7 @@ Proof.
       destruct T' ; inversion hh. subst. clear hh th.
       (* Translation of the pair *)
       destruct (X _ hΓ) as [T'' [p'' hp'']].
-      assert (th : type_head (head (sSum n A B))) by constructor.
+      assert (th : type_head (head (sSum A B))) by constructor.
       destruct (choose_type hg th hp'') as [T' [[p' hp'] hh]].
       clear hp'' p'' T''.
       destruct T' ; inversion hh. subst. clear hh th.
@@ -600,7 +600,7 @@ Proof.
       clear hu'' A'' u''.
       (* Now we conclude using beta *)
       exists (B'{0 := u'}), (B'{0 := u'}).
-      exists (sApp (sLambda n A' B' t') A' B' u'), (t'{0 := u'}).
+      exists (sApp (sLambda A' B' t') A' B' u'), (t'{0 := u'}).
       exists (sEqToHeq (sBeta t' u')).
       destruct hA' as [[[? ?] ?] ?].
       destruct hB' as [[[? ?] ?] ?].
@@ -882,7 +882,7 @@ Proof.
       destruct hp5 as [p5 hp5].
       (* We can finally conclude! *)
       exists (sSort (Sorts.prod_sort s1 s2)), (sSort (Sorts.prod_sort s1 s2)).
-      exists (sProd n1 A1' B1'), (sProd n2 A2' tB2).
+      exists (sProd A1' B1'), (sProd A2' tB2).
       exists (optCongProd B1' tB2 p1 p5).
       destruct hA1' as [[[? ?] ?] ?].
       destruct hB1' as [[[? ?] ?] ?].
@@ -1124,15 +1124,15 @@ Proof.
       }
       destruct hq4 as [qt hqt].
       (* We're almost done.
-         However, our translation of (sLambda n2 A2 B2 t2) has to live in
-         our translation of (sProd n' A1 B1).
+         However, our translation of (sLambda A2 B2 t2) has to live in
+         our translation of (sProd A1 B1).
          This is where the path between the two types comes into action.
        *)
       assert (hty : ∑ pty,
         Σ ;;; Γ' |-i pty : sHeq (sSort (Sorts.prod_sort s1 s2))
-                               (sProd n2 A2' B2')
+                               (sProd A2' B2')
                                (sSort (Sorts.prod_sort s1 s2))
-                               (sProd n1 A1' B1')
+                               (sProd A1' B1')
 
       ).
       { exists (optHeqSym (optCongProd B1' B2' pA pB)).
@@ -1148,14 +1148,14 @@ Proof.
       destruct (opt_sort_heq_ex hg hty) as [eT heT].
       (* We move the lambda now. *)
       pose (tλ :=
-              sTransport (sProd n2 A2' B2') (sProd n1 A1' B1')
-                         eT (sLambda n2 A2' B2' tt2)
+              sTransport (sProd A2' B2') (sProd A1' B1')
+                         eT (sLambda A2' B2' tt2)
       ).
       (* Now we conclude *)
-      exists (sProd n1 A1' B1'), (sProd n1 A1' B1').
-      exists (sLambda n1 A1' B1' t1'), tλ.
+      exists (sProd A1' B1'), (sProd A1' B1').
+      exists (sLambda A1' B1' t1'), tλ.
       exists (optHeqTrans (optCongLambda B1' B2' t1' tt2 pA pB qt)
-                   (optHeqTransport eT (sLambda n2 A2' B2' tt2))).
+                   (optHeqTransport eT (sLambda A2' B2' tt2))).
       destruct ht1' as [[[? ?] ?] ?].
       destruct htt2 as [[[? ?] ?] ?].
       destruct hA1' as [[[? ?] ?] ?].
@@ -1346,7 +1346,7 @@ Proof.
       destruct (change_type hg ht2''' (trans_Prod hΓ hA2' hB2')) as [tt2 htt2].
       clear ht2''' t2''' P2.
       assert (hqt : ∑ qt,
-        Σ ;;; Γ' |-i qt : sHeq (sProd n1 A1' B1') t1' (sProd n2 A2' B2') tt2
+        Σ ;;; Γ' |-i qt : sHeq (sProd A1' B1') t1' (sProd A2' B2') tt2
       ).
       { destruct ht1'' as [[[? ?] ?] ?].
         destruct ht2'' as [[[? ?] ?] ?].
@@ -1602,7 +1602,7 @@ Proof.
       destruct hp5 as [p5 hp5].
       (* We can finally conclude! *)
       exists (sSort (Sorts.sum_sort s1 s2)), (sSort (Sorts.sum_sort s1 s2)).
-      exists (sSum n1 A1' B1'), (sSum n2 A2' tB2).
+      exists (sSum A1' B1'), (sSum A2' tB2).
       exists (sCongSum B1' tB2 p1 p5).
       destruct hA1' as [[[? ?] ?] ?].
       destruct hB1' as [[[? ?] ?] ?].
@@ -1852,8 +1852,8 @@ Proof.
       destruct hqt' as [qt' hqt'].
       (* We have an equality between Pairs now *)
       assert (hpi : ∑ qpi,
-        Σ ;;; Γ' |-i qpi : sHeq (sSum n A1' B1') (sPair A1' B1' u1' v1')
-                               (sSum n A2' B2') (sPair A2' B2' tu2 tv2)
+        Σ ;;; Γ' |-i qpi : sHeq (sSum A1' B1') (sPair A1' B1' u1' v1')
+                               (sSum A2' B2') (sPair A2' B2' tu2 tv2)
       ).
       { exists (sCongPair B1' B2' pA pB qt qt').
         destruct hB1' as [[[? ?] ?] ?].
@@ -1866,10 +1866,10 @@ Proof.
       destruct hpi as [qpi hpi].
       (* Finally we translate the right Pair to put it in the left Sum *)
       rename e into eA.
-      pose (e := sHeqTypeEq (sSum n A2' B2') (sSum n A1' B1') (optHeqSym qpi)).
-      pose (tpi := sTransport (sSum n A2' B2') (sSum n A1' B1') e (sPair A2' B2' tu2 tv2)).
+      pose (e := sHeqTypeEq (sSum A2' B2') (sSum A1' B1') (optHeqSym qpi)).
+      pose (tpi := sTransport (sSum A2' B2') (sSum A1' B1') e (sPair A2' B2' tu2 tv2)).
       (* We conclude *)
-      exists (sSum n A1' B1'), (sSum n A1' B1').
+      exists (sSum A1' B1'), (sSum A1' B1').
       exists (sPair A1' B1' u1' v1'), tpi.
       exists (optHeqTrans qpi (optHeqTransport e (sPair A2' B2' tu2 tv2))).
       destruct hu1' as [[[? ?] ?] ?].
@@ -2059,7 +2059,7 @@ Proof.
       destruct (change_type hg hp2''' (trans_Sum hΓ hA2' hB2')) as [tp2 htp2].
       clear hp2''' p2''' P2.
       assert (hqt : ∑ qt,
-        Σ ;;; Γ' |-i qt : sHeq (sSum nx A1' B1') p1' (sSum ny A2' B2') tp2
+        Σ ;;; Γ' |-i qt : sHeq (sSum A1' B1') p1' (sSum A2' B2') tp2
       ).
       { destruct hp1'' as [[[? ?] ?] ?].
         destruct hp2'' as [[[? ?] ?] ?].
@@ -2293,7 +2293,7 @@ Proof.
       destruct (change_type hg hp2''' (trans_Sum hΓ hA2' hB2')) as [tp2 htp2].
       clear hp2''' p2''' P2.
       assert (hqt : ∑ qt,
-        Σ ;;; Γ' |-i qt : sHeq (sSum nx A1' B1') p1' (sSum ny A2' B2') tp2
+        Σ ;;; Γ' |-i qt : sHeq (sSum A1' B1') p1' (sSum A2' B2') tp2
       ).
       { destruct hp1'' as [[[? ?] ?] ?].
         destruct hp2'' as [[[? ?] ?] ?].
@@ -2646,18 +2646,6 @@ Proof.
       destruct (istype_type hg he') as [? heq].
       ttinv heq.
       eapply opt_EqToHeq ; assumption.
-
-    (* eq_alpha *)
-    + destruct (X _ hΓ) as [A' [u' hu']].
-      destruct hu' as [[[? ?] ?] hu'].
-      exists A', A', u', u', (sHeqRefl A' u').
-      repeat split ; try assumption.
-      * eapply inrel_nl ; eassumption.
-      * destruct (istype_type hg hu') as [s' hA'].
-        eapply type_HeqRefl ; eassumption.
-
-  Unshelve. all: try exact 0.
-
 Defined.
 
 Theorem context_translation {Σ} :
@@ -2717,11 +2705,11 @@ Local Existing Instance Sorts.nat_sorts.
 Corollary consistency :
   forall {Σ t},
     type_glob Σ ->
-    Σ ;;; [] |-x t : sProd nAnon (sSort 0) (sRel 0) ->
-    ∑ t', Σ ;;; [] |-i t' : sProd nAnon (sSort 0) (sRel 0).
+    Σ ;;; [] |-x t : sProd (sSort 0) (sRel 0) ->
+    ∑ t', Σ ;;; [] |-i t' : sProd (sSort 0) (sRel 0).
 Proof.
   intros Σ t hg h.
-  set (T := sProd nAnon (@sSort Sorts.nat_sorts 0) (sRel 0)) in *.
+  set (T := sProd (@sSort Sorts.nat_sorts 0) (sRel 0)) in *.
   eapply conservativity.
   all: try eassumption.
   - repeat constructor.

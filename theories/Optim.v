@@ -43,7 +43,7 @@ Proof.
   - intros i. destruct i as [C c].
     simpl.
     ttinv h.
-    eapply type_rename.
+    eapply meta_conv.
     + eapply type_HeqRefl' ; eassumption.
     + cbn in h3. inversion h3.
       cbn. f_equal ; eauto.
@@ -77,30 +77,18 @@ Proof.
   - intros iq ip. destruct ip as [D d], iq as [E e].
     simpl.
     ttinv hp. cbn in h2. inversion h2.
-    ttinv hq. cbn in h5. inversion h5.
-    eapply type_rename.
-    + eapply type_HeqRefl' ; eassumption.
-    + cbn. f_equal ; eauto.
-      * transitivity (nl B) ; eauto.
-        transitivity (nl E) ; eauto.
-      * transitivity (nl b) ; eauto.
-        transitivity (nl e) ; eauto.
+    ttinv hq. cbn in h5. inversion h5. subst.
+    eapply type_HeqRefl'. all: assumption.
   - intros bot ip. destruct ip as [D d].
     replace (optHeqTrans (sHeqRefl D d) q) with q.
-    + ttinv hp. cbn in h2. inversion h2.
-      eapply type_rename ; try eassumption.
-      cbn. f_equal ; eauto.
-      * transitivity (nl D) ; eauto.
-      * transitivity (nl d) ; eauto.
+    + ttinv hp. cbn in h2. inversion h2. subst.
+      assumption.
     + destruct q. all: try reflexivity.
       exfalso. apply bot. constructor.
   - intros iq bot. destruct iq as [E e].
     replace (optHeqTrans p (sHeqRefl E e)) with p.
-    + ttinv hq. cbn in h2. inversion h2.
-      eapply type_rename ; try eassumption.
-      cbn. f_equal ; eauto.
-      * transitivity (nl E) ; eauto.
-      * transitivity (nl e) ; eauto.
+    + ttinv hq. cbn in h2. inversion h2. subst.
+      assumption.
     + destruct p. all: reflexivity.
   - intros bq bp.
     destruct p ; try (exfalso ; apply bp ; constructor).
@@ -124,8 +112,7 @@ Proof.
   - intro h.
     destruct (istype_type hg hp) as [z hT].
     ttinv hT.
-    eapply eq_term_spec in h.
-    eapply type_rename ; eassumption.
+    eapply eq_term_spec in h. subst. assumption.
   - intros _. eapply type_Transport' ; eassumption.
 Defined.
 
@@ -151,14 +138,10 @@ Proof.
   destruct p.
   all: try (simpl ; eapply type_HeqToEq' ; eassumption).
   - simpl. rename p1 into B, p2 into b.
-    ttinv h. cbn in h3. inversion h3.
-    eapply type_rename.
-    + eapply type_Refl' ; eassumption.
-    + cbn. f_equal ; eauto.
+    ttinv h. cbn in h3. inversion h3. subst.
+    eapply type_Refl' ; eassumption.
   - simpl. ttinv h. rename A0 into B, u0 into a, v0 into b.
-    cbn in h5. inversion h5.
-    eapply type_rename ; try eassumption.
-    cbn. f_equal ; eauto.
+    inversion h5. subst. assumption.
 Defined.
 
 Fact opt_sort_heq :
@@ -218,10 +201,8 @@ Proof.
   destruct p.
   all: try (simpl ; eapply type_EqToHeq' ; eassumption).
   simpl.
-  ttinv h. cbn in h3. inversion h3.
-  eapply type_rename.
-  - eapply type_HeqRefl' ; eassumption.
-  - cbn. f_equal ; eauto.
+  ttinv h. cbn in h3. inversion h3. subst.
+  eapply type_HeqRefl' ; eassumption.
 Defined.
 
 (* Tests if t does not depend on variable i *)
@@ -229,10 +210,10 @@ Fixpoint notdepi (t : sterm) (i : nat) {struct t} : bool :=
   match t with
   | sRel j => negb (i =? j)
   | sSort _ => true
-  | sProd _ A B => notdepi A i && notdepi B (S i)
-  | sLambda _ A B t => notdepi A i && notdepi B (S i) && notdepi t (S i)
+  | sProd A B => notdepi A i && notdepi B (S i)
+  | sLambda A B t => notdepi A i && notdepi B (S i) && notdepi t (S i)
   | sApp u A B v => notdepi A i && notdepi B (S i) && notdepi u i && notdepi v i
-  | sSum _ A B => notdepi A i && notdepi B (S i)
+  | sSum A B => notdepi A i && notdepi B (S i)
   | sPair A B u v => notdepi A i && notdepi B (S i) && notdepi u i && notdepi v i
   | sPi1 A B p => notdepi A i && notdepi B (S i) && notdepi p i
   | sPi2 A B p => notdepi A i && notdepi B (S i) && notdepi p i
@@ -288,7 +269,8 @@ Proof.
   all: try (cbn in h ; repeat destruct_andb ;
             cbn ; f_equal ;
             rewrite_assumption ; (reflexivity || assumption)).
-  revert h. cbn - [Nat.leb]. ncase (i =? n).
+  revert h. cbn - [Nat.leb].
+  ncase (i =? n).
   intros _. nat_case.
   - nat_case. reflexivity.
   - nat_case. reflexivity.
@@ -307,13 +289,13 @@ Definition optCongProd B1 B2 pA pB :=
   match pA, pB with
   | sHeqRefl (sSort s) A, sHeqRefl (sSort z) B =>
     if notdep B1 && notdep B2 then
-      sHeqRefl (sSort (prod_sort s z)) (sProd nAnon A B1)
+      sHeqRefl (sSort (prod_sort s z)) (sProd A B1)
     else sCongProd B1 B2 pA pB
   | _,_ => sCongProd B1 B2 pA pB
   end.
 
 Lemma opt_CongProd :
-  forall {Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB},
+  forall {Σ Γ s1 s2 z1 z2 A1 A2 B1 B2 pA pB},
     type_glob Σ ->
     Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 ->
     Σ;;; Γ,, sPack A1 A2 |-i
@@ -324,10 +306,10 @@ Lemma opt_CongProd :
     Σ;;; Γ,, A1 |-i B1 : sSort z1 ->
     Σ;;; Γ,, A2 |-i B2 : sSort z2 ->
     Σ;;; Γ |-i optCongProd B1 B2 pA pB
-    : sHeq (sSort (prod_sort s1 z1)) (sProd nx A1 B1)
-           (sSort (prod_sort s2 z2)) (sProd ny A2 B2).
+    : sHeq (sSort (prod_sort s1 z1)) (sProd A1 B1)
+           (sSort (prod_sort s2 z2)) (sProd A2 B2).
 Proof.
-  intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
+  intros Σ Γ s1 s2 z1 z2 A1 A2 B1 B2 pA pB hg hpA hpB hB1 hB2.
   destruct pA.
   all: try (simpl ; eapply type_CongProd' ; eassumption).
   destruct pA1.
@@ -347,29 +329,23 @@ Proof.
   cbn in h5. inversion h5. subst.
   cbn in h15. inversion h15. subst. clear h15.
   cbn in h10. inversion h10. subst. clear h10.
-  rewrite notdep_lift, lift_subst in H2 by assumption.
-  rewrite notdep_lift, lift_subst in H5 by assumption.
-  eapply type_rename.
-  - eapply type_HeqRefl' ; try eassumption.
-    eapply type_Prod ; try eassumption.
-    eapply rename_typed ; try eapply hB1 ; try eassumption ; try reflexivity.
-    + cbn. f_equal. eauto.
-    + econstructor ; try eassumption. eapply typing_wf. eassumption.
-  - cbn. f_equal ; f_equal ; eauto.
-    transitivity (nl pB2) ; eauto.
+  rewrite notdep_lift, lift_subst in H3 by assumption.
+  rewrite notdep_lift, lift_subst in H3 by assumption. subst.
+  eapply type_HeqRefl' ; try eassumption.
+  eapply type_Prod ; eassumption.
 Defined.
 
 Definition optCongLambda B1 B2 t1 t2 pA pB pt :=
   match pA, pB, pt with
   | sHeqRefl _ A, sHeqRefl _ _, sHeqRefl _ _ =>
     if notdep B1 && notdep B2 && notdep t1 && notdep t2 then
-      sHeqRefl (sProd nAnon A B1) (sLambda nAnon A B1 t1)
+      sHeqRefl (sProd A B1) (sLambda A B1 t1)
     else sCongLambda B1 B2 t1 t2 pA pB pt
   | _,_,_ => sCongLambda B1 B2 t1 t2 pA pB pt
   end.
 
 Lemma opt_CongLambda :
-  forall {Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 t1 t2 pA pB pt},
+  forall {Σ Γ s1 s2 z1 z2 A1 A2 B1 B2 t1 t2 pA pB pt},
     type_glob Σ ->
     Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 ->
     Σ;;; Γ,, sPack A1 A2 |-i pB
@@ -385,10 +361,10 @@ Lemma opt_CongLambda :
     Σ;;; Γ,, A1 |-i t1 : B1 ->
     Σ;;; Γ,, A2 |-i t2 : B2 ->
     Σ;;; Γ |-i optCongLambda B1 B2 t1 t2 pA pB pt
-    : sHeq (sProd nx A1 B1) (sLambda nx A1 B1 t1)
-           (sProd ny A2 B2) (sLambda ny A2 B2 t2).
+    : sHeq (sProd A1 B1) (sLambda A1 B1 t1)
+           (sProd A2 B2) (sLambda A2 B2 t2).
 Proof.
-  intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 t1 t2 pA pB pt
+  intros Σ Γ s1 s2 z1 z2 A1 A2 B1 B2 t1 t2 pA pB pt
          hg hpA hpB hpt hB1 hB2 ht1 ht2.
   destruct pA.
   all: try (simpl ; eapply type_CongLambda' ; eassumption).
@@ -408,38 +384,15 @@ Proof.
   destruct (istype_type hg hpt) as [? hTt]. ttinv hTt.
   cbn in h2. inversion h2.
   cbn in h5. inversion h5.
-  cbn in h8. inversion h8.
-  repeat match goal with
-  | h : nl ?t = nlSort ?s |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  | h : nlSort ?s = nl ?t |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  end.
-  repeat match goal with
-  | h : nl (sSort _) = nl (sSort _) |- _ =>
-    cbn in h ; inversion h ; subst ; clear h
-  end.
-  rewrite notdep_lift, lift_subst in H5 by assumption.
+  cbn in h8. inversion h8. subst.
   rewrite notdep_lift, lift_subst in H7 by assumption.
-  rewrite notdep_lift, lift_subst in H8 by assumption.
-  rewrite notdep_lift, lift_subst in H9 by assumption.
-  rewrite notdep_lift, lift_subst in H10 by assumption.
+  rewrite notdep_lift, lift_subst in H7 by assumption.
+  subst.
   rewrite notdep_lift, lift_subst in H11 by assumption.
-  eapply type_rename.
-  - eapply type_HeqRefl' ; try eassumption.
-    eapply type_Lambda ; try eassumption.
-    + eapply rename_typed ; try eapply hB1 ; try eassumption ; try reflexivity.
-      * cbn. f_equal. eauto.
-      * econstructor ; try eassumption. eapply typing_wf. eassumption.
-    + eapply rename_typed ; try eapply ht1 ; try eassumption ; try reflexivity.
-      * cbn. f_equal. eauto.
-      * econstructor ; try eassumption. eapply typing_wf. eassumption.
-  - cbn. f_equal ; f_equal. all: eauto.
-    + transitivity (nl pt1) ; eauto.
-    + transitivity (nl pt1) ; eauto.
-    + transitivity (nl pt2) ; eauto.
+  rewrite notdep_lift, lift_subst in H11 by assumption.
+  subst.
+  eapply type_HeqRefl' ; try eassumption.
+  eapply type_Lambda ; eassumption.
 Defined.
 
 Definition optCongApp B1 B2 pu pA pB pv :=
@@ -452,20 +405,20 @@ Definition optCongApp B1 B2 pu pA pB pv :=
   end.
 
 Lemma opt_CongApp :
-  forall {Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 u1 u2 v1 v2 pA pB pu pv},
+  forall {Σ Γ s1 s2 z1 z2 A1 A2 B1 B2 u1 u2 v1 v2 pA pB pu pv},
     type_glob Σ ->
     Σ;;; Γ |-i pA : sHeq (sSort s1) A1 (sSort s2) A2 ->
     Σ;;; Γ,, sPack A1 A2 |-i pB
     : sHeq (sSort z1) ((lift 1 1 B1) {0 := sProjT1 (sRel 0)})
            (sSort z2) ((lift 1 1 B2) {0 := sProjT2 (sRel 0)}) ->
-    Σ;;; Γ |-i pu : sHeq (sProd nx A1 B1) u1 (sProd ny A2 B2) u2 ->
+    Σ;;; Γ |-i pu : sHeq (sProd A1 B1) u1 (sProd A2 B2) u2 ->
     Σ;;; Γ |-i pv : sHeq A1 v1 A2 v2 ->
     Σ;;; Γ,, A1 |-i B1 : sSort z1 ->
     Σ;;; Γ,, A2 |-i B2 : sSort z2 ->
     Σ;;; Γ |-i optCongApp B1 B2 pu pA pB pv
     : sHeq (B1 {0 := v1}) (sApp u1 A1 B1 v1) (B2 {0 := v2}) (sApp u2 A2 B2 v2).
 Proof.
-  intros Σ Γ s1 s2 z1 z2 nx ny A1 A2 B1 B2 u1 u2 v1 v2 pA pB pu pv
+  intros Σ Γ s1 s2 z1 z2 A1 A2 B1 B2 u1 u2 v1 v2 pA pB pu pv
          hg hpA hpB hpu hpv hB1 hB2.
   destruct pA.
   all: try (simpl ; eapply type_CongApp' ; eassumption).
@@ -487,39 +440,10 @@ Proof.
   cbn in h2. inversion h2.
   cbn in h5. inversion h5.
   cbn in h8. inversion h8.
-  cbn in h11. inversion h11.
-  repeat match goal with
-  | h : nl ?t = nlSort ?s |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  | h : nlSort ?s = nl ?t |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  end.
-  repeat match goal with
-  | h : nl (sSort _) = nl (sSort _) |- _ =>
-    cbn in h ; inversion h ; subst ; clear h
-  end.
-  rewrite notdep_lift, lift_subst in H5 by assumption.
-  rewrite notdep_lift, lift_subst in H7 by assumption.
-  eapply type_rename.
-  - eapply type_HeqRefl' ; try eassumption.
-    eapply type_App ; try eassumption.
-    + eapply rename_typed ; try eapply hB1 ; try eassumption ; try reflexivity.
-      * cbn. f_equal. eauto.
-      * econstructor ; try eassumption. eapply typing_wf. eassumption.
-    + eapply type_rename ; try eassumption.
-      cbn. etransitivity ; eauto. f_equal ; eauto.
-      transitivity (nl pB2) ; eauto.
-    + eapply type_rename ; try eassumption.
-      transitivity (nl A1) ; eauto.
-  - cbn. f_equal. all: try eapply nl_subst.
-    all: try reflexivity. all: eauto.
-    + f_equal. all: eauto.
-    + transitivity (nl pB2) ; eauto.
-    + f_equal. all: eauto.
-      transitivity (nl pB2) ; eauto.
-  Unshelve. constructor.
+  cbn in h11. inversion h11. subst.
+  inversion H10. subst.
+  eapply type_HeqRefl' ; try eassumption.
+  eapply type_App ; eassumption.
 Defined.
 
 (* TODO congSum, congPair, congPi1, congPi2 *)
@@ -557,27 +481,9 @@ Proof.
   destruct (istype_type hg hpv) as [? hTv]. ttinv hTv.
   cbn in h2. inversion h2.
   cbn in h5. inversion h5.
-  cbn in h8. inversion h8.
-  repeat match goal with
-  | h : nl ?t = nlSort ?s |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  | h : nlSort ?s = nl ?t |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  end.
-  repeat match goal with
-  | h : nl (sSort _) = nl (sSort _) |- _ =>
-    cbn in h ; inversion h ; subst ; clear h
-  end.
-  eapply type_rename.
-  - eapply type_HeqRefl' ; try eassumption.
-    eapply type_Eq ; try eassumption.
-    + eapply type_rename ; try eassumption.
-      transitivity (nl A1) ; eauto.
-    + eapply type_rename ; try eassumption.
-      transitivity (nl A1) ; eauto.
-  - cbn. f_equal. all: f_equal. all: eauto.
+  cbn in h8. inversion h8. subst.
+  eapply type_HeqRefl' ; try eassumption.
+  eapply type_Eq ; eassumption.
 Defined.
 
 Definition optCongRefl pA pu :=
@@ -605,27 +511,9 @@ Proof.
   destruct (istype_type hg hpA) as [? hTA]. ttinv hTA.
   destruct (istype_type hg hpu) as [? hTu]. ttinv hTu.
   cbn in h2. inversion h2.
-  cbn in h5. inversion h5.
-  repeat match goal with
-  | h : nl ?t = nlSort ?s |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  | h : nlSort ?s = nl ?t |- _ =>
-    destruct t ; cbn in h ; try discriminate h ;
-    inversion h ; subst ; clear h
-  end.
-  repeat match goal with
-  | h : nl (sSort _) = nl (sSort _) |- _ =>
-    cbn in h ; inversion h ; subst ; clear h
-  end.
-  eapply type_rename.
-  - eapply type_HeqRefl' ; try eassumption.
-    eapply type_Refl' ; try eassumption.
-    eapply type_rename ; try eassumption.
-    transitivity (nl A1) ; eauto.
-  - cbn. f_equal.
-    all: f_equal.
-    all: eauto.
+  cbn in h5. inversion h5. subst.
+  eapply type_HeqRefl' ; try eassumption.
+  eapply type_Refl' ; eassumption.
 Defined.
 
 End Optim.

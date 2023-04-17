@@ -1,6 +1,6 @@
 (*! Type checker for WTT *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith Utf8.
 From Equations Require Import Equations.
 From Translation
 Require Import util monad_utils Sorts WAst WLiftSubst WTyping WEquality WLemmata.
@@ -22,13 +22,13 @@ Definition getsort (T : wterm) : i_result sort :=
 
 Definition getprod (T : wterm) : i_result (wterm * wterm) :=
   match T with
-  | wProd n A B => ret (A,B)
+  | wProd A B => ret (A,B)
   | _ => raise (Msg "getprod")
   end.
 
 Definition getsum (T : wterm) : i_result (wterm * wterm) :=
   match T with
-  | wSum n A B => ret (A,B)
+  | wSum A B => ret (A,B)
   | _ => raise (Msg "getsum")
   end.
 
@@ -60,20 +60,20 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
      end
   | wSort s =>
     ret (wSort (succ s))
-  | wProd n A B =>
+  | wProd A B =>
     s1 <- getsort =<< wttinfer Σ Γ A ;;
     s2 <- getsort =<< wttinfer Σ (Γ ,, A) B ;;
     ret (wSort (prod_sort s1 s2))
-  | wLambda n A t =>
+  | wLambda A t =>
     getsort =<< wttinfer Σ Γ A ;;
     B <- wttinfer Σ (Γ ,, A) t ;;
-    ret (wProd n A B)
+    ret (wProd A B)
   | wApp u v =>
     Π <- getprod =<< wttinfer Σ Γ u ;;
     let '(A,B) := Π in
     assert_eq A =<< wttinfer Σ Γ v ;;
     ret (B{ 0 := v })
-  | wSum n A B =>
+  | wSum A B =>
     s1 <- getsort =<< wttinfer Σ Γ A ;;
     s2 <- getsort =<< wttinfer Σ (Γ ,, A) B ;;
     ret (wSort (sum_sort s1 s2))
@@ -82,14 +82,14 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     getsort =<< wttinfer Σ (Γ,, A) B ;;
     assert_eq A =<< wttinfer Σ Γ u ;;
     assert_eq (B{ 0 := u }) =<< wttinfer Σ Γ v ;;
-    ret (wSum nAnon A B)
+    ret (wSum A B)
   | wPi1 A B p =>
-    assert_eq (wSum nAnon A B) =<< wttinfer Σ Γ p ;;
+    assert_eq (wSum A B) =<< wttinfer Σ Γ p ;;
     getsort =<< wttinfer Σ Γ A ;;
     getsort =<< wttinfer Σ (Γ,, A) B ;;
     ret A
   | wPi2 A B p =>
-    assert_eq (wSum nAnon A B) =<< wttinfer Σ Γ p ;;
+    assert_eq (wSum A B) =<< wttinfer Σ Γ p ;;
     getsort =<< wttinfer Σ Γ A ;;
     getsort =<< wttinfer Σ (Γ,, A) B ;;
     ret (B{ 0 := wPi1 A B p })
@@ -119,7 +119,7 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
   | wBeta t u =>
     A <- wttinfer Σ Γ u ;;
     B <- wttinfer Σ (Γ,, A) t ;;
-    ret (wEq (B{ 0 := u }) (wApp (wLambda nAnon A t) u) (t{ 0 := u }))
+    ret (wEq (B{ 0 := u }) (wApp (wLambda A t) u) (t{ 0 := u }))
   | wK A u p =>
     getsort =<< wttinfer Σ Γ A ;;
     assert_eq A =<< wttinfer Σ Γ u ;;
@@ -128,12 +128,12 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
   | wFunext f g p =>
     Π <- getprod =<< wttinfer Σ Γ f ;;
     let '(A,B) := Π in
-    assert_eq (wProd nAnon A B) =<< wttinfer Σ Γ g ;;
-    assert_eq (wProd nAnon A
+    assert_eq (wProd A B) =<< wttinfer Σ Γ g ;;
+    assert_eq (wProd A
                  (wEq B (wApp (lift0 1 f) (wRel 0))
                         (wApp (lift0 1 g) (wRel 0))))
               =<< wttinfer Σ Γ p ;;
-    ret (wEq (wProd nAnon A B) f g)
+    ret (wEq (wProd A B) f g)
   | wJBeta u P w =>
     A <- wttinfer Σ Γ u ;;
     getsort =<< wttinfer Σ (Γ,, A,, (wEq (lift0 1 A) (lift0 1 u) (wRel 0))) P ;;
@@ -148,19 +148,19 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
   | wPairEta p =>
     T <- getsum =<< wttinfer Σ Γ p ;;
     let '(A,B) := T in
-    ret (wEq (wSum nAnon A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p)
+    ret (wEq (wSum A B) (wPair A B (wPi1 A B p) (wPi2 A B p)) p)
   | wProdExt A p =>
     s1 <- getsort =<< wttinfer Σ Γ A ;;
     E <- geteq =<< wttinfer Σ (Γ,, A) p ;;
     let '(S2,B1,B2) := E in
     s2 <- getsort S2 ;;
-    ret (wEq (wSort (prod_sort s1 s2)) (wProd nAnon A B1) (wProd nAnon A B2))
+    ret (wEq (wSort (prod_sort s1 s2)) (wProd A B1) (wProd A B2))
   | wSumExt A p =>
     s1 <- getsort =<< wttinfer Σ Γ A ;;
     E <- geteq =<< wttinfer Σ (Γ,, A) p ;;
     let '(S2,B1,B2) := E in
     s2 <- getsort S2 ;;
-    ret (wEq (wSort (sum_sort s1 s2)) (wSum nAnon A B1) (wSum nAnon A B2))
+    ret (wEq (wSort (sum_sort s1 s2)) (wSum A B1) (wSum A B2))
   | wAx id =>
     match lookup_glob Σ id with
     | Some d => ret (dtype d)
@@ -174,14 +174,14 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
   end.
 
 Lemma type_Beta' :
-  forall {Σ Γ A B t u n},
+  forall {Σ Γ A B t u},
     type_glob Σ ->
     Σ ;;; Γ,, A |-w t : B ->
     Σ ;;; Γ |-w u : A ->
     Σ ;;; Γ |-w wBeta t u
-             : wEq (B {0 := u}) (wApp (wLambda n A t) u) (t {0 := u}).
+             : wEq (B {0 := u}) (wApp (wLambda A t) u) (t {0 := u}).
 Proof.
-  intros Σ Γ A B t u n hg ht hu.
+  intros Σ Γ A B t u hg ht hu.
   destruct (istype_type hg hu).
   econstructor ; eassumption.
 Defined.
@@ -279,7 +279,7 @@ Ltac ih :=
   ].
 
 Ltac rih :=
-  eapply type_rename ; [
+  eapply meta_conv ; [
     ih ; eassumption
   | symmetry ; eapply eq_term_spec ; assumption
   ].
@@ -338,76 +338,18 @@ Proof.
   all: try solve [ constructor ].
 Defined.
 
-Lemma nth_error_rename :
-  forall {Γ Δ n A},
-    nth_error Γ n = Some A ->
-    nlctx Γ = nlctx Δ ->
-    exists B, nth_error Δ n = Some B /\ nl A = nl B.
-Proof.
-  intros Γ Δ n A h eq. revert Δ n A h eq.
-  induction Γ ; intros Δ n A h eq.
-  - destruct n ; simpl in h ; discriminate.
-  - destruct Δ ; simpl in eq ; try discriminate eq.
-    destruct n.
-    + cbn in h. inversion h. subst. clear h.
-      inversion eq.
-      cbn. eexists. split.
-      * reflexivity.
-      * assumption.
-    + cbn in h. cbn. eapply IHΓ.
-      * assumption.
-      * inversion eq. reflexivity.
-Defined.
-
-Ltac nleq :=
-  repeat (try eapply nl_lift ; try eapply nl_subst) ;
-  cbn ; auto ; f_equal ; eauto.
-
-Ltac rewwtt :=
-  lazymatch goal with
-  | ih : _ -> _ -> _ -> _ -> _ -> exists _, wttinfer _ _ ?t = _ /\ _,
-    h : wttinfer _ ?Γ ?t = _,
-    e : nlctx ?Γ = nlctx ?Δ
-    |- context [ wttinfer _ ?Δ ?t ] =>
-      let eq := fresh "eq" in
-      destruct (ih _ _ _ h e) as [? [eq ?]] ;
-      rewrite eq
-  | ih : _ -> _ -> _ -> _ -> _ -> exists _, wttinfer _ _ ?t = _ /\ _,
-    h : wttinfer _ ?Γ ?t = _
-    |- context [ wttinfer _ ?Δ ?t ] =>
-      let e := fresh "e" in
-      assert (nlctx Γ = nlctx Δ) as e ; [
-        repeat nleq
-      | let eq := fresh "eq" in
-        destruct (ih _ _ _ h e) as [? [eq ?]] ;
-        rewrite eq
-      ]
-  end.
-
-Ltac cbn_nl :=
+Ltac inv_eq :=
   match goal with
-  | h : nl (wSort _) = _ |- _ =>
-    cbn in h
-  | h : nl (wProd _ _ _) = _ |- _ =>
-    cbn in h
-  | h : nl (wEq _ _ _) = _ |- _ =>
-    cbn in h
-  | h : nl (wSum _ _ _) = _ |- _ =>
-    cbn in h
-  end.
-
-Ltac inv_nl :=
-  match goal with
-  | h : nlSort _ = nl ?t |- _ =>
+  | h : wSort _ = ?t |- _ =>
     destruct t ; cbn in h ; try discriminate h ;
     inversion h ; subst ; clear h
-  | h : nlProd _ _ = nl ?t |- _ =>
+  | h : wProd _ _ = ?t |- _ =>
     destruct t ; cbn in h ; try discriminate h ;
     inversion h ; subst ; clear h
-  | h : nlSum _ _ = nl ?t |- _ =>
+  | h : wSum _ _ = ?t |- _ =>
     destruct t ; cbn in h ; try discriminate h ;
     inversion h ; subst ; clear h
-  | h : nlEq _ _ _ = nl ?t |- _ =>
+  | h : wEq _ _ _ = ?t |- _ =>
     destruct t ; cbn in h ; try discriminate h ;
     inversion h ; subst ; clear h
   end.
@@ -421,72 +363,6 @@ Proof.
   - exfalso. apply n. reflexivity.
 Defined.
 
-Lemma wttinfer_rename_ctx :
-  forall {Σ Γ Δ t A},
-    wttinfer Σ Γ t = Success A ->
-    nlctx Γ = nlctx Δ ->
-    exists B, wttinfer Σ Δ t = Success B /\ nl A = nl B.
-Proof.
-  intros Σ Γ Δ t A h eq. revert Γ Δ A h eq.
-  induction t ; intros Γ Δ A h eq.
-  all: try solve [
-    go h ; simpl ;
-    repeat rewwtt ;
-    repeat (cbn_nl ; inv_nl) ;
-    repeat inv_nl ;
-    simpl ;
-    unfold assert_eq ;
-    rewrite ?assert_eq_sort_refl ;
-    repeat (erewrite (proj2 eq_term_spec) ; [| shelve]) ;
-    simpl ;
-    eexists ; split ; [ reflexivity | repeat nleq ]
-  ].
-  - simpl in h. simpl. revert h. case_eq (nth_error Γ n).
-    + intros B e h. inversion h. subst. clear h.
-      destruct (nth_error_rename e eq) as [? [ee ?]].
-      rewrite ee.
-      eexists. split.
-      * reflexivity.
-      * eapply nl_lift. assumption.
-    + intros e h. discriminate h.
-  - simpl in h. simpl.
-    eexists. split.
-    + eassumption.
-    + reflexivity.
-  - simpl in h. simpl.
-    eexists. split.
-    + eassumption.
-    + reflexivity.
-  Unshelve.
-  all: repeat match goal with
-              | h : eq_term _ _ = true |- _ =>
-                apply eq_term_spec in h
-              end.
-  all: try solve [
-    match goal with
-    | h : nl ?x = nl ?y |- nl _ = nl ?y =>
-      transitivity (nl x) ; eauto
-    end
-  ].
-  * transitivity (nl w0_1) ; eauto. transitivity (nl w) ; eauto.
-  * transitivity (nl w0) ; eauto.
-    transitivity (nl (wProd nAnon w1_1 w1_2)) ; eauto.
-    nleq.
-  * transitivity (nl w) ; eauto.
-    match goal with
-    | h : nl ?x = nl ?y |- nl _ = nl ?y =>
-      transitivity (nl x) ; eauto
-    end.
-    cbn. f_equal.
-    -- eauto.
-    -- f_equal. eauto.
-  * repeat match goal with
-    | h : nl ?x = nl ?y |- nl _ = nl ?y =>
-      transitivity (nl x) ; eauto
-    end.
-    repeat nleq.
-Defined.
-
 Ltac rewih :=
   match goal with
   | [ h : exists _, _ |- _ ] =>
@@ -498,93 +374,59 @@ Ltac rewih :=
 Ltac co :=
   simpl ;
   repeat rewih ;
-  repeat cbn_nl ;
-  repeat inv_nl ;
+  subst ;
+  repeat inv_eq ;
   simpl ;
   unfold assert_eq ;
   rewrite ?assert_eq_sort_refl ;
-  repeat (erewrite (proj2 eq_term_spec) ; [| shelve]) ;
+  repeat (erewrite (proj2 eq_term_spec) ; [| reflexivity]) ;
   simpl ;
   eexists ; split ; [
     reflexivity
-  | repeat nleq
+  | repeat f_equal
   ].
 
 Lemma wttinfer_complete :
   forall {Σ Γ t A},
     Σ ;;; Γ |-w t : A ->
-    exists B, wttinfer Σ Γ t = Success B /\ nl A = nl B.
+    exists B, wttinfer Σ Γ t = Success B /\ A = B.
 Proof.
   intros Σ Γ t A h.
   induction h.
   all: try solve [ co ].
   - cbn. rewrite H0. eexists. intuition eauto.
   - simpl.
-    repeat rewih.
-    assert (nlctx (Γ,, A) = nlctx (Γ,, x)) as eq.
-    { cbn. f_equal. assumption. }
-    destruct (wttinfer_rename_ctx e0 eq) as [? [e3 ?]].
-    rewrite e3.
-    repeat cbn_nl.
-    repeat inv_nl.
-    simpl.
+    repeat rewih. subst. simpl.
     unfold assert_eq.
     rewrite ?assert_eq_sort_refl.
-    repeat (erewrite (proj2 eq_term_spec) ; [| shelve]).
+    repeat (erewrite (proj2 eq_term_spec) ; [| reflexivity]).
     simpl.
     eexists. split.
     + reflexivity.
-    + cbn. f_equal.
-      * eapply nl_subst ; try reflexivity.
-        transitivity (nl x0) ; eauto.
-      * repeat nleq.
+    + reflexivity.
   - simpl.
-    repeat rewih.
-    assert (nlctx ((Γ,, A),, wEq (↑ A) (↑ u) (wRel 0))
-            = nlctx ((Γ,, x2),, wEq (↑ x2) (↑ u) (wRel 0))) as eq.
-    { cbn. f_equal.
-      - f_equal. eapply nl_lift. assumption.
-      - f_equal. assumption.
-    }
-    destruct (wttinfer_rename_ctx e1 eq) as [? [e3 ?]].
-    rewrite e3.
-    repeat cbn_nl.
-    repeat inv_nl.
-    repeat cbn_nl.
-    repeat inv_nl.
-    simpl.
+    repeat rewih. subst. simpl.
     unfold assert_eq.
     rewrite ?assert_eq_sort_refl.
-    repeat (erewrite (proj2 eq_term_spec) ; [| shelve]).
+    repeat (erewrite (proj2 eq_term_spec) ; [| reflexivity]).
     simpl.
-    eexists. split.
+    eexists. intuition reflexivity.
+  - simpl. repeat rewih. subst.
+    rewrite e0.
+    eexists. intuition reflexivity.
+  - simpl. repeat rewih. subst.
+    rewrite e1. simpl.
+    unfold assert_eq.
+    rewrite ?assert_eq_sort_refl.
+    repeat (erewrite (proj2 eq_term_spec) ; [| reflexivity]).
+    simpl.
+    eexists. intuition reflexivity.
+  - exists (dtype d). split.
+    + unfold wttinfer. rewrite_assumption. reflexivity.
     + reflexivity.
-    + repeat nleq.
-  - simpl. exists (dtype d). split.
-    + rewrite_assumption; reflexivity.
+  - exists (wEq (dtype d) (wAx id) (dbody d)). split.
+    + unfold wttinfer. rewrite_assumption. reflexivity.
     + reflexivity.
-  - simpl. exists (wEq (dtype d) (wAx id) (dbody d)). split.
-    + rewrite_assumption; reflexivity.
-    + reflexivity.
-  - rewih. eexists. split.
-    + reflexivity.
-    + transitivity (nl A) ; eauto.
-  Unshelve.
-  all: try assumption.
-  all: try solve [repeat nleq].
-  * transitivity (nl A) ; eauto.
-  * cbn. f_equal.
-    -- transitivity (nl A) ; eauto.
-    -- transitivity (nl B) ; eauto.
-  * cbn. f_equal.
-    -- transitivity (nl A) ; eauto.
-    -- f_equal.
-       ++ transitivity (nl B) ; eauto.
-       ++ assumption.
-       ++ assumption.
-  * etransitivity ; [| eassumption].
-    eapply nl_subst ; try reflexivity.
-    nleq.
 Defined.
 
 End Checking.
@@ -640,10 +482,10 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     match t with
     | wRel n => wRel n
     | wSort s => wSort (instantiate_sort inst s)
-    | wProd n A B => wProd n (f A) (f B)
-    | wLambda n A t => wLambda n (f A) (f t)
+    | wProd A B => wProd (f A) (f B)
+    | wLambda A t => wLambda (f A) (f t)
     | wApp u v => wApp (f u) (f v)
-    | wSum n A B => wSum n (f A) (f B)
+    | wSum A B => wSum (f A) (f B)
     | wPair A B u v => wPair (f A) (f B) (f u) (f v)
     | wPi1 A B p => wPi1 (f A) (f B) (f p)
     | wPi2 A B p => wPi2 (f A) (f B) (f p)
@@ -728,18 +570,6 @@ Proof.
   - cbn in *. revert h. case_eq (ident_eq id (dname a)).
     + intros e h. inversion h. subst. reflexivity.
     + intros e h. eapply IHΣ. assumption.
-Defined.
-
-Lemma nl_instantiate_sorts :
-  forall `{ S : Sorts.notion } inst t u,
-    nl t = nl u ->
-    nl (instantiate_sorts inst t) = nl (instantiate_sorts inst u).
-Proof.
-  intros S inst t.
-  induction t ; intros u e ; destruct u ; cbn in e ; try discriminate e.
-  all:
-    try (cbn ; inversion e ;
-         repeat (erewrite_assumption by eassumption) ; reflexivity).
 Defined.
 
 Lemma nth_error_instantiate_sorts :
@@ -900,9 +730,6 @@ Proof.
   - eapply meta_conv. econstructor. assumption.
     eapply instantiate_sorts_lookup_glob. eassumption.
     reflexivity.
-  - eapply type_rename.
-    + eapply IHh. assumption.
-    + unfold A'. eapply nl_instantiate_sorts. assumption.
 Defined.
 
 End PolymorphicSorts.

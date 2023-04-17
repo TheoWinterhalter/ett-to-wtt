@@ -129,8 +129,8 @@ Ltac bprop' H H' :=
   | (?x ?= ?y) = Gt => pose proof (compute_gt (nat_compare_Gt_gt _ _ H)) as H'
   | (?x ?= ?y) = Eq => pose proof (compute_eq (Nat.compare_eq _ _ H)) as H'
   | (?x ?= ?y) = Lt => pose proof (compute_lt (nat_compare_Lt_lt _ _ H)) as H'
-  | (?x =? ?y) = true => pose proof (compute_eq (beq_nat_true x y H)) as H'
-  | (?x =? ?y) = false => pose proof (compute_neq (beq_nat_false x y H)) as H'
+  | (?x =? ?y) = true => pose proof (compute_eq (EqNat.beq_nat_true_stt x y H)) as H'
+  | (?x =? ?y) = false => pose proof (compute_neq (EqNat.beq_nat_false_stt x y H)) as H'
   end.
 
 (* Doesn't work. :( *)
@@ -205,7 +205,7 @@ Ltac propb :=
   | |- (_ ?= _) = Eq => apply compute_compare_Eq ; apply Nat.compare_eq_iff
   | |- (_ ?= _) = Gt => apply compute_compare_Gt ; apply Nat.compare_gt_iff
   | |- (_ =? _) = true => apply compute_eqb_true ; apply Nat.eqb_eq
-  | |- (_ =? _) = false => apply compute_eqb_false ; apply beq_nat_false
+  | |- (_ =? _) = false => apply compute_eqb_false ; apply Nat.eqb_neq
   end.
 
 (* Replace the opaque version *)
@@ -430,11 +430,6 @@ Fixpoint assoc_at {A} (key : string) (t : assoc A) {struct t} : option A :=
 
 
 Definition ident := string.
-
-Inductive name : Set :=
-| nAnon
-| nNamed (_ : ident).
-
 
 Definition ident_eq (x y : ident) :=
   match string_dec x y with

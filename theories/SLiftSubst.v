@@ -8,11 +8,11 @@ Open Scope type_scope.
 Fixpoint lift `{Sort_notion : Sorts.notion} n k t : sterm :=
   match t with
   | sRel i => if Nat.leb k i then sRel (n + i) else sRel i
-  | sLambda na T V M => sLambda na (lift n k T) (lift n (S k) V) (lift n (S k) M)
+  | sLambda T V M => sLambda (lift n k T) (lift n (S k) V) (lift n (S k) M)
   | sApp u A B v =>
     sApp (lift n k u) (lift n k A) (lift n (S k) B) (lift n k v)
-  | sProd na A B => sProd na (lift n k A) (lift n (S k) B)
-  | sSum na A B => sSum na (lift n k A) (lift n (S k) B)
+  | sProd A B => sProd (lift n k A) (lift n (S k) B)
+  | sSum A B => sSum (lift n k A) (lift n (S k) B)
   | sPair A B u v =>
     sPair (lift n k A) (lift n (S k) B) (lift n k u) (lift n k v)
   | sPi1 A B p => sPi1 (lift n k A) (lift n (S k) B) (lift n k p)
@@ -81,12 +81,12 @@ Fixpoint subst `{Sort_notion : Sorts.notion} t k u :=
     | Gt => sRel n
     | Lt => sRel (pred n)
     end
-  | sLambda na T V M =>
-    sLambda na (subst t k T) (subst t (S k) V) (subst t (S k) M)
+  | sLambda T V M =>
+    sLambda (subst t k T) (subst t (S k) V) (subst t (S k) M)
   | sApp u A B v =>
     sApp (subst t k u) (subst t k A) (subst t (S k) B) (subst t k v)
-  | sProd na A B => sProd na (subst t k A) (subst t (S k) B)
-  | sSum na A B => sSum na (subst t k A) (subst t (S k) B)
+  | sProd A B => sProd (subst t k A) (subst t (S k) B)
+  | sSum A B => sSum (subst t k A) (subst t (S k) B)
   | sPair A B u v =>
     sPair (subst t k A) (subst t (S k) B) (subst t k u) (subst t k v)
   | sPi1 A B p => sPi1 (subst t k A) (subst t (S k) B) (subst t k p)
@@ -165,15 +165,15 @@ Fixpoint closed_above k (t : sterm) :=
   match t with
   | sRel n => n <? k
   | sSort _ => true
-  | sProd _ A B => closed_above k A && closed_above (S k) B
-  | sLambda _ A B t =>
+  | sProd A B => closed_above k A && closed_above (S k) B
+  | sLambda A B t =>
     closed_above k A && closed_above (S k) B && closed_above (S k) t
   | sApp u A B v =>
     closed_above k u &&
     closed_above k A &&
     closed_above (S k) B &&
     closed_above k v
-  | sSum _ A B => closed_above k A && closed_above (S k) B
+  | sSum A B => closed_above k A && closed_above (S k) B
   | sPair A B u v =>
     closed_above k A && closed_above (S k) B &&
     closed_above k u && closed_above k v
