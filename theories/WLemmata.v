@@ -1,4 +1,4 @@
-From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith Utf8.
 Require Import Equations.Prop.DepElim.
 From Equations Require Import Equations.
 From Translation
@@ -109,7 +109,7 @@ Proof.
                 try apply weak_glob_type ;
                 eassumption
                ).
-      + eapply type_Ax.
+      + eapply type_Const.
         * eapply weak_glob_wf ; eassumption.
         * cbn. erewrite ident_neq_fresh by eassumption.
           assumption.
@@ -117,6 +117,7 @@ Proof.
         * eapply weak_glob_wf ; eassumption.
         * cbn. erewrite ident_neq_fresh by eassumption.
           assumption.
+        * assumption.
     }
 
   (* weak_glob_wf *)
@@ -150,20 +151,22 @@ Proof.
   unfold closed_above. case_eq (n <? #|Γ|) ; intro e ; bprop e ; try mylia.
 Defined.
 
-Fact typed_ax_body :
-  forall {Σ}, type_glob Σ ->
-  forall {id d},
-    lookup_glob Σ id = Some d ->
-    Σ ;;; [] |-w dbody d : dtype d.
+Fact typed_const_body :
+  ∀ {Σ}, type_glob Σ →
+  ∀ {id d t},
+    lookup_glob Σ id = Some d →
+    d.(dbody) = Some t →
+    Σ ;;; [] |-w t : dtype d.
 Proof.
-  intros Σ hg. dependent induction hg ; intros id d' h.
+  intros Σ hg. dependent induction hg ; intros id d' t h he.
   - cbn in h. discriminate h.
   - cbn in h.
     case_eq (ident_eq id (dname d)).
     + intro e. rewrite e in h. inversion h. subst.
+      rewrite he in o.
       eapply weak_glob_type ; eassumption.
     + intro e. rewrite e in h.
-      specialize (IHhg _ _ h).
+      specialize IHhg with (1 := h) (2 := he).
       eapply weak_glob_type ; eassumption.
 Defined.
 
@@ -269,7 +272,7 @@ Proof.
     eapply isType_ctxempty_closed, isType_lookup_glob; eassumption.
   - eapply closed_above_nk with (n := 0). lia.
     eapply type_ctxempty_closed.
-    eapply typed_ax_body. eassumption. eassumption.
+    eapply typed_const_body. all: eassumption.
 Qed.
 
 Fact type_ctxempty_closed' :
@@ -285,7 +288,7 @@ Defined.
 
 
 
-Fact lift_ax_type :
+Fact lift_const_type :
   forall {Σ},
     type_glob Σ ->
     forall {id d},
@@ -294,20 +297,24 @@ Fact lift_ax_type :
 Proof.
   intros Σ hg id ty isd n k.
   eapply closed_lift.
-  eapply type_ctxempty_closed'. eassumption. eapply type_Ax.
-  constructor. eassumption.
+  eapply type_ctxempty_closed'.
+  - eassumption.
+  - eapply type_Const.
+    + constructor.
+    + eassumption.
 Defined.
 
-Fact lift_ax_body :
+Fact lift_const_body :
   forall {Σ},
     type_glob Σ ->
-    forall {id d},
+    forall {id d t},
       lookup_glob Σ id = Some d ->
-      forall n k, lift n k (dbody d) = dbody d.
+      d.(dbody) = Some t →
+      forall n k, lift n k t = t.
 Proof.
-  intros Σ hg id ty isd n k.
+  intros Σ hg id ty t isd ht n k.
   eapply closed_lift.
-  eapply type_ctxempty_closed. eapply typed_ax_body; eassumption.
+  eapply type_ctxempty_closed. eapply typed_const_body; eassumption.
 Defined.
 
 Lemma nth_error_lift_context :
@@ -479,13 +486,14 @@ Proof.
       - cbn. eapply type_PairEta ; eih.
       - cbn. eapply type_ProdExt ; eih.
       - cbn. eapply type_SumExt ; eih.
-      - cbn. erewrite lift_ax_type by eassumption.
-        eapply type_Ax.
+      - cbn. erewrite lift_const_type by eassumption.
+        eapply type_Const.
         + now apply wf_lift.
         + assumption.
-      - cbn. erewrite lift_ax_type, lift_ax_body by eassumption.
+      - cbn. erewrite lift_const_type, lift_const_body by eassumption.
         eapply type_Delta.
         + now apply wf_lift.
+        + assumption.
         + assumption.
     }
 
@@ -573,7 +581,7 @@ Proof.
 Defined.
 
 
-Fact subst_ax_type :
+Fact subst_const_type :
   forall {Σ},
     type_glob Σ ->
     forall {id d},
@@ -582,20 +590,22 @@ Fact subst_ax_type :
 Proof.
   intros Σ hg id d isd n k.
   eapply closed_subst.
-  eapply type_ctxempty_closed'. eassumption. eapply type_Ax.
-  constructor. eassumption.
+  eapply type_ctxempty_closed'. eassumption. eapply type_Const.
+  - constructor.
+  - eassumption.
 Defined.
 
-Fact subst_ax_body :
-  forall {Σ},
-    type_glob Σ ->
-    forall {id d},
-      lookup_glob Σ id = Some d ->
-      forall n u, (dbody d){ n := u } = dbody d.
+Fact subst_const_body :
+  ∀ {Σ},
+    type_glob Σ →
+    ∀ {id d t},
+      lookup_glob Σ id = Some d →
+      d.(dbody) = Some t →
+      ∀ n u, t{ n := u } = t.
 Proof.
-  intros Σ hg id d isd n k.
+  intros Σ hg id d t isd ht n k.
   eapply closed_subst.
-  eapply type_ctxempty_closed. eapply typed_ax_body; eassumption.
+  eapply type_ctxempty_closed. eapply typed_const_body; eassumption.
 Defined.
 
 (* Substitution in context *)
@@ -808,13 +818,14 @@ Proof.
       - cbn. eapply type_PairEta ; esh.
       - cbn. eapply type_ProdExt ; esh.
       - cbn. eapply type_SumExt ; esh.
-      - cbn. erewrite subst_ax_type by eassumption.
-        eapply type_Ax.
+      - cbn. erewrite subst_const_type by eassumption.
+        eapply type_Const.
         + eapply wf_subst; eassumption.
         + assumption.
-      - cbn. erewrite subst_ax_type, subst_ax_body by eassumption.
+      - cbn. erewrite subst_const_type, subst_const_body by eassumption.
         eapply type_Delta.
         + eapply wf_subst; eassumption.
+        + assumption.
         + assumption.
     }
 
@@ -970,19 +981,19 @@ Proof.
     destruct H1 as [s HH]; exists s.
     pose proof (@type_lift _ [] Γ [] _ _ HH hg). cbn in H1.
     rewrite nil_cat in H1.
-    erewrite lift_ax_type in H1 by eassumption. auto.
-  - pose proof (isType_lookup_glob hg _ _ H0).
-    destruct H1 as [s HH]; exists (Sorts.eq_sort s).
-    assert (Σ;;; [] |-w wEq (dtype d) (wAx id) (dbody d)
-                     : wSort (Sorts.eq_sort s)). {
-      econstructor. assumption.
-      eapply type_Ax. constructor. assumption.
-      eapply typed_ax_body; eassumption.
+    erewrite lift_const_type in H1 by eassumption. auto.
+  - pose proof (isType_lookup_glob hg _ _ H0) as [s HH].
+    exists (Sorts.eq_sort s).
+    assert (Σ;;; [] |-w wEq (dtype d) (wConst id) t : wSort (Sorts.eq_sort s)).
+    { econstructor. assumption.
+      eapply type_Const. constructor. assumption.
+      eapply typed_const_body; eassumption.
     }
-    pose proof (@type_lift _ [] Γ [] _ _ H1 hg). cbn in H2.
-    rewrite nil_cat in H2.
-    erewrite lift_ax_body in H2 by eassumption.
-    erewrite lift_ax_type in H2 by eassumption; auto.
+    pose proof (@type_lift _ [] Γ [] _ _ H2 hg). cbn in H3.
+    rewrite nil_cat in H3.
+    erewrite lift_const_type in H3 by eassumption; auto.
+    erewrite lift_const_body in H3 by eassumption.
+    auto.
 Defined.
 
 End Lemmata.

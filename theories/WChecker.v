@@ -161,14 +161,18 @@ Fixpoint wttinfer (Σ : wglobal_context) (Γ : wcontext) (t : wterm)
     let '(S2,B1,B2) := E in
     s2 <- getsort S2 ;;
     ret (wEq (wSort (sum_sort s1 s2)) (wSum A B1) (wSum A B2))
-  | wAx id =>
+  | wConst id =>
     match lookup_glob Σ id with
     | Some d => ret (dtype d)
     | None  => raise (Msg ("unknown constant: " ++ id))
     end
   | wDelta id =>
     match lookup_glob Σ id with
-    | Some d => ret (wEq (dtype d) (wAx id) (dbody d))
+    | Some d =>
+      match dbody d with
+      | Some t => ret (wEq (dtype d) (wConst id) t)
+      | None => raise (Msg ("not a definition: " ++ id))
+      end
     | None  => raise (Msg ("unknown constant: " ++ id))
     end
   end.
@@ -424,8 +428,9 @@ Proof.
   - exists (dtype d). split.
     + unfold wttinfer. rewrite_assumption. reflexivity.
     + reflexivity.
-  - exists (wEq (dtype d) (wAx id) (dbody d)). split.
-    + unfold wttinfer. rewrite_assumption. reflexivity.
+  - exists (wEq (dtype d) (wConst id) t).
+    split.
+    + unfold wttinfer. rewrite_assumption. rewrite_assumption. reflexivity.
     + reflexivity.
 Defined.
 
@@ -501,7 +506,7 @@ Definition instantiate_sorts `{ S : Sorts.notion }
     | wPairEta p => wPairEta (f p)
     | wProdExt A p => wProdExt (f A) (f p)
     | wSumExt A p => wSumExt (f A) (f p)
-    | wAx id => wAx id
+    | wConst id => wConst id
     | wDelta id => wDelta id
     end.
 
@@ -551,7 +556,7 @@ Definition instantiate_sorts_decl `{ S : Sorts.notion } inst
            (d : @glob_decl psort_notion) : @glob_decl S :=
   {| dname := d.(dname) ;
      dtype := instantiate_sorts inst d.(dtype) ;
-     dbody := instantiate_sorts inst d.(dbody)
+     dbody := option_map (instantiate_sorts inst) d.(dbody)
   |}.
 
 Definition instantiate_sorts_glob `{ S : Sorts.notion } inst
@@ -585,6 +590,16 @@ Proof.
   - cbn in e. inversion e. subst. clear e.
     cbn. reflexivity.
   - cbn in e. eapply IHΓ in e. cbn. assumption.
+Defined.
+
+Lemma instantiate_sorts_decl_body :
+  ∀ `{ S : Sorts.notion } d t inst,
+    dbody d = Some t →
+    dbody (instantiate_sorts_decl inst d) = Some (instantiate_sorts inst t).
+Proof.
+  intros SN d t inst h.
+  destruct d. simpl in *.
+  subst. reflexivity.
 Defined.
 
 Lemma instantiate_sorts_sound :
@@ -727,9 +742,12 @@ Proof.
   - eapply meta_conv. econstructor. assumption.
     eapply instantiate_sorts_lookup_glob. eassumption.
     reflexivity.
-  - eapply meta_conv. econstructor. assumption.
-    eapply instantiate_sorts_lookup_glob. eassumption.
-    reflexivity.
+  - eapply meta_conv.
+    + econstructor.
+      * assumption.
+      * eapply instantiate_sorts_lookup_glob. eassumption.
+      * eapply instantiate_sorts_decl_body. eassumption.
+    + reflexivity.
 Defined.
 
 End PolymorphicSorts.

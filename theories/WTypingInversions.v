@@ -551,7 +551,7 @@ Defined.
 
 (* Lemma inversionAx : *)
 (*   forall {Σ Γ id T}, *)
-(*     Σ ;;; Γ |-w wAx id : T -> *)
+(*     Σ ;;; Γ |-w wConst id : T -> *)
 (*     exists ty, *)
 (*       (lookup_glob Σ id = Some ty) /\ *)
 (*       (nl ty = nl T). *)

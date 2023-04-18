@@ -1,9 +1,7 @@
-
-From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
-From Translation
-     Require Import util Sorts SAst SLiftSubst WAst WLiftSubst
-     SCommon ITyping ITypingLemmata
-     WTyping WChecker WLemmata Quotes.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith Utf8.
+From Translation Require Import
+  util Sorts SAst SLiftSubst WAst WLiftSubst SCommon ITyping ITypingLemmata
+  WTyping WChecker WLemmata.
 Import ListNotations.
 Open Scope string_scope.
 
@@ -18,10 +16,10 @@ Fixpoint tsl (t : sterm) : wterm :=
   match t with
   | sRel n => wRel n
   | sSort s => wSort s
-  | sProd nx A B => wProd nx (tsl A) (tsl B)
-  | sLambda nx A B t => wLambda nx (tsl A) (tsl t)
+  | sProd A B => wProd (tsl A) (tsl B)
+  | sLambda A B t => wLambda (tsl A) (tsl t)
   | sApp u A B v => wApp (tsl u) (tsl v)
-  | sSum nx A B => wSum nx (tsl A) (tsl B)
+  | sSum A B => wSum (tsl A) (tsl B)
   | sPair A B u v => wPair (tsl A) (tsl B) (tsl u) (tsl v)
   | sPi1 A B p => wPi1 (tsl A) (tsl B) (tsl p)
   | sPi2 A B p => wPi2 (tsl A) (tsl B) (tsl p)
@@ -30,29 +28,28 @@ Fixpoint tsl (t : sterm) : wterm :=
   | sJ A u P w v p => wJ (tsl A) (tsl u) (tsl P) (tsl w) (tsl v) (tsl p)
   | sTransport T1 T2 p t => wTransport (tsl T1) (tsl T2) (tsl p) (tsl t)
   | sBeta f t => wBeta (tsl f) (tsl t)
-  (* | sHeq A a B b => wHeq (tsl A) (tsl a) (tsl B) (tsl b) *)
-  (* | sHeqToEq p => _ *)
-  (* | sHeqRefl A a => _ *)
-  (* | sHeqSym p => _ *)
-  (* | sHeqTrans p q => _ *)
-  (* | sHeqTransport p t => _ *)
-  (* | sCongProd B1 B2 pA pB => _ *)
-  (* | sCongLambda B1 B2 t1 t2 pA pB pt => _ *)
-  (* | sCongApp B1 B2 pu pA pB pv => _ *)
-  (* | sCongSum B1 B2 pA pB => _ *)
-  (* | sCongPair B1 B2 pA pB pu pv => _ *)
-  (* | sCongPi1 B1 B2 pA pB pp => _ *)
-  (* | sCongPi2 B1 B2 pA pB pp => _ *)
-  (* | sCongEq pA pu pv => _ *)
-  (* | sCongRefl pA pu => _ *)
-  (* | sEqToHeq p => _ *)
-  (* | sHeqTypeEq A B p => _ *)
-  (* | sPack A1 A2 => wPack (tsl A1) (tsl A2) *)
-  (* | sProjT1 p => wProjT1 (tsl p) *)
-  (* | sProjT2 p => wProjT2 (tsl p) *)
-  (* | sProjTe p => wProjTe (tsl p) *)
-  | sAx id => wAx id
-  | _ => wAx "todo"
+  | sHeq A a B b => wConst "heq" (* wHeq (tsl A) (tsl a) (tsl B) (tsl b) *)
+  | sHeqToEq p => wConst "heqtoeq"
+  | sHeqRefl A a => wConst "heqrefl"
+  | sHeqSym p => wConst "heqsym"
+  | sHeqTrans p q => wConst "heqtrans"
+  | sHeqTransport p t => wConst "heqtransport"
+  | sCongProd B1 B2 pA pB => wConst "congprod"
+  | sCongLambda B1 B2 t1 t2 pA pB pt => wConst "conglam"
+  | sCongApp B1 B2 pu pA pB pv => wConst "congapp"
+  | sCongSum B1 B2 pA pB => wConst "congsum"
+  | sCongPair B1 B2 pA pB pu pv => wConst "congpair"
+  | sCongPi1 B1 B2 pA pB pp => wConst "congpi1"
+  | sCongPi2 B1 B2 pA pB pp => wConst "congpi2"
+  | sCongEq pA pu pv => wConst "congeq"
+  | sCongRefl pA pu => wConst "congrefl"
+  | sEqToHeq p => wConst "eqtoheq"
+  | sHeqTypeEq A B p => wConst "heqtypeq"
+  | sPack A1 A2 => wConst "pack" (* wPack (tsl A1) (tsl A2) *)
+  | sProjT1 p => wConst "projT1" (* wProjT1 (tsl p) *)
+  | sProjT2 p => wConst "projT2" (* wProjT2 (tsl p) *)
+  | sProjTe p => wConst "projTe" (* wProjTe (tsl p) *)
+  | sAx id => wConst id
   end.
 
 Program Fixpoint tsl_glob (Σ : sglobal_context) : wglobal_context :=
@@ -70,6 +67,8 @@ Fixpoint tsl_ctx (Γ : scontext) : wcontext :=
   | A :: Γ => tsl A :: tsl_ctx Γ
   | nil => nil
   end.
+
+(*
 
 Lemma tsl_lift :
   forall {t n k},
@@ -290,5 +289,7 @@ Defined.
 (*   - eapply tsl_ctx_sound ; try assumption. *)
 (*     eapply ITypingLemmata.typing_wf. eassumption. *)
 (* Defined. *)
+
+*)
 
 End Translation.

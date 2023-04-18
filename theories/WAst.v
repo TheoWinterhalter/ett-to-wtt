@@ -36,8 +36,8 @@ Inductive wterm : Type :=
 | wPairEta (p : wterm)
 | wProdExt (A p : wterm)
 | wSumExt (A p : wterm)
-(* External axioms *)
-| wAx (id : ident)
+(* External axioms and defs *)
+| wConst (id : ident)
 | wDelta (id : ident)
 .
 

@@ -230,7 +230,7 @@ Ltac ittintro :=
     | wFunext _ _ _ => eapply type_Funext
     | wJBeta _ _ _ => eapply type_JBeta
     | wPairEta _ => eapply type_PairEta
-    | wAx _ => eapply type_Ax ; [| try reflexivity ]
+    | wConst _ => eapply type_Ax ; [| try reflexivity ]
     | wDelta _ => eapply type_Ax ; [| try reflexivity ]
     | _ => other_ittintro t
     end

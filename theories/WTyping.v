@@ -1,6 +1,6 @@
 (*! WTT Typing *)
 
-From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith Utf8.
 From Equations Require Import Equations.
 From Translation
 Require Import util Sorts WAst WLiftSubst WEquality.
@@ -17,10 +17,8 @@ Definition wcontext := list wterm.
 
 Definition wsnoc (Γ : wcontext) (d : wterm) := d :: Γ.
 
-(** Global contexts of axioms
-    Basically a list of ITT types.
- *)
-Record glob_decl := { dname : ident ; dtype : wterm ; dbody : wterm }.
+(** Global contexts of axioms and definitions. *)
+Record glob_decl := { dname : ident ; dtype : wterm ; dbody : option wterm }.
 
 Definition wglobal_context : Type := list glob_decl.
 
@@ -174,15 +172,16 @@ Inductive typing (Σ : wglobal_context) : wcontext -> wterm -> wterm -> Prop :=
     Σ ;;; Γ |-w A : wSort s1 ->
     Σ ;;; Γ |-w wSumExt A p : wEq (wSort (sum_sort s1 s2)) (wSum A B1) (wSum A B2)
 
-| type_Ax Γ id d :
+| type_Const Γ id d :
     wf Σ Γ ->
     lookup_glob Σ id = Some d ->
-    Σ ;;; Γ |-w wAx id : dtype d
+    Σ ;;; Γ |-w wConst id : dtype d
 
-| type_Delta Γ id d :
+| type_Delta Γ id d t :
     wf Σ Γ ->
     lookup_glob Σ id = Some d ->
-    Σ ;;; Γ |-w wDelta id : wEq (dtype d) (wAx id) (dbody d)
+    d.(dbody) = Some t →
+    Σ ;;; Γ |-w wDelta id : wEq (dtype d) (wConst id) t
 
 where " Σ ;;; Γ '|-w' t : T " := (@typing Σ Γ t T) : w_scope
 
@@ -220,13 +219,19 @@ Inductive fresh_glob (id : ident) : wglobal_context -> Prop :=
     (dname d) <> id ->
     fresh_glob id (d :: Σ).
 
-Inductive type_glob : wglobal_context -> Type :=
+Definition onSome {A} (P : A → Type) (o : option A) : Type :=
+  match o with
+  | Some x => P x
+  | None => True
+  end.
+
+Inductive type_glob : wglobal_context → Type :=
 | type_glob_nil : type_glob []
 | type_glob_cons Σ d :
-    type_glob Σ ->
-    fresh_glob (dname d) Σ ->
-    isType Σ [] (dtype d) ->
-    Σ ;;; [] |-w dbody d : dtype d ->
+    type_glob Σ →
+    fresh_glob (dname d) Σ →
+    isType Σ [] (dtype d) →
+    onSome (λ x, Σ ;;; [] |-w x : dtype d) d.(dbody) →
     type_glob (d :: Σ).
 
 End Global.
