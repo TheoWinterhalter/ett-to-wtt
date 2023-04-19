@@ -1,8 +1,89 @@
 From Coq Require Import Bool String List BinPos Compare_dec Lia Arith Utf8.
 From Translation Require Import
-  util Sorts SAst SLiftSubst WAst WLiftSubst SCommon ITyping ITypingLemmata
-  WTyping WChecker WLemmata.
+  util monad_utils Sorts SAst SLiftSubst WAst WLiftSubst SCommon ITyping
+  ITypingLemmata WEquality WTyping WChecker WLemmata.
 Import ListNotations.
+
+Section Prelims.
+
+Context (Sort_notion : notion).
+Context Σ (wΣ : type_glob Σ).
+
+(* TODO MOVE *)
+Lemma assert_eq_refl :
+  ∀ t, assert_eq t t = Success tt.
+Proof.
+  intro t. unfold assert_eq. rewrite eq_term_refl. reflexivity.
+Defined.
+
+Definition wHeq s A a B b :=
+  wSum (wEq (wSort s) A B) (wEq (↑ B) (wTransport (↑ A) (↑ B) (wRel 0) (↑ a)) (↑ b)).
+
+(* Lemma wttinfer_lift :
+  ∀ s Γ A t,
+    wf Σ Γ →
+    Σ ;;; Γ |-w A : wSort s →
+    wttinfer Σ (Γ ,, A) (lift0 1 t) = (B <- wttinfer Σ Γ t ;; ret (lift0 1 B)).
+Proof.
+  intros s Γ A t hΓ hA.
+  symmetry. destruct wttinfer as [B|] eqn:e.
+  - simpl. symmetry. eapply wttinfer_complete.
+    eapply wttinfer_sound in e. 2,3: auto.
+    eapply typing_lift01. all: eassumption.
+  - simpl. erewrite wttinfer_complete. *)
+
+Lemma wttinfer_lift01 :
+  ∀ s Γ A t B,
+    wf Σ Γ →
+    Σ ;;; Γ |-w A : wSort s →
+    wttinfer Σ Γ t = ret B →
+    wttinfer Σ (Γ ,, A) (lift0 1 t) = ret (lift0 1 B).
+Proof.
+  intros s Γ A t B hΓ hA h.
+  eapply wttinfer_complete.
+  eapply wttinfer_sound in h. 2,3: auto.
+  eapply typing_lift01. all: eassumption.
+Qed.
+
+Lemma type_Heq :
+  ∀ Γ s A a B b,
+    wf Σ Γ →
+    Σ ;;; Γ |-w A : wSort s →
+    Σ ;;; Γ |-w B : wSort s →
+    Σ ;;; Γ |-w a : A →
+    Σ ;;; Γ |-w b : B →
+    Σ ;;; Γ |-w wHeq s A a B b : wSort s.
+Proof.
+  intros Γ s A a B b hΓ hA hB ha hb.
+  eapply wttinfer_sound. 2,3: auto.
+  simpl. rewrite wttinfer_complete with (1 := hA).
+  rewrite assert_eq_refl.
+  rewrite wttinfer_complete with (1 := hB).
+  rewrite assert_eq_refl. simpl.
+  erewrite wttinfer_lift01.
+  2: auto.
+  2:{ econstructor. 2,3: eassumption. econstructor. auto. }
+  2:{ apply wttinfer_complete with (1 := hB). }
+  simpl.
+  erewrite wttinfer_lift01.
+  2: auto.
+  2:{ econstructor. 2,3: eassumption. econstructor. auto. }
+  2:{ apply wttinfer_complete with (1 := hA). }
+  simpl. rewrite assert_eq_refl. rewrite assert_eq_sort_refl.
+  erewrite wttinfer_lift01.
+  2: auto.
+  2:{ econstructor. 2,3: eassumption. econstructor. auto. }
+  2:{ apply wttinfer_complete with (1 := ha). }
+  simpl. rewrite assert_eq_refl. rewrite assert_eq_refl.
+  erewrite wttinfer_lift01.
+  2: auto.
+  2:{ econstructor. 2,3: eassumption. econstructor. auto. }
+  2:{ apply wttinfer_complete with (1 := hb). }
+  simpl. rewrite assert_eq_refl. simpl.
+  (* Sort problem *)
+Abort.
+
+End Prelims.
 
 Open Scope string_scope.
 
@@ -10,9 +91,6 @@ Section Translation.
 
 Context (Sort_notion : notion).
 
-(* Note we will require Σ and Γ in order to do some inference
-   meaning we will also land in a monad.
- *)
 Fixpoint tsl (t : sterm) : wterm :=
   match t with
   | sRel n => wRel n
