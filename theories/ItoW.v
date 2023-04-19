@@ -3,6 +3,7 @@ From Translation Require Import
   util Sorts SAst SLiftSubst WAst WLiftSubst SCommon ITyping ITypingLemmata
   WTyping WChecker WLemmata.
 Import ListNotations.
+
 Open Scope string_scope.
 
 Section Translation.
@@ -52,15 +53,18 @@ Fixpoint tsl (t : sterm) : wterm :=
   | sAx id => wConst id
   end.
 
-Program Fixpoint tsl_glob (Σ : sglobal_context) : wglobal_context :=
+Definition tsl_decl i ty := {|
+  dname := i ;
+  dtype := tsl ty ;
+  dbody := None
+|}.
+
+Fixpoint tsl_glob (Σ : sglobal_context) : wglobal_context :=
   match Σ with
-  | d :: Σ =>
-    {| dname := d.(SCommon.dname) ; dtype := tsl d.(SCommon.dtype) ; dbody := _ |}
+  | d :: Σ => tsl_decl d.(SCommon.dname) d.(SCommon.dtype)
     :: tsl_glob Σ
   | nil => nil
   end.
-Next Obligation.
-Admitted.
 
 Fixpoint tsl_ctx (Γ : scontext) : wcontext :=
   match Γ with
@@ -68,7 +72,7 @@ Fixpoint tsl_ctx (Γ : scontext) : wcontext :=
   | nil => nil
   end.
 
-(*
+Open Scope nat_scope.
 
 Lemma tsl_lift :
   forall {t n k},
@@ -99,84 +103,83 @@ Proof.
   apply tsl_lift.
 Defined.
 
-(* Lemma tsl_lookup : *)
-(*   forall {Σ id ty}, *)
-(*     SCommon.lookup_glob Σ id = Some ty -> *)
-(*     lookup_glob (tsl_glob Σ) id = Some (tsl ty). *)
-(* Proof. *)
-(*   intro Σ. induction Σ ; intros id ty eq. *)
-(*   - cbn in eq. discriminate eq. *)
-(*   - revert eq. cbn. case_eq (ident_eq id (SCommon.dname a)). *)
-(*     + intros e eq. inversion eq. subst. reflexivity. *)
-(*     + intros e eq. eapply IHΣ. assumption. *)
-(* Defined. *)
+Lemma tsl_lookup :
+  forall {Σ id ty},
+    SCommon.lookup_glob Σ id = Some ty ->
+    lookup_glob (tsl_glob Σ) id = Some (tsl_decl id ty).
+Proof.
+  intro Σ. induction Σ ; intros id ty he.
+  - cbn in he. discriminate he.
+  - revert he. cbn. case_eq (ident_eq id (SCommon.dname a)).
+    + intros e he. inversion he. subst.
+      eapply reflect_iff in e. 2: eapply ident_eq_spec.
+      subst. reflexivity.
+    + intros e he. eapply IHΣ. assumption.
+Defined.
 
-(* Lemma nl_tsl : *)
-(*   forall {u v}, *)
-(*     Equality.nl u = Equality.nl v -> *)
-(*     WEquality.nl (tsl u) = WEquality.nl (tsl v). *)
-(* Proof. *)
-(*   intro u. induction u ; intros v eq. *)
-(*   all: destruct v ; simpl in eq ; try discriminate eq. *)
-(*   all: try ( *)
-(*     cbn ; inversion eq ; f_equal ; *)
-(*     try eapply IHu ; *)
-(*     try eapply IHu1 ; try eapply IHu2 ; *)
-(*     try eapply IHu3 ; try eapply IHu4 ; *)
-(*     try eapply IHu5 ; try eapply IHu6 ; *)
-(*     assumption *)
-(*   ). *)
-(* Defined. *)
+Lemma nth_error_tsl_ctx :
+  ∀ Γ n,
+    nth_error (tsl_ctx Γ) n = option_map tsl (nth_error Γ n).
+Proof.
+  intros Γ n.
+  induction Γ as [| ty Γ ih ] in n |- *.
+  - simpl. destruct n. all: reflexivity.
+  - simpl. destruct n.
+    + simpl. reflexivity.
+    + simpl. apply ih.
+Qed.
 
-(* Open Scope i_scope. *)
+Open Scope i_scope.
 
-(* Ltac lift_sort := *)
-(*   match goal with *)
-(*   | |- _ ;;; _ |-w lift ?n ?k ?t : ?S => change S with (lift n k S) *)
-(*   | |- _ ;;; _ |-w ?t { ?n := ?u } : ?S => change S with (S {n := u}) *)
-(*   end. *)
+Ltac lift_sort :=
+  match goal with
+  | |- _ ;;; _ |-w lift ?n ?k ?t : ?S => change S with (lift n k S)
+  | |- _ ;;; _ |-w ?t { ?n := ?u } : ?S => change S with (S {n := u})
+  end.
 
-(* Ltac callih := *)
-(*   match goal with *)
-(*   | h : let _ := _ in *)
-(*         let _ := tsl ?t in *)
-(*         let _ := _ in _ -> _ ;;; _ |-w _ : _ *)
-(*     |- _ ;;; _ |-w tsl ?t : _ => *)
-(*     eapply h *)
-(*   end. *)
+Ltac callih :=
+  match goal with
+  | h : let _ := _ in
+        let _ := tsl ?t in
+        let _ := _ in _ -> _ ;;; _ |-w _ : _
+    |- _ ;;; _ |-w tsl ?t : _ =>
+    eapply h
+  end.
 
-(* Ltac wfctx := *)
-(*   first [ *)
-(*     eassumption *)
-(*     | cbn ; eapply wf_snoc ; try assumption *)
-(*   ]. *)
+Ltac wfctx :=
+  first [
+    eassumption
+    | cbn ; eapply wf_snoc ; try assumption
+  ].
 
-(* Ltac ih := *)
-(*   repeat (callih ; wfctx). *)
+Ltac ih :=
+  repeat (callih ; wfctx).
 
-(* Ltac go t' A' := *)
-(*   unfold t', A' ; cbn ; *)
-(*   repeat (rewrite ?tsl_lift, ?tsl_subst) ; *)
-(*   econstructor ; try assumption ; ih. *)
+Ltac go t' A' :=
+  unfold t', A' ; cbn ;
+  repeat (rewrite ?tsl_lift, ?tsl_subst) ;
+  econstructor ; try assumption ; ih.
 
-(* Lemma tsl_sound : *)
-(*   forall {Σ Γ t A}, *)
-(*     let Σ' := tsl_glob Σ in *)
-(*     let Γ' := tsl_ctx Γ in *)
-(*     let t' := tsl t in *)
-(*     let A' := tsl A in *)
-(*     type_glob Σ' -> *)
-(*     wf Σ' Γ' -> *)
-(*     Σ ;;; Γ |-i t : A -> *)
-(*     Σ' ;;; Γ' |-w t' : A'. *)
-(* Proof. *)
-(*   intros Σ Γ t A Σ' Γ' t' A' hg hw h. induction h. *)
-(*   all: try solve [go t' A']. *)
-(*   - unfold t', A'. cbn. rewrite tsl_lift. unshelve erewrite tsl_safe_nth. *)
-(*     + cbn. rewrite tsl_ctx_length. assumption. *)
-(*     + econstructor. assumption. *)
-(*   - unfold t', A'. cbn. econstructor ; try assumption ; try ih. *)
-(*     rewrite <- tsl_subst. ih. *)
+Lemma tsl_sound :
+  forall {Σ Γ t A},
+    let Σ' := tsl_glob Σ in
+    let Γ' := tsl_ctx Γ in
+    let t' := tsl t in
+    let A' := tsl A in
+    type_glob Σ' ->
+    wf Σ' Γ' ->
+    Σ ;;; Γ |-i t : A ->
+    Σ' ;;; Γ' |-w t' : A'.
+Proof.
+  intros Σ Γ t A Σ' Γ' t' A' hg hw h. induction h.
+  all: try solve [go t' A'].
+  - unfold t', A'. cbn. rewrite tsl_lift.
+    eapply type_Rel.
+    + assumption.
+    + subst Γ'. rewrite nth_error_tsl_ctx.
+      rewrite_assumption. reflexivity.
+  - unfold t', A'. cbn. econstructor ; try assumption ; try ih.
+    rewrite <- tsl_subst. ih.
 (*   - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst). *)
 (*     cbn. econstructor ; try assumption ; try ih. *)
 (*     + eapply rename_typed ; try assumption. *)
@@ -228,7 +231,7 @@ Defined.
 (*   - eapply type_rename. *)
 (*     + eapply IHh. assumption. *)
 (*     + unfold A'. eapply nl_tsl. assumption. *)
-(* Admitted. *)
+Admitted.
 
 (* Lemma tsl_fresh_glob : *)
 (*   forall {id Σ}, *)
@@ -289,7 +292,5 @@ Defined.
 (*   - eapply tsl_ctx_sound ; try assumption. *)
 (*     eapply ITypingLemmata.typing_wf. eassumption. *)
 (* Defined. *)
-
-*)
 
 End Translation.
