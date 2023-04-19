@@ -367,13 +367,12 @@ Proof.
   - exfalso. apply n. reflexivity.
 Defined.
 
-Ltac rewih :=
+(* Ltac rewih :=
   match goal with
-  | [ h : exists _, _ |- _ ] =>
-    let e := fresh "e" in
-    destruct h as [? [e ?]] ;
+  | [ e : wttinfer _ _ _ = _ |- _ ] =>
     rewrite ?e
-  end.
+  end. *)
+Ltac rewih := rewrite_assumption.
 
 Ltac co :=
   simpl ;
@@ -385,53 +384,16 @@ Ltac co :=
   rewrite ?assert_eq_sort_refl ;
   repeat (erewrite (proj2 eq_term_spec) ; [| reflexivity]) ;
   simpl ;
-  eexists ; split ; [
-    reflexivity
-  | repeat f_equal
-  ].
+  reflexivity.
 
 Lemma wttinfer_complete :
   forall {Σ Γ t A},
     Σ ;;; Γ |-w t : A ->
-    exists B, wttinfer Σ Γ t = Success B /\ A = B.
+    wttinfer Σ Γ t = Success A.
 Proof.
   intros Σ Γ t A h.
   induction h.
-  all: try solve [ co ].
-  - cbn. rewrite H0. eexists. intuition eauto.
-  - simpl.
-    repeat rewih. subst. simpl.
-    unfold assert_eq.
-    rewrite ?assert_eq_sort_refl.
-    repeat (erewrite (proj2 eq_term_spec) ; [| reflexivity]).
-    simpl.
-    eexists. split.
-    + reflexivity.
-    + reflexivity.
-  - simpl.
-    repeat rewih. subst. simpl.
-    unfold assert_eq.
-    rewrite ?assert_eq_sort_refl.
-    repeat (erewrite (proj2 eq_term_spec) ; [| reflexivity]).
-    simpl.
-    eexists. intuition reflexivity.
-  - simpl. repeat rewih. subst.
-    rewrite e0.
-    eexists. intuition reflexivity.
-  - simpl. repeat rewih. subst.
-    rewrite e1. simpl.
-    unfold assert_eq.
-    rewrite ?assert_eq_sort_refl.
-    repeat (erewrite (proj2 eq_term_spec) ; [| reflexivity]).
-    simpl.
-    eexists. intuition reflexivity.
-  - exists (dtype d). split.
-    + unfold wttinfer. rewrite_assumption. reflexivity.
-    + reflexivity.
-  - exists (wEq (dtype d) (wConst id) t).
-    split.
-    + unfold wttinfer. rewrite_assumption. rewrite_assumption. reflexivity.
-    + reflexivity.
+  all: solve [ co ].
 Defined.
 
 End Checking.
