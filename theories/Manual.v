@@ -1,24 +1,27 @@
-From Coq Require Import Bool String List BinPos Compare_dec Lia Arith.
+From Coq Require Import Bool String List BinPos Compare_dec Lia Arith Utf8.
 Require Import Equations.Prop.DepElim.
 From Equations Require Import Equations.
-From Translation
-Require Import util Sorts WAst WEquality WLiftSubst WTyping WTypingInversions
-WChecker WLemmata Quotes.
+From Translation Require Import
+  util Sorts WAst WEquality WLiftSubst WTyping WTypingInversions WChecker
+  WLemmata.
+
 Import ListNotations.
 Open Scope string_scope.
 
 Notation "⇑ t" := (lift 1 0 t) (at level 3, format "'⇑' t").
-Notation "A ↦ B" := (wProd nAnon A (↑ B)) (at level 30, right associativity).
+Notation "A ↦ B" := (wProd A (↑ B)) (at level 30, right associativity).
 
 
 Ltac gitt_as H XX :=
-  simple refine (let XX := istype_type _ H in _);
-  [try eassumption|
-   let s := fresh "s" in destruct XX as [s XX]].
+  simple refine (let XX := istype_type _ H in _) ; [
+    try eassumption
+  | let s := fresh "s" in destruct XX as [s XX]
+  ].
 
 Tactic Notation "gitt" ident(H1) := let XX := fresh in gitt_as H1 XX.
-Tactic Notation "gitt" ident(H1) ident(H2) := gitt H1; gitt H2.
-Tactic Notation "gitt" ident(H1) ident(H2) ident(H3) := gitt H1; gitt H2; gitt H3.
+Tactic Notation "gitt" ident(H1) ident(H2) := gitt H1 ; gitt H2.
+Tactic Notation "gitt" ident(H1) ident(H2) ident(H3) :=
+  gitt H1 ; gitt H2 ; gitt H3.
 
 Ltac inverse H :=
   lazymatch type of H with
@@ -36,130 +39,144 @@ Ltac inverse H :=
 
 
 Section Admissibles1.
+
   Context {S : notion} Σ (HΣ : type_glob Σ).
 
-  Definition type_Lambda Γ n n' t A B :
-      Σ ;;; Γ ,, A |-w t : B ->
-      Σ ;;; Γ |-w wLambda n A t : wProd n' A B.
+  Lemma type_Lambda Γ t A B :
+    Σ ;;; Γ ,, A |-w t : B →
+    Σ ;;; Γ |-w wLambda A t : wProd A B.
   Proof.
-    intros H. pose proof (typing_wf H).
-    inversion H0. now eapply type_Lambda.
-  Defined.
+    intros H. pose proof (typing_wf H) as hΓA.
+    inversion hΓA. now eapply type_Lambda.
+  Qed.
 
-  Definition type_Pair Γ n A B u v s2 :
-      Σ ;;; Γ |-w u : A ->
-      Σ;;; Γ,, A |-w B : wSort s2 ->
-      Σ ;;; Γ |-w v : B{ 0 := u } ->
-      Σ ;;; Γ |-w wPair A B u v : wSum n A B.
+  Lemma type_Pair Γ A B u v s :
+    Σ ;;; Γ |-w u : A →
+    Σ;;; Γ,, A |-w B : wSort s →
+    Σ ;;; Γ |-w v : B{ 0 := u } →
+    Σ ;;; Γ |-w wPair A B u v : wSum A B.
   Proof.
     intros Hu Hv. gitt Hu.
-    econstructor; eassumption.
-  Defined.
+    econstructor ; eassumption.
+  Qed.
 
-  Definition type_Pi1 Γ n A B p :
-      Σ ;;; Γ |-w p : wSum n A B ->
-      Σ ;;; Γ |-w wPi1 A B p : A.
+  Lemma type_Pi1 Γ A B p :
+    Σ ;;; Γ |-w p : wSum A B →
+    Σ ;;; Γ |-w wPi1 A B p : A.
   Proof.
-    intro Hp; gitt Hp.
+    intro Hp. gitt Hp.
     apply inversion_Sum in H.
     destruct H as [s1 [s2 [H1 [H2 H3]]]].
-    econstructor; eassumption.
-  Defined.
+    econstructor ; eassumption.
+  Qed.
 
-  Definition type_Pi2 Γ n A B p :
-      Σ ;;; Γ |-w p : wSum n A B ->
-      Σ ;;; Γ |-w wPi2 A B p : B{ 0 := wPi1 A B p }.
+  Lemma type_Pi2 Γ A B p :
+    Σ ;;; Γ |-w p : wSum A B →
+    Σ ;;; Γ |-w wPi2 A B p : B{ 0 := wPi1 A B p }.
   Proof.
-    intro Hp; gitt Hp.
+    intro Hp. gitt Hp.
     apply inversion_Sum in H.
     destruct H as [s1 [s2 [H1 [H2 H3]]]].
-    econstructor; eassumption.
-  Defined.
+    econstructor ; eassumption.
+  Qed.
 
-  Definition type_Refl Γ A u :
-      Σ ;;; Γ |-w u : A ->
-      Σ ;;; Γ |-w wRefl A u : wEq A u u.
+  Lemma type_Refl Γ A u :
+    Σ ;;; Γ |-w u : A →
+    Σ ;;; Γ |-w wRefl A u : wEq A u u.
   Proof.
-    intro Hp; gitt Hp.
-    econstructor; eassumption.
-  Defined.
+    intro Hp. gitt Hp.
+    econstructor ; eassumption.
+  Qed.
 
-  Definition type_J Γ s2 A u v P p w :
-      Σ ;;; Γ ,, A ,, (wEq (lift0 1 A) (lift0 1 u) (wRel 0)) |-w P : wSort s2 ->
-      Σ ;;; Γ |-w p : wEq A u v ->
-      Σ ;;; Γ |-w w : P{ 1 := u }{ 0 := wRefl A u } ->
-      Σ ;;; Γ |-w wJ A u P w v p : P{ 1 := v }{ 0 := p }.
+  Lemma type_J Γ s2 A u v P p w :
+    Σ ;;; Γ ,, A ,, (wEq (lift0 1 A) (lift0 1 u) (wRel 0)) |-w P : wSort s2 →
+    Σ ;;; Γ |-w p : wEq A u v →
+    Σ ;;; Γ |-w w : P{ 1 := u }{ 0 := wRefl A u } →
+    Σ ;;; Γ |-w wJ A u P w v p : P{ 1 := v }{ 0 := p }.
   Proof.
     intros HP Hp Hw. inverse Hp.
-    econstructor; eassumption.
-  Defined.
+    econstructor ; eassumption.
+  Qed.
 
-  Definition type_Beta Γ A B t u n :
-      Σ ;;; Γ ,, A |-w t : B ->
-      Σ ;;; Γ |-w u : A ->
-      Σ ;;; Γ |-w wBeta t u : wEq (B{ 0 := u })
-                                 (wApp (wLambda n A t) u)
-                                 (t{ 0 := u }).
+  Lemma type_Beta Γ A B t u :
+    Σ ;;; Γ ,, A |-w t : B →
+    Σ ;;; Γ |-w u : A →
+    Σ ;;; Γ |-w wBeta t u : wEq (B{ 0 := u }) (wApp (wLambda A t) u) (t{ 0 := u }).
   Proof.
     intros Ht Hu. gitt Hu.
-    econstructor; eassumption.
-  Defined.
+    econstructor ; eassumption.
+  Qed.
 
-  Definition type_K Γ A u p :
-      Σ;;; Γ |-w p : wEq A u u ->
-      Σ ;;; Γ |-w wK A u p : wEq (wEq A u u) p (wRefl A u).
+  Lemma type_K Γ A u p :
+    Σ;;; Γ |-w p : wEq A u u →
+    Σ ;;; Γ |-w wK A u p : wEq (wEq A u u) p (wRefl A u).
   Proof.
     intros Hp. inverse Hp.
-    econstructor; eassumption.
-  Defined.
+    econstructor ; eassumption.
+  Qed.
 
-  Definition type_JBeta Γ A u P w s2 :
-      Σ ;;; Γ |-w u : A ->
-      Σ ;;; Γ ,, A ,, (wEq (lift0 1 A) (lift0 1 u) (wRel 0)) |-w P : wSort s2 ->
-      Σ ;;; Γ |-w w : P{ 1 := u }{ 0 := wRefl A u } ->
-      Σ ;;; Γ |-w wJBeta u P w : wEq (P{ 1 := u }{ 0 := wRefl A u })
-                                  (wJ A u P w u (wRefl A u)) w.
+  Definition type_JBeta Γ A u P w s :
+    Σ ;;; Γ |-w u : A →
+    Σ ;;; Γ ,, A ,, (wEq (lift0 1 A) (lift0 1 u) (wRel 0)) |-w P : wSort s →
+    Σ ;;; Γ |-w w : P{ 1 := u }{ 0 := wRefl A u } →
+    Σ ;;; Γ |-w wJBeta u P w : wEq (P{ 1 := u }{ 0 := wRefl A u }) (wJ A u P w u (wRefl A u)) w.
   Proof.
     intros Hu HP Hw. gitt Hu.
-    econstructor; eassumption.
-  Defined.
+    econstructor ; eassumption.
+  Qed.
 
+  Open Scope w_scope.
 
-Open Scope w_scope.
-(* todo reuse existing notation *)
-Notation " Γ  ,,, Γ' " :=
-  (wapp_context Γ Γ')
+  (* todo reuse existing notation *)
+  Notation " Γ  ,,, Γ' " :=
+    (wapp_context Γ Γ')
     (at level 25, Γ' at next level, left associativity) : w_scope.
 
+  Open Scope nat_scope.
 
-Lemma inverse_lift t u n k
-  : lift n k t = lift n k u -> t = u.
-Proof.
-  revert k u; induction t; intros k u; cbn.
-  { case_eq (k <=? n0); intro eq.
-    + destruct u; intros e; inversion e as [e']. revert e'.
-      case_eq (k <=? n1); intro eq'. inversion 1.
-      apply Nat.add_cancel_l in H0. now rewrite H0.
-      inversion 1. subst.
-      eapply leb_iff_conv in eq'.
-      eapply leb_complete in eq. lia.
-    + destruct u; intros e; inversion e as [e']. revert e'.
-      case_eq (k <=? n1); intro eq'. inversion 1. subst.
-      eapply leb_iff_conv in eq.
-      eapply leb_complete in eq'. lia.
-      easy.
-  }
-  all: destruct u; intros e; inversion e as [e'];
-      try (destruct (k <=? n0); inversion e'); try reflexivity.
-  all: try erewrite IHt by eassumption.
-  all: try erewrite IHt1 by eassumption.
-  all: try erewrite IHt2 by eassumption.
-  all: try erewrite IHt3 by eassumption.
-  all: try erewrite IHt4 by eassumption.
-  all: try erewrite IHt5 by eassumption.
-  all: try erewrite IHt6 by eassumption.
-  all: try reflexivity.
-Qed.
+  Lemma inverse_lift t u n k :
+    lift n k t = lift n k u →
+    t = u.
+  Proof.
+    revert k u; induction t; intros k u; cbn.
+    { case_eq (k <=? n0); intro eq.
+      + destruct u; intros e; inversion e as [e']. revert e'.
+        case_eq (k <=? n1); intro eq'. inversion 1.
+        apply Nat.add_cancel_l in H0. now rewrite H0.
+        inversion 1. subst.
+        eapply leb_iff_conv in eq'.
+        eapply leb_complete in eq. lia.
+      + destruct u; intros e; inversion e as [e']. revert e'.
+        case_eq (k <=? n1); intro eq'. inversion 1. subst.
+        eapply leb_iff_conv in eq.
+        eapply leb_complete in eq'. lia.
+        easy.
+    }
+    all: destruct u; intros e; inversion e as [e'];
+        try (destruct (k <=? n0); inversion e'); try reflexivity.
+    all: try erewrite IHt by eassumption.
+    all: try erewrite IHt1 by eassumption.
+    all: try erewrite IHt2 by eassumption.
+    all: try erewrite IHt3 by eassumption.
+    all: try erewrite IHt4 by eassumption.
+    all: try erewrite IHt5 by eassumption.
+    all: try erewrite IHt6 by eassumption.
+    all: try reflexivity.
+  Qed.
+
+  (* !!!!!!!!
+
+
+    Let's stop here! I think I remember what I was doing!
+    I should probably use λs to produce closed terms that the checker can
+    handle. Then the only problem is sorts because they won't be concrete.
+    Unless I use the instantiate stuff I did!
+    Can also imagine a tactic to abstract over sorts to turn it into
+    instantiate_sort.
+
+    And probably definitions inside Σ were for this as well.
+
+  *)
 
 Fixpoint inversion_lift {Γ Δ Ξ t A}
   (h : Σ ;;; Γ ,,, Δ ,,, lift_context #|Δ| Ξ |-w lift #|Δ| #|Ξ| t : lift #|Δ| #|Ξ| A)
