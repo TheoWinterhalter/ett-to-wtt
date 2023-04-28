@@ -79,78 +79,148 @@ Open Scope string_scope.
 
 Section Translation.
 
-Context (Sort_notion : notion).
+  Context {Sort_notion : notion}.
 
-Fixpoint tsl (t : sterm) : wterm :=
-  match t with
-  | sRel n => wRel n
-  | sSort s => wSort s
-  | sProd A B => wProd (tsl A) (tsl B)
-  | sLambda A B t => wLambda (tsl A) (tsl t)
-  | sApp u A B v => wApp (tsl u) (tsl v)
-  | sSum A B => wSum (tsl A) (tsl B)
-  | sPair A B u v => wPair (tsl A) (tsl B) (tsl u) (tsl v)
-  | sPi1 A B p => wPi1 (tsl A) (tsl B) (tsl p)
-  | sPi2 A B p => wPi2 (tsl A) (tsl B) (tsl p)
-  | sEq A u v => wEq (tsl A) (tsl u) (tsl v)
-  | sRefl A u => wRefl (tsl A) (tsl u)
-  | sJ A u P w v p => wJ (tsl A) (tsl u) (tsl P) (tsl w) (tsl v) (tsl p)
-  | sTransport T1 T2 p t => wTransport (tsl T1) (tsl T2) (tsl p) (tsl t)
-  | sBeta f t => wBeta (tsl f) (tsl t)
-  | sHeq A a B b => wConst "heq" (* wHeq (tsl A) (tsl a) (tsl B) (tsl b) *)
-  | sHeqToEq p => wConst "heqtoeq"
-  | sHeqRefl A a => wConst "heqrefl"
-  | sHeqSym p => wConst "heqsym"
-  | sHeqTrans p q => wConst "heqtrans"
-  | sHeqTransport p t => wConst "heqtransport"
-  | sCongProd B1 B2 pA pB => wConst "congprod"
-  | sCongLambda B1 B2 t1 t2 pA pB pt => wConst "conglam"
-  | sCongApp B1 B2 pu pA pB pv => wConst "congapp"
-  | sCongSum B1 B2 pA pB => wConst "congsum"
-  | sCongPair B1 B2 pA pB pu pv => wConst "congpair"
-  | sCongPi1 B1 B2 pA pB pp => wConst "congpi1"
-  | sCongPi2 B1 B2 pA pB pp => wConst "congpi2"
-  | sCongEq pA pu pv => wConst "congeq"
-  | sCongRefl pA pu => wConst "congrefl"
-  | sEqToHeq p => wConst "eqtoheq"
-  | sHeqTypeEq A B p => wConst "heqtypeq"
-  | sPack A1 A2 => wConst "pack" (* wPack (tsl A1) (tsl A2) *)
-  | sProjT1 p => wConst "projT1" (* wProjT1 (tsl p) *)
-  | sProjT2 p => wConst "projT2" (* wProjT2 (tsl p) *)
-  | sProjTe p => wConst "projTe" (* wProjTe (tsl p) *)
-  | sAx id => wConst id
-  end.
+  (* The translation takes an already translated global context *)
+  Context (Σ' : wglobal_context).
 
-Definition tsl_decl i ty := {|
-  dname := i ;
-  dtype := tsl ty ;
-  dbody := None
-|}.
+  (* and an already translated local context *)
+  Fixpoint tsl (Γ' : wcontext) (t : sterm) : i_result wterm :=
+    match t with
+    | sRel n => ret (wRel n)
+    | sSort s => ret (wSort s)
+    | sProd A B =>
+        A' <- tsl Γ' A ;;
+        B' <- tsl (Γ' ,, A') B ;;
+        ret (wProd A' B')
+    | sLambda A B t =>
+        A' <- tsl Γ' A ;;
+        t' <- tsl (Γ' ,, A') t ;;
+        ret (wLambda A' t')
+    | sApp u A B v =>
+        u' <- tsl Γ' u ;;
+        v' <- tsl Γ' v ;;
+        ret (wApp u' v')
+    | sSum A B =>
+        A' <- tsl Γ' A ;;
+        B' <- tsl (Γ' ,, A') B ;;
+        ret (wSum A' B')
+    | sPair A B u v =>
+        A' <- tsl Γ' A ;;
+        B' <- tsl (Γ' ,, A') B ;;
+        u' <- tsl Γ' u ;;
+        v' <- tsl Γ' v ;;
+        ret (wPair A' B' u' v')
+    | sPi1 A B p =>
+        A' <- tsl Γ' A ;;
+        B' <- tsl (Γ' ,, A') B ;;
+        p' <- tsl Γ' p ;;
+        ret (wPi1 A' B' p')
+    | sPi2 A B p =>
+        A' <- tsl Γ' A ;;
+        B' <- tsl (Γ' ,, A') B ;;
+        p' <- tsl Γ' p ;;
+        ret (wPi2 A' B' p')
+    | sEq A u v =>
+        A' <- tsl Γ' A ;;
+        u' <- tsl Γ' u ;;
+        v' <- tsl Γ' v ;;
+        ret (wEq A' u' v')
+    | sRefl A u =>
+        A' <- tsl Γ' A ;;
+        u' <- tsl Γ' u ;;
+        ret (wRefl A' u')
+    | sJ A u P w v p =>
+        A' <- tsl Γ' A ;;
+        u' <- tsl Γ' u ;;
+        P' <- tsl (Γ' ,, A' ,, (wEq (lift0 1 A') (lift0 1 u') (wRel 0))) P ;;
+        w' <- tsl Γ' w ;;
+        v' <- tsl Γ' v ;;
+        p' <- tsl Γ' p ;;
+        ret (wJ A' u' P' w' v' p')
+    | sTransport T1 T2 p t =>
+        T1' <- tsl Γ' T1 ;;
+        T2' <- tsl Γ' T2 ;;
+        p' <- tsl Γ' p ;;
+        t' <- tsl Γ' t ;;
+        ret (wTransport T1' T2' p' t')
+    | sBeta f t =>
+        f' <- tsl Γ' f ;;
+        t' <- tsl Γ' t ;;
+        ret (wBeta f' t')
+    | sHeq A a B b =>
+        A' <- tsl Γ' A ;;
+        a' <- tsl Γ' a ;;
+        B' <- tsl Γ' B ;;
+        b' <- tsl Γ' b ;;
+        s <- getsort =<< wttinfer Σ' Γ' A' ;;
+        ret (wApps (wHeq s) [ A' ; a' ; B' ; b' ])
+    | sHeqToEq p => ret (wConst "heqtoeq")
+    | sHeqRefl A a => ret (wConst "heqrefl")
+    | sHeqSym p => ret (wConst "heqsym")
+    | sHeqTrans p q => ret (wConst "heqtrans")
+    | sHeqTransport p t => ret (wConst "heqtransport")
+    | sCongProd B1 B2 pA pB => ret (wConst "congprod")
+    | sCongLambda B1 B2 t1 t2 pA pB pt => ret (wConst "conglam")
+    | sCongApp B1 B2 pu pA pB pv => ret (wConst "congapp")
+    | sCongSum B1 B2 pA pB => ret (wConst "congsum")
+    | sCongPair B1 B2 pA pB pu pv => ret (wConst "congpair")
+    | sCongPi1 B1 B2 pA pB pp => ret (wConst "congpi1")
+    | sCongPi2 B1 B2 pA pB pp => ret (wConst "congpi2")
+    | sCongEq pA pu pv => ret (wConst "congeq")
+    | sCongRefl pA pu => ret (wConst "congrefl")
+    | sEqToHeq p => ret (wConst "eqtoheq")
+    | sHeqTypeEq A B p => ret (wConst "heqtypeq")
+    | sPack A1 A2 => ret (wConst "pack" (* wPack (tsl Γ' A1) (tsl Γ' A2) *))
+    | sProjT1 p => ret (wConst "projT1" (* wProjT1 (tsl Γ' p) *))
+    | sProjT2 p => ret (wConst "projT2" (* wProjT2 (tsl Γ' p) *))
+    | sProjTe p => ret (wConst "projTe" (* wProjTe (tsl Γ' p) *))
+    | sAx id => ret (wConst id)
+    end.
 
-Fixpoint tsl_glob (Σ : sglobal_context) : wglobal_context :=
-  match Σ with
-  | d :: Σ => tsl_decl d.(SCommon.dname) d.(SCommon.dtype)
-    :: tsl_glob Σ
-  | nil => nil
-  end.
+  Definition tsl_decl i ty : i_result glob_decl :=
+    ty' <- tsl [] ty ;;
+    ret {|
+      dname := i ;
+      dtype := ty' ;
+      dbody := None
+    |}.
 
-Fixpoint tsl_ctx (Γ : scontext) : wcontext :=
-  match Γ with
-  | A :: Γ => tsl A :: tsl_ctx Γ
-  | nil => nil
-  end.
+  Fixpoint tsl_ctx (Γ : scontext) : i_result wcontext :=
+    match Γ with
+    | A :: Γ =>
+      Γ' <- tsl_ctx Γ ;;
+      A' <- tsl Γ' A ;;
+      ret (Γ' ,, A')
+    | [] => ret []
+    end.
 
-Open Scope nat_scope.
+End Translation.
 
-Lemma tsl_lift :
-  forall {t n k},
-    tsl (SLiftSubst.lift n k t) = lift n k (tsl t).
-Proof.
-  intro t. induction t ; intros m k.
-  all: try (cbn ; reflexivity).
-  all: try (cbn ; rewrite ?IHt, ?IHt1, ?IHt2, ?IHt3, ?IHt4, ?IHt5, ?IHt6 ; reflexivity).
-  cbn. case_eq (k <=? n) ; intros ; reflexivity.
-Defined.
+Section MoreTranslation.
+
+  Context {Sort_notion : notion}.
+
+  Fixpoint tsl_glob (Σ : sglobal_context) : i_result wglobal_context :=
+    match Σ with
+    | d :: Σ =>
+      Σ' <- tsl_glob Σ ;;
+      d' <- tsl_decl Σ' d.(SCommon.dname) d.(SCommon.dtype) ;;
+      ret (d' :: Σ')
+    | [] => ret []
+    end.
+
+  Open Scope nat_scope.
+
+  (* Lemma tsl_lift :
+    ∀ {t n k},
+      tsl Γ' (SLiftSubst.lift n k t) = lift n k (tsl Γ' t).
+  Proof.
+    intro t. induction t ; intros m k.
+    all: try (cbn ; reflexivity).
+    all: try (cbn ; rewrite ?IHt, ?IHt1, ?IHt2, ?IHt3, ?IHt4, ?IHt5, ?IHt6 ; reflexivity).
+    cbn. case_eq (k <=? n) ; intros ; reflexivity.
+  Defined.
 
 Lemma tsl_ctx_length :
   forall {Γ},
@@ -162,7 +232,7 @@ Defined.
 
 Lemma tsl_subst :
   forall {t u n},
-    tsl (t { n := u })%s = (tsl t){ n := tsl u }.
+    tsl Γ' (t { n := u })%s = (tsl Γ' t){ n := tsl Γ' u }.
 Proof.
   intro t. induction t ; intros u m.
   all: try (cbn ; reflexivity).
@@ -187,7 +257,7 @@ Defined.
 
 Lemma nth_error_tsl_ctx :
   ∀ Γ n,
-    nth_error (tsl_ctx Γ) n = option_map tsl (nth_error Γ n).
+    nth_error (tsl_ctx Γ) n = option_map tsl Γ' (nth_error Γ n).
 Proof.
   intros Γ n.
   induction Γ as [| ty Γ ih ] in n |- *.
@@ -208,9 +278,9 @@ Ltac lift_sort :=
 Ltac callih :=
   match goal with
   | h : let _ := _ in
-        let _ := tsl ?t in
+        let _ := tsl Γ' ?t in
         let _ := _ in _ -> _ ;;; _ |-w _ : _
-    |- _ ;;; _ |-w tsl ?t : _ =>
+    |- _ ;;; _ |-w tsl Γ' ?t : _ =>
     eapply h
   end.
 
@@ -232,8 +302,8 @@ Lemma tsl_sound :
   forall {Σ Γ t A},
     let Σ' := tsl_glob Σ in
     let Γ' := tsl_ctx Γ in
-    let t' := tsl t in
-    let A' := tsl A in
+    let t' := tsl Γ' t in
+    let A' := tsl Γ' A in
     type_glob Σ' ->
     wf Σ' Γ' ->
     Σ ;;; Γ |-i t : A ->
@@ -247,7 +317,7 @@ Proof.
     + subst Γ'. rewrite nth_error_tsl_ctx.
       rewrite_assumption. reflexivity.
   - unfold t', A'. cbn. econstructor ; try assumption ; try ih.
-    rewrite <- tsl_subst. ih.
+    rewrite <- tsl_subst. ih. *)
 (*   - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst). *)
 (*     cbn. econstructor ; try assumption ; try ih. *)
 (*     + eapply rename_typed ; try assumption. *)
@@ -299,7 +369,7 @@ Proof.
 (*   - eapply type_rename. *)
 (*     + eapply IHh. assumption. *)
 (*     + unfold A'. eapply nl_tsl. assumption. *)
-Admitted.
+(* Admitted. *)
 
 (* Lemma tsl_fresh_glob : *)
 (*   forall {id Σ}, *)
@@ -321,7 +391,7 @@ Admitted.
 (*   - cbn. econstructor ; try assumption. *)
 (*     + cbn. eapply tsl_fresh_glob. assumption. *)
 (*     + cbn. destruct i as [s hh]. *)
-(*       exists s. change (wSort s) with (tsl (sSort s)). *)
+(*       exists s. change (wSort s) with (tsl Γ' (sSort s)). *)
 (*       change [] with (tsl_ctx []). *)
 (*       eapply tsl_sound ; try assumption. *)
 (*       cbn. constructor. *)
@@ -338,7 +408,7 @@ Admitted.
 (*   - cbn. econstructor ; try eassumption. *)
 (*     match goal with *)
 (*     | |- _ ;;; _ |-w _ : wSort ?s => *)
-(*       change (wSort s) with (tsl (sSort s)) *)
+(*       change (wSort s) with (tsl Γ' (sSort s)) *)
 (*     end. *)
 (*     eapply tsl_sound ; try eassumption. *)
 (*     eapply tsl_glob_sound. assumption. *)
@@ -348,8 +418,8 @@ Admitted.
 (* forall {Σ Γ t A}, *)
 (*     let Σ' := tsl_glob Σ in *)
 (*     let Γ' := tsl_ctx Γ in *)
-(*     let t' := tsl t in *)
-(*     let A' := tsl A in *)
+(*     let t' := tsl Γ' t in *)
+(*     let A' := tsl Γ' A in *)
 (*     ITyping.type_glob Σ -> *)
 (*     Σ ;;; Γ |-i t : A -> *)
 (*     Σ' ;;; Γ' |-w t' : A'. *)
@@ -361,4 +431,4 @@ Admitted.
 (*     eapply ITypingLemmata.typing_wf. eassumption. *)
 (* Defined. *)
 
-End Translation.
+End MoreTranslation.
