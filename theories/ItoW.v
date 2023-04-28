@@ -1,4 +1,5 @@
 From Coq Require Import Bool String List BinPos Compare_dec Lia Arith Utf8.
+From Equations Require Import Equations.
 From Translation Require Import
   util monad_utils Sorts SAst SLiftSubst WAst WLiftSubst SCommon ITyping
   ITypingLemmata WEquality WTyping WChecker WLemmata.
@@ -297,138 +298,173 @@ Ltac go t' A' :=
   unfold t', A' ; cbn ;
   repeat (rewrite ?tsl_lift, ?tsl_subst) ;
   econstructor ; try assumption ; ih.
+*)
 
-Lemma tsl_sound :
-  forall {Σ Γ t A},
-    let Σ' := tsl_glob Σ in
-    let Γ' := tsl_ctx Γ in
-    let t' := tsl Γ' t in
-    let A' := tsl Γ' A in
-    type_glob Σ' ->
-    wf Σ' Γ' ->
-    Σ ;;; Γ |-i t : A ->
-    Σ' ;;; Γ' |-w t' : A'.
-Proof.
-  intros Σ Γ t A Σ' Γ' t' A' hg hw h. induction h.
-  all: try solve [go t' A'].
-  - unfold t', A'. cbn. rewrite tsl_lift.
-    eapply type_Rel.
-    + assumption.
-    + subst Γ'. rewrite nth_error_tsl_ctx.
-      rewrite_assumption. reflexivity.
-  - unfold t', A'. cbn. econstructor ; try assumption ; try ih.
-    rewrite <- tsl_subst. ih. *)
-(*   - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst). *)
-(*     cbn. econstructor ; try assumption ; try ih. *)
-(*     + eapply rename_typed ; try assumption. *)
-(*       * eapply IHh4. cbn. repeat eapply wf_snoc ; try assumption. *)
-(*         -- ih. *)
-(*         -- econstructor. *)
-(*            ++ rewrite tsl_lift. lift_sort. *)
-(*               eapply typing_lift01 ; try assumption ; ih. *)
-(*            ++ rewrite 2!tsl_lift. *)
-(*               eapply typing_lift01 ; try assumption ; ih. *)
-(*            ++ rewrite tsl_lift. refine (type_Rel _ _ _ _ _). *)
-(*               ** wfctx ; ih. *)
-(*               ** cbn. auto with arith. *)
-(*       * cbn. rewrite 2!tsl_lift. reflexivity. *)
-(*       * reflexivity. *)
-(*       * repeat eapply wf_snoc ; try assumption ; ih. *)
-(*         econstructor. *)
-(*         -- lift_sort. *)
-(*            eapply typing_lift01 ; try assumption ; ih. *)
-(*         -- eapply typing_lift01 ; try assumption ; ih. *)
-(*         -- refine (type_Rel _ _ _ _ _). *)
-(*            ++ wfctx ; ih. *)
-(*            ++ cbn. auto with arith. *)
-(*     + repeat (rewrite ?tsl_lift, ?tsl_subst in IHh6). ih. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - give_up. *)
-(*   - unfold t', A'. econstructor. *)
-(*     + assumption. *)
-(*     + eapply tsl_lookup. assumption. *)
-(*   - eapply type_rename. *)
-(*     + eapply IHh. assumption. *)
-(*     + unfold A'. eapply nl_tsl. assumption. *)
-(* Admitted. *)
+  Derive NoConfusion for result.
+  Opaque wHeq.
 
-(* Lemma tsl_fresh_glob : *)
-(*   forall {id Σ}, *)
-(*     ITyping.fresh_glob id Σ -> *)
-(*     fresh_glob id (tsl_glob Σ). *)
-(* Proof. *)
-(*   intros id Σ h. induction h. *)
-(*   - cbn. constructor. *)
-(*   - cbn. econstructor ; assumption. *)
-(* Defined. *)
+  Lemma tsl_sound :
+    ∀ Σ Γ t A Σ' Γ' t' A',
+      tsl_glob Σ = Success Σ' →
+      tsl_ctx Σ' Γ = Success Γ' →
+      tsl Σ' Γ' A = Success A' →
+      tsl Σ' Γ' t = Success t' →
+      type_glob Σ' →
+      wf Σ' Γ' →
+      Σ ;;; Γ |-i t : A →
+      Σ' ;;; Γ' |-w t' : A'.
+  Proof.
+    intros Σ Γ t A Σ' Γ' t' A' hΣ hΓ hA ht hg hw h.
+    induction h in Σ', Γ', t', A', hΣ, hΓ, hA, ht, hg, hw |- *.
+    (* all: try solve [go t' A']. *)
+    23:{
+      simpl in *. noconf ht.
+      move hA at top.
+      destruct tsl as [B1' |] eqn:hB1. 2: discriminate.
+      move hA at top.
+      destruct tsl as [u1' |] eqn:hu1. 2: discriminate.
+      move hA at top.
+      destruct tsl as [v1' |] eqn:hv1. 2: discriminate.
+      move hA at top.
+      destruct tsl as [B2' |] eqn:hB2. 2: discriminate.
+      move hA at top.
+      destruct tsl as [u2' |] eqn:hu2. 2: discriminate.
+      move hA at top.
+      destruct tsl as [v2' |] eqn:hv2. 2: discriminate.
+      destruct wttinfer as [TB1' |] eqn:hTB1. 2: discriminate.
+      destruct getsort as [s1 |] eqn:hs1. 2: discriminate.
+      noconf hA.
+      (* Now we can check the expected type *)
+      Transparent wHeq.
+      cbn.
+      (* Maybe prove equality for applied wHeq? *)
+      (* Or maybe using λs was actually wrong for the definition
+        because it means we need to perform the rewrite instead of the
+        substitution. We could have also used a context directly with a
+        substitution, that would be more general!
+      *)
+      admit.
+    }
+    - simpl in *. noconf ht.
+      (* rewrite tsl_lift in hA.
+      eapply type_Rel.
+      + assumption.
+      + subst Γ'. rewrite nth_error_tsl_ctx.
+        rewrite_assumption. reflexivity. *)
+      admit.
+    (* - unfold t', A'. cbn. econstructor ; try assumption ; try ih.
+      rewrite <- tsl_subst. ih. *)
+  (*   - unfold t', A'. repeat (rewrite ?tsl_lift, ?tsl_subst). *)
+  (*     cbn. econstructor ; try assumption ; try ih. *)
+  (*     + eapply rename_typed ; try assumption. *)
+  (*       * eapply IHh4. cbn. repeat eapply wf_snoc ; try assumption. *)
+  (*         -- ih. *)
+  (*         -- econstructor. *)
+  (*            ++ rewrite tsl_lift. lift_sort. *)
+  (*               eapply typing_lift01 ; try assumption ; ih. *)
+  (*            ++ rewrite 2!tsl_lift. *)
+  (*               eapply typing_lift01 ; try assumption ; ih. *)
+  (*            ++ rewrite tsl_lift. refine (type_Rel _ _ _ _ _). *)
+  (*               ** wfctx ; ih. *)
+  (*               ** cbn. auto with arith. *)
+  (*       * cbn. rewrite 2!tsl_lift. reflexivity. *)
+  (*       * reflexivity. *)
+  (*       * repeat eapply wf_snoc ; try assumption ; ih. *)
+  (*         econstructor. *)
+  (*         -- lift_sort. *)
+  (*            eapply typing_lift01 ; try assumption ; ih. *)
+  (*         -- eapply typing_lift01 ; try assumption ; ih. *)
+  (*         -- refine (type_Rel _ _ _ _ _). *)
+  (*            ++ wfctx ; ih. *)
+  (*            ++ cbn. auto with arith. *)
+  (*     + repeat (rewrite ?tsl_lift, ?tsl_subst in IHh6). ih. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - give_up. *)
+  (*   - unfold t', A'. econstructor. *)
+  (*     + assumption. *)
+  (*     + eapply tsl_lookup. assumption. *)
+  (*   - eapply type_rename. *)
+  (*     + eapply IHh. assumption. *)
+  (*     + unfold A'. eapply nl_tsl. assumption. *)
+  Admitted.
 
-(* Lemma tsl_glob_sound : *)
-(*   forall {Σ}, *)
-(*     ITyping.type_glob Σ -> *)
-(*     type_glob (tsl_glob Σ). *)
-(* Proof. *)
-(*   intros Σ h. induction h. *)
-(*   - cbn. econstructor. *)
-(*   - cbn. econstructor ; try assumption. *)
-(*     + cbn. eapply tsl_fresh_glob. assumption. *)
-(*     + cbn. destruct i as [s hh]. *)
-(*       exists s. change (wSort s) with (tsl Γ' (sSort s)). *)
-(*       change [] with (tsl_ctx []). *)
-(*       eapply tsl_sound ; try assumption. *)
-(*       cbn. constructor. *)
-(* Defined. *)
+  (* Lemma tsl_fresh_glob : *)
+  (*   forall {id Σ}, *)
+  (*     ITyping.fresh_glob id Σ -> *)
+  (*     fresh_glob id (tsl_glob Σ). *)
+  (* Proof. *)
+  (*   intros id Σ h. induction h. *)
+  (*   - cbn. constructor. *)
+  (*   - cbn. econstructor ; assumption. *)
+  (* Defined. *)
 
-(* Lemma tsl_ctx_sound : *)
-(*   forall {Σ Γ}, *)
-(*     ITyping.type_glob Σ -> *)
-(*     ITyping.wf Σ Γ -> *)
-(*     wf (tsl_glob Σ) (tsl_ctx Γ). *)
-(* Proof. *)
-(*   intros Σ Γ hg hw. induction hw. *)
-(*   - cbn. constructor. *)
-(*   - cbn. econstructor ; try eassumption. *)
-(*     match goal with *)
-(*     | |- _ ;;; _ |-w _ : wSort ?s => *)
-(*       change (wSort s) with (tsl Γ' (sSort s)) *)
-(*     end. *)
-(*     eapply tsl_sound ; try eassumption. *)
-(*     eapply tsl_glob_sound. assumption. *)
-(* Defined. *)
+  (* Lemma tsl_glob_sound : *)
+  (*   forall {Σ}, *)
+  (*     ITyping.type_glob Σ -> *)
+  (*     type_glob (tsl_glob Σ). *)
+  (* Proof. *)
+  (*   intros Σ h. induction h. *)
+  (*   - cbn. econstructor. *)
+  (*   - cbn. econstructor ; try assumption. *)
+  (*     + cbn. eapply tsl_fresh_glob. assumption. *)
+  (*     + cbn. destruct i as [s hh]. *)
+  (*       exists s. change (wSort s) with (tsl Γ' (sSort s)). *)
+  (*       change [] with (tsl_ctx []). *)
+  (*       eapply tsl_sound ; try assumption. *)
+  (*       cbn. constructor. *)
+  (* Defined. *)
 
-(* Corollary tsl_soundness : *)
-(* forall {Σ Γ t A}, *)
-(*     let Σ' := tsl_glob Σ in *)
-(*     let Γ' := tsl_ctx Γ in *)
-(*     let t' := tsl Γ' t in *)
-(*     let A' := tsl Γ' A in *)
-(*     ITyping.type_glob Σ -> *)
-(*     Σ ;;; Γ |-i t : A -> *)
-(*     Σ' ;;; Γ' |-w t' : A'. *)
-(* Proof. *)
-(*   intros Σ Γ t A Σ' Γ' t' A' hg h. *)
-(*   eapply tsl_sound ; try assumption. *)
-(*   - eapply tsl_glob_sound. assumption. *)
-(*   - eapply tsl_ctx_sound ; try assumption. *)
-(*     eapply ITypingLemmata.typing_wf. eassumption. *)
-(* Defined. *)
+  (* Lemma tsl_ctx_sound : *)
+  (*   forall {Σ Γ}, *)
+  (*     ITyping.type_glob Σ -> *)
+  (*     ITyping.wf Σ Γ -> *)
+  (*     wf (tsl_glob Σ) (tsl_ctx Γ). *)
+  (* Proof. *)
+  (*   intros Σ Γ hg hw. induction hw. *)
+  (*   - cbn. constructor. *)
+  (*   - cbn. econstructor ; try eassumption. *)
+  (*     match goal with *)
+  (*     | |- _ ;;; _ |-w _ : wSort ?s => *)
+  (*       change (wSort s) with (tsl Γ' (sSort s)) *)
+  (*     end. *)
+  (*     eapply tsl_sound ; try eassumption. *)
+  (*     eapply tsl_glob_sound. assumption. *)
+  (* Defined. *)
+
+  (* Corollary tsl_soundness : *)
+  (* forall {Σ Γ t A}, *)
+  (*     let Σ' := tsl_glob Σ in *)
+  (*     let Γ' := tsl_ctx Γ in *)
+  (*     let t' := tsl Γ' t in *)
+  (*     let A' := tsl Γ' A in *)
+  (*     ITyping.type_glob Σ -> *)
+  (*     Σ ;;; Γ |-i t : A -> *)
+  (*     Σ' ;;; Γ' |-w t' : A'. *)
+  (* Proof. *)
+  (*   intros Σ Γ t A Σ' Γ' t' A' hg h. *)
+  (*   eapply tsl_sound ; try assumption. *)
+  (*   - eapply tsl_glob_sound. assumption. *)
+  (*   - eapply tsl_ctx_sound ; try assumption. *)
+  (*     eapply ITypingLemmata.typing_wf. eassumption. *)
+  (* Defined. *)
 
 End MoreTranslation.
