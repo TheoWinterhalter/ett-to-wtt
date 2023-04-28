@@ -4,86 +4,76 @@ From Translation Require Import
   ITypingLemmata WEquality WTyping WChecker WLemmata.
 Import ListNotations.
 
-Section Prelims.
+Section Definitions.
 
-Context (Sort_notion : notion).
-Context Σ (wΣ : type_glob Σ).
+  Context {Sort_notion : notion}.
 
-(* TODO MOVE *)
-Lemma assert_eq_refl :
-  ∀ t, assert_eq t t = Success tt.
-Proof.
-  intro t. unfold assert_eq. rewrite eq_term_refl. reflexivity.
-Defined.
+  Fixpoint wLams (l : list wterm) (t : wterm) : wterm :=
+    match l with
+    | [] => t
+    | A :: l => wLambda A (wLams l t)
+    end.
 
-Definition wHeq s A a B b :=
-  wSum (wEq (wSort s) A B) (wEq (↑ B) (wTransport (↑ A) (↑ B) (wRel 0) (↑ a)) (↑ b)).
+  Fixpoint wApps (u : wterm) (l : list wterm) : wterm :=
+    match l with
+    | [] => u
+    | v :: l => wApps (wApp u v) l
+    end.
 
-(* Lemma wttinfer_lift :
-  ∀ s Γ A t,
-    wf Σ Γ →
-    Σ ;;; Γ |-w A : wSort s →
-    wttinfer Σ (Γ ,, A) (lift0 1 t) = (B <- wttinfer Σ Γ t ;; ret (lift0 1 B)).
-Proof.
-  intros s Γ A t hΓ hA.
-  symmetry. destruct wttinfer as [B|] eqn:e.
-  - simpl. symmetry. eapply wttinfer_complete.
-    eapply wttinfer_sound in e. 2,3: auto.
-    eapply typing_lift01. all: eassumption.
-  - simpl. erewrite wttinfer_complete. *)
+  Fixpoint wProds (l : list wterm) (B : wterm) : wterm :=
+    match l with
+    | [] => B
+    | A :: l => wProd A (wProds l B)
+    end.
 
-Lemma wttinfer_lift01 :
-  ∀ s Γ A t B,
-    wf Σ Γ →
-    Σ ;;; Γ |-w A : wSort s →
-    wttinfer Σ Γ t = ret B →
-    wttinfer Σ (Γ ,, A) (lift0 1 t) = ret (lift0 1 B).
-Proof.
-  intros s Γ A t B hΓ hA h.
-  eapply wttinfer_complete.
-  eapply wttinfer_sound in h. 2,3: auto.
-  eapply typing_lift01. all: eassumption.
-Qed.
+  Definition wHeq_ctx s := [
+    (* A *) wSort s ;
+    (* a : A *) wRel 0 ;
+    (* B *) wSort s ;
+    (* b : B *) wRel 0
+  ].
 
-Lemma type_Heq :
-  ∀ Γ s A a B b,
-    wf Σ Γ →
-    Σ ;;; Γ |-w A : wSort s →
-    Σ ;;; Γ |-w B : wSort s →
-    Σ ;;; Γ |-w a : A →
-    Σ ;;; Γ |-w b : B →
-    Σ ;;; Γ |-w wHeq s A a B b : wSort s.
-Proof.
-  intros Γ s A a B b hΓ hA hB ha hb.
-  eapply wttinfer_sound. 2,3: auto.
-  simpl. rewrite wttinfer_complete with (1 := hA).
-  rewrite assert_eq_refl.
-  rewrite wttinfer_complete with (1 := hB).
-  rewrite assert_eq_refl. simpl.
-  erewrite wttinfer_lift01.
-  2: auto.
-  2:{ econstructor. 2,3: eassumption. econstructor. auto. }
-  2:{ apply wttinfer_complete with (1 := hB). }
-  simpl.
-  erewrite wttinfer_lift01.
-  2: auto.
-  2:{ econstructor. 2,3: eassumption. econstructor. auto. }
-  2:{ apply wttinfer_complete with (1 := hA). }
-  simpl. rewrite assert_eq_refl. rewrite assert_eq_sort_refl.
-  erewrite wttinfer_lift01.
-  2: auto.
-  2:{ econstructor. 2,3: eassumption. econstructor. auto. }
-  2:{ apply wttinfer_complete with (1 := ha). }
-  simpl. rewrite assert_eq_refl. rewrite assert_eq_refl.
-  erewrite wttinfer_lift01.
-  2: auto.
-  2:{ econstructor. 2,3: eassumption. econstructor. auto. }
-  2:{ apply wttinfer_complete with (1 := hb). }
-  simpl. rewrite assert_eq_refl. simpl.
-  (* Sort problem *)
-Abort.
+  Definition wHeq s :=
+    wLams (wHeq_ctx s) (
+      wSum
+        (* e : A = B *)
+        (wEq (wSort s) (wRel 3) (wRel 1))
+        (* transport A B e a = b *)
+        (wEq (wRel 2) (wTransport (wRel 4) (wRel 2) (wRel 0) (wRel 3)) (wRel 1))
+    ).
 
-End Prelims.
+  Definition heq_sort s :=
+    (sum_sort (eq_sort (succ s)) (eq_sort s)).
+
+End Definitions.
+
+Section Poly.
+
+  (* We use sort polymorphism to use the checker *)
+  #[local] Existing Instance psort_notion.
+
+  Lemma ptype_Heq :
+    [] ;;; [] |-w wHeq (pvar 0) : wProds (wHeq_ctx (pvar 0)) (wSort (heq_sort (pvar 0))).
+  Proof.
+    eapply wttinfer_sound. 1: reflexivity. all: constructor.
+  Qed.
+
+End Poly.
+
+Section Rules.
+
+  Context {Sort_notion : notion}.
+
+  Lemma type_Heq :
+    ∀ s, [] ;;; [] |-w wHeq s : wProds (wHeq_ctx s) (wSort (heq_sort s)).
+  Proof.
+    intro s.
+    pose proof ptype_Heq as h.
+    eapply instantiate_sorts_sound with (inst := λ _, s) in h. 2,3: constructor.
+    assumption.
+  Qed.
+
+End Rules.
 
 Open Scope string_scope.
 
